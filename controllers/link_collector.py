@@ -7,7 +7,7 @@ from common.utils.dto import Bookmark
 from common.utils.files import load_file
 
 
-class BrowserBookmark:
+class BrowserBookmarkCollector:
     """take browser bookmark html file, parse it and returning list[Bookmark]"""
 
     def __init__(self, path: str):
