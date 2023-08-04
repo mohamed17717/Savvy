@@ -1,18 +1,19 @@
 import requests
 from bs4 import BeautifulSoup
 
-
-url = 'https://stackoverflow.com/questions/11754478/sending-a-http-request-that-tells-server-to-return-only-headers-and-no-body'
-res = requests.get(url)
-
-assert res.status_code == 200, 'Error request'
+from common.utils.dto import Bookmark
 
 
-soup = BeautifulSoup(res.text, 'lxml')
+class BrowserBookmarkScraper:
+    def __init__(self, bookmark: Bookmark):
+        self.bookmark = bookmark
 
-print(f'{soup.head.title.text=}\n\n')
-for index, meta in enumerate(soup.select('head meta')):
-    print(f'{index=} ---- {meta}\n\n')
+    def pull(self):
+        print(f'[pull] {self.bookmark.url}')
+        res = requests.get(self.bookmark.url)
+        assert res.status_code == 200, f'Error request [{res.status_code}]'
 
-with open('index.html', 'w') as f:
-    f.write(res.text)
+        soup = BeautifulSoup(res.text, 'lxml')
+        meta_tags = soup.select('meta')
+        for meta in meta_tags:
+            print(meta)
