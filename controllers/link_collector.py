@@ -12,10 +12,10 @@ class BrowserBookmark:
 
     def __init__(self, path: str):
         self.path = path
+        self.file_content = load_file(path)
 
-    def parse(self) -> list[Bookmark]:
-        html = load_file(self.path)
-        soup = BeautifulSoup(html, 'lxml')
+    def from_html(self) -> list[Bookmark]:
+        soup = BeautifulSoup(self.file_content, 'lxml')
 
         bookmarks: list[Bookmark] = []
 
@@ -29,8 +29,13 @@ class BrowserBookmark:
 
         return bookmarks
 
-    def to_json(self) -> str:
-        bookmarks = tuple(map(asdict, self.parse()))
+    def from_json(self) -> list[Bookmark]:
+        data = json.loads(self.file_content)
+        return [Bookmark(**item) for item in data]
+
+    def to_json(self, bookmarks: list[Bookmark]) -> str:
+        bookmarks = tuple(map(asdict, bookmarks))
         json_bookmarks = json.dumps(bookmarks, indent=2, ensure_ascii=False)
 
         return json_bookmarks
+

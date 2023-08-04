@@ -6,9 +6,9 @@ from common.utils.files import dump_to_file
 
 
 def main():
-    bookmarks = BrowserBookmark('src/resources/bookmarks/firefox_bookmarks.html')
-    # pprint(bookmarks.parse())
-    json_bookmarks = bookmarks.to_json()
+    controller = BrowserBookmark('resources/bookmarks/firefox_bookmarks.html')
+    bookmarks = controller.from_html()
+    json_bookmarks = controller.to_json(bookmarks)
     dump_to_file('./bookmarks.json', json_bookmarks)
 
 
