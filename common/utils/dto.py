@@ -1,5 +1,6 @@
+from itertools import count
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 
@@ -12,3 +13,5 @@ class Bookmark:
     icon_uri: Optional[str] = None
     add_date: Optional[int] = None
     last_modified: Optional[int] = None
+
+    id:int = field(default_factory=count().__next__)
