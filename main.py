@@ -1,4 +1,6 @@
 import os
+import json
+from dataclasses import asdict
 
 from pprint import pprint
 from controllers.link_collector import BrowserBookmarkCollector
@@ -15,16 +17,20 @@ def main():
 
     collector = BrowserBookmarkCollector('resources/bookmarks/firefox_bookmarks.html')
     bookmarks = collector.from_html()
+    web_pages = []
     for bookmark in bookmarks:
+        print(bookmark.url)
         try:
             scraper = BrowserBookmarkScraper(bookmark)
-            scraper.pull()
+            web_page = scraper.pull()
+            web_pages.append(asdict(web_page))
         except Exception as e:
             print(e)
         print('--------------------')
     
     # json_bookmarks = collector.to_json(bookmarks)
-    # dump_to_file('../bookmarks.json', json_bookmarks)
+    dump_to_file('../bookmarks_webpage.json',
+                 json.dumps(web_pages, indent=2, ensure_ascii=False))
 
 
 if __name__ == '__main__':
