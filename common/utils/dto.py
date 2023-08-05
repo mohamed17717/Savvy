@@ -14,4 +14,19 @@ class Bookmark:
     add_date: Optional[int] = None
     last_modified: Optional[int] = None
 
-    id:int = field(default_factory=count().__next__)
+    id: int = field(default_factory=count().__next__)
+
+
+@dataclass
+class HTMLMetaTag:
+    name: str
+    content: str
+    # property // itemprop //
+
+
+@dataclass
+class BookmarkWebPage:
+    id: int
+    url: str
+    title: str
+    meta_tags: list[HTMLMetaTag] = field(default_factory=lambda: [])
