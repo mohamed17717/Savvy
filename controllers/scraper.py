@@ -1,7 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 
-from common.utils.dto import Bookmark, BookmarkWebPage, HTMLMetaTag
+from common.utils.dto import Bookmark, BookmarkWebpage, HTMLMetaTag
 from common.utils.dicts import get_by_alias
 
 
@@ -16,7 +16,7 @@ class BrowserBookmarkScraper:
 
         soup = BeautifulSoup(res.text, 'lxml')
 
-        web_page = BookmarkWebPage(
+        webpage = BookmarkWebpage(
             id=self.bookmark.id,
             url=self.bookmark.url,
             title=soup.select_one('title').text
@@ -31,5 +31,5 @@ class BrowserBookmarkScraper:
             )
             meta_tags.append(meta_tag)
 
-        web_page.meta_tags = meta_tags
-        return web_page
+        webpage.meta_tags = meta_tags
+        return webpage
