@@ -33,8 +33,8 @@ class BrowserBookmarkCollector:
         data = json.loads(self.file_content)
         return [Bookmark(**item) for item in data]
 
-    def to_json(self, bookmarks: list[Bookmark]) -> str:
-        bookmarks = tuple(map(asdict, bookmarks))
+    def to_json(self) -> str:
+        bookmarks = tuple(map(asdict, self.from_html()))
         json_bookmarks = json.dumps(bookmarks, indent=2, ensure_ascii=False)
 
         return json_bookmarks
