@@ -22,6 +22,8 @@ class Bookmark:
     id: int = field(default_factory=count().__next__)
     domain: str = field(init=False)
 
+    # TODO add BookmarkWebpage on this class
+
     def __get_domain(self) -> str:
         return urllib.parse.urlparse(self.url).netloc
 
