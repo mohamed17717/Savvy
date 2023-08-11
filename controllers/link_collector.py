@@ -25,13 +25,13 @@ class BrowserBookmarkCollector:
             attrs['url'] = attrs.pop('href')
             attrs['title'] = item.text
 
-            bookmarks.append(Bookmark(**attrs))
+            bookmarks.append(Bookmark.load(attrs))
 
         return bookmarks
 
     def from_json(self) -> list[Bookmark]:
         data = json.loads(self.file_content)
-        return [Bookmark(**item) for item in data]
+        return [Bookmark.load(item) for item in data]
 
     def to_json(self) -> str:
         bookmarks = tuple(map(asdict, self.from_html()))

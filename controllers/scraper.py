@@ -9,27 +9,31 @@ class BrowserBookmarkScraper:
     def __init__(self, bookmark: Bookmark):
         self.bookmark = bookmark
 
+    def __load_meta_tags(self, soup: BeautifulSoup) -> list[HTMLMetaTag]:
+        meta_tags = []
+
+        # TODO make HTMLMetaTag take the html meta as a variable and extract data from it
+        for elm in soup.select('meta[content]'):
+            data = elm.attrs.copy()
+            data['name'] = get_by_alias(
+                data, ['name', 'property', 'itemprop'], 'undefined'
+            )
+
+            meta_tags.append(HTMLMetaTag.load(data))
+
+        return meta_tags
+
     def pull(self):
         print(f'[pull] {self.bookmark.url}')
         res = requests.get(self.bookmark.url, timeout=3)
         assert res.status_code == 200, f'Error request [{res.status_code}]'
 
         soup = BeautifulSoup(res.text, 'lxml')
+        page_data = {
+            'id': self.bookmark.id,
+            'url': self.bookmark.url,
+            'title': soup.select_one('title').text,
+            'meta_tags': self.__load_meta_tags(soup)
+        }
 
-        webpage = BookmarkWebpage(
-            id=self.bookmark.id,
-            url=self.bookmark.url,
-            title=soup.select_one('title').text
-        )
-        meta_tags = []
-        for elm in soup.select('meta[content]'):
-            name = get_by_alias(
-                elm.attrs, ['name', 'property', 'itemprop'], 'undefined')
-            meta_tag = HTMLMetaTag(
-                name=name,
-                content=elm.attrs.get('content')
-            )
-            meta_tags.append(meta_tag)
-
-        webpage.meta_tags = meta_tags
-        return webpage
+        return BookmarkWebpage.load(page_data)

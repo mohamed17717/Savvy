@@ -49,31 +49,21 @@ def test_document_builder():
     bookmarks_data = json.loads(load_file('../bookmarks.json'))
     bookmarks = []
     for item in bookmarks_data:
-        item.pop('domain', '')
-        bookmarks.append(Bookmark(**item))
-    
-    
+        bookmarks.append(Bookmark.load(item))
+
     webpages_data = json.loads(load_file('../bookmarks_webpage.json'))
     webpages = []
     for item in webpages_data:
-        item.pop('meta_data')
-
         meta_tags = []
         for i in item.pop('meta_tags'):
-            i.pop('simple_name', '')
-            i.pop('is_allowed', '')
-            meta_tags.append(
-                HTMLMetaTag(**i)
-            )
-            
-        webpages.append(
-            BookmarkWebpage(
-                meta_tags=meta_tags,
-                **item,
-            )
-        )
+            meta_tags.append(HTMLMetaTag.load(i))
+
+        item['meta_tags'] = meta_tags,
+        webpages.append(BookmarkWebpage.load(item))
 
     for bookmark, webpage in zip(bookmarks, webpages):
         builder = BookmarkDocumentBuilder(bookmark, webpage)
-        print(builder.build())
+        document = builder.build()
+        dump_to_file(f'resources/documents/{webpage.id+1}.txt', document)
+        print(document)
         print('----------------')
