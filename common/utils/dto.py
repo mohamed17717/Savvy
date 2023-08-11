@@ -12,22 +12,40 @@ class Bookmark:
     url: str
     title: str
 
+    # OPTIONAL
     icon: Optional[str] = None
     icon_uri: Optional[str] = None
     add_date: Optional[int] = None
     last_modified: Optional[int] = None
 
+    # COMPUTED
     id: int = field(default_factory=count().__next__)
     domain: str = field(init=False)
 
+    def __get_domain(self) -> str:
+        return urllib.parse.urlparse(self.url).netloc
+
     def __post_init__(self):
-        self.domain = urllib.parse.urlparse(self.url).netloc
+        self.domain = self.__get_domain()
+
+    @classmethod
+    def load(cls, data: dict) -> 'Bookmark':
+        return cls(
+            url=data.get('url'),
+            title=data.get('title'),
+            icon=data.get('icon'),
+            icon_uri=data.get('icon_uri'),
+            add_date=data.get('add_date'),
+            last_modified=data.get('last_modified'),
+        )
 
 
 @dataclass
 class HTMLMetaTag:
     name: str
     content: str
+
+    # COMPUTED
     simple_name: str = field(init=False)
     is_allowed: bool = field(init=False)
 
@@ -50,13 +68,24 @@ class HTMLMetaTag:
         self.simple_name = self.__get_simple_name()
         self.is_allowed = self.__get_is_allowed()
 
+    @classmethod
+    def load(cls, data: dict) -> 'HTMLMetaTag':
+        return cls(
+            name=data.get('name'),
+            content=data.get('content'),
+        )
+
 
 @dataclass
 class BookmarkWebpage:
     id: int
     url: str
     title: str
-    meta_tags: list[HTMLMetaTag] = field(default_factory=lambda: [])
+
+    # OPTIONAL
+    meta_tags: Optional[list[HTMLMetaTag]] = field(default_factory=lambda: [])
+
+    # COMPUTED
     meta_data: str = field(init=False)
 
     def __get_meta_data(self):
@@ -70,3 +99,12 @@ class BookmarkWebpage:
 
     def __post_init__(self):
         self.meta_data = self.__get_meta_data()
+
+    @classmethod
+    def load(cls, data: dict) -> 'BookmarkWebpage':
+        return cls(
+            id=data.get('id'),
+            url=data.get('url'),
+            title=data.get('title'),
+            meta_tags=data.get('meta_tags'),
+        )
