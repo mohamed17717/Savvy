@@ -54,11 +54,13 @@ def test_document_builder():
     webpages_data = json.loads(load_file('../bookmarks_webpage.json'))
     webpages = []
     for item in webpages_data:
+        item.setdefault('meta_tags', [])
+
         meta_tags = []
-        for i in item.pop('meta_tags'):
+        for i in item.pop('meta_tags') or []:
             meta_tags.append(HTMLMetaTag.load(i))
 
-        item['meta_tags'] = meta_tags,
+        item['meta_tags'] = meta_tags
         webpages.append(BookmarkWebpage.load(item))
 
     if len(bookmarks) != len(webpages):
