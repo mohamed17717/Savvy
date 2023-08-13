@@ -61,6 +61,9 @@ def test_document_builder():
         item['meta_tags'] = meta_tags,
         webpages.append(BookmarkWebpage.load(item))
 
+    if len(bookmarks) != len(webpages):
+        raise Exception('invalid bookmarks, webpages data')
+
     for bookmark, webpage in zip(bookmarks, webpages):
         builder = BookmarkDocumentBuilder(bookmark, webpage)
         document = builder.build()
