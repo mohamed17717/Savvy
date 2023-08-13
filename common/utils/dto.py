@@ -85,6 +85,7 @@ class BookmarkWebpage:
     title: str
 
     # OPTIONAL
+    # TODO Check why it become null in some values
     meta_tags: Optional[list[HTMLMetaTag]] = field(default_factory=lambda: [])
 
     # COMPUTED
