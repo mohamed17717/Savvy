@@ -26,14 +26,20 @@ class BrowserBookmarkScraper:
     def pull(self):
         print(f'[pull] {self.bookmark.url}')
         res = requests.get(self.bookmark.url, timeout=3)
-        assert res.status_code == 200, f'Error request [{res.status_code}]'
 
-        soup = BeautifulSoup(res.text, 'lxml')
-        page_data = {
-            'id': self.bookmark.id,
-            'url': self.bookmark.url,
-            'title': soup.select_one('title').text,
-            'meta_tags': self.__load_meta_tags(soup)
-        }
+        if res.status_code == 200:
+            soup = BeautifulSoup(res.text, 'lxml')
+            page_data = {
+                'id': self.bookmark.id,
+                'url': self.bookmark.url,
+                'title': soup.select_one('title').text,
+                'meta_tags': self.__load_meta_tags(soup)
+            }
+        else:
+            page_data = {
+                'id': self.bookmark.id,
+                'url': self.bookmark.url,
+                'title': f'Error request [{res.status_code}]',
+            }
 
         return BookmarkWebpage.load(page_data)
