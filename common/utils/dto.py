@@ -92,10 +92,10 @@ class BookmarkWebpage:
 
     def __get_meta_data(self):
         meta_data = {}
-
-        for meta in self.meta_tags:
-            if meta.is_allowed:
-                meta_data[meta.simple_name] = meta.content
+        if self.meta_tags:
+            for meta in self.meta_tags:
+                if meta.is_allowed:
+                    meta_data[meta.simple_name] = meta.content
 
         return stringify_dict(meta_data)
 
