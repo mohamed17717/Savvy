@@ -9,6 +9,7 @@ from controllers.document_builder import BookmarkDocumentBuilder, BookmarkWeight
 
 from common.utils.files import dump_to_file, load_file
 from common.utils.dto import BookmarkWebpage, Bookmark, HTMLMetaTag
+from common.utils.string import clean_text
 
 
 def test_collector_from_html():
@@ -70,6 +71,15 @@ def test_document_builder():
         # builder = BookmarkDocumentBuilder(bookmark, webpage)
         builder = BookmarkWeightedDocumentBuilder(bookmark, webpage)
         document = json.dumps(builder.build(), ensure_ascii=False, indent=2)
-        dump_to_file(f'resources/documents/{webpage.id+1}.json', document)
+        dump_to_file(f'resources/documents/{webpage.id+1}+.json', document)
         print(document)
         print('----------------')
+
+
+def test_clean_documents():
+    files = [f'resources/documents/{i}.txt' for i in range(1, 20)]
+    docs = map(load_file, files)
+    
+    for path, doc in zip(files, docs):
+        dump_to_file(f'{path}.cleaned', clean_text(doc))
+        
