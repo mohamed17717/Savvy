@@ -1,9 +1,9 @@
 import re
 from typing import Dict
 from common.utils.dto import Bookmark, BookmarkWebpage
+from common.utils.string import clean_text
 
 
-# Create WeightedDocumentBuilder
 class BookmarkWeightedDocumentBuilder:
     def __init__(self, bookmark: Bookmark, webpage: BookmarkWebpage) -> None:
         self.bookmark = bookmark
@@ -21,10 +21,7 @@ class BookmarkWeightedDocumentBuilder:
 
         weighted_words = {}
         for phrase, weight in weight_sheet:
-            # remove punctuation
-            phrase = re.sub(r'[^\w ]', ' ', phrase)
-            # remove double spaces
-            phrase = re.sub(r' {2,}', '', phrase)
+            phrase = clean_text(phrase)
 
             words = phrase.split(' ')
             for word in words:
