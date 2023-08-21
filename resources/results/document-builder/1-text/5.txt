@@ -1,0 +1,20 @@
+[GET https://www.kali.org/kali-nethunter/]
+
+title: Get Kali | Kali Linux
+secondary_title: Kali NetHunter
+
+name: Get Kali | Kali Linux
+application-name: Get Kali | Kali Linux
+title: Get Kali | Kali Linux
+site_name: Kali Linux
+description: Home of Kali Linux, an Advanced Penetration Testing Linux distribution used for Penetration Testing, Ethical Hacking and network security assessments.
+keywords: kali,linux,kalilinux,Penetration,Testing,Penetration Testing,Distribution,Advanced
+language: English
+locale: en_US
+image: https://www.kali.org/images/kali-logo.svg
+updated_time: 2023-03-06T17:51:19+0100
+site: @kalilinux
+creator: @kalilinux
+url: https://www.kali.org/kali-nethunter/
+
+domain: www.kali.org

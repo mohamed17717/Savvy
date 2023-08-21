@@ -1,0 +1,9 @@
+[GET https://forums.kali.org/]
+
+title: Kali Linux Forums
+secondary_title: Kali Forums
+
+keywords: forum,bbs,discussion,bulletin board,kali,linux,support
+description: This is a Kali Linux OS support forum
+
+domain: forums.kali.org

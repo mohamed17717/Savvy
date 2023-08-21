@@ -1,0 +1,7 @@
+[GET https://www.exploit-db.com/google-hacking-database]
+
+title: Error request [403]
+secondary_title: Google Hacking DB
+
+
+domain: www.exploit-db.com

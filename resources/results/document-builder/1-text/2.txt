@@ -1,0 +1,20 @@
+[GET https://www.kali.org/tools/]
+
+title: Kali Tools | Kali Linux Tools
+secondary_title: Kali Tools
+
+name: Kali Tools | Kali Linux Tools
+application-name: Kali Tools | Kali Linux Tools
+title: Kali Tools | Kali Linux Tools
+site_name: Kali Linux
+description: Home of Kali Linux, an Advanced Penetration Testing Linux distribution used for Penetration Testing, Ethical Hacking and network security assessments.
+keywords: kali,linux,kalilinux,Penetration,Testing,Penetration Testing,Distribution,Advanced
+language: English
+locale: en_US
+image: https://www.kali.org/images/kali-logo.svg
+updated_time: 2022-07-14T00:00:00Z
+site: @kalilinux
+creator: @kalilinux
+url: https://www.kali.org/tools/
+
+domain: www.kali.org

@@ -1,0 +1,14 @@
+[GET https://www.offensive-security.com/]
+
+title: The Path to a Secure Future | OffSec
+secondary_title: OffSec
+
+description: Build cyber workforce resilience with our unmatched skills development and hands-on learning platform and library.
+locale: en_US
+title: The Path to a Secure Future | OffSec
+url: https://www.offsec.com/homepage/
+site_name: OffSec
+image: image/png
+site: @offsectraining
+
+domain: www.offensive-security.com
