@@ -32,11 +32,11 @@ There is 2 main tasks in this step
 
 
 def get_paths() -> list[str]:
-    DIR = './resources/documents/'
+    DIR = './resources/results/document-builder/4-weighted-json-cleaned/'
     fname = lambda i: int(i.split('/')[-1].split('.')[0].strip('+')) # get filename
 
     files = os.listdir(DIR)
-    files = filter(lambda f: f.endswith('+.json'), files)
+    files = filter(lambda f: f.endswith('.json'), files)
     files = map(lambda f: DIR + f, files)
     files = list(files)
     files = sorted(files, key=fname)
