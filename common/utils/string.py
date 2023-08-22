@@ -7,13 +7,13 @@ def random_string() -> str:
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
 
 
-def clean_text(text):
+def clean_string(string: str) -> str:
     # TODO make it a class and chain the pipes on it
     # so you apply only pipes you need
     # also with ability to return the substituted text
 
     # Remove HTML entities
-    tmp = re.sub(r'\&\w*;', '', text)
+    tmp = re.sub(r'\&\w*;', '', string)
     # Remove html tags
     tmp = re.sub(r'<.*?>', '', tmp)
     # Remove email
@@ -46,3 +46,6 @@ def clean_text(text):
     tmp = re.sub(r' {2,}', ' ', tmp)
 
     return tmp.strip()
+
+def adv_clean_string(string: str):
+    ...

@@ -9,7 +9,7 @@ from controllers.document_builder import BookmarkDocumentBuilder, BookmarkWeight
 
 from common.utils.files import dump_to_file, load_file
 from common.utils.dto import BookmarkWebpage, Bookmark, HTMLMetaTag
-from common.utils.string import clean_text
+from common.utils.string import clean_string
 
 
 def test_collector_from_html():
@@ -81,5 +81,5 @@ def test_clean_documents():
     docs = map(load_file, files)
     
     for path, doc in zip(files, docs):
-        dump_to_file(f'{path}.cleaned', clean_text(doc))
+        dump_to_file(f'{path}.cleaned', clean_string(doc))
         

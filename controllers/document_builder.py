@@ -1,7 +1,7 @@
 import re
 from typing import Dict
 from common.utils.dto import Bookmark, BookmarkWebpage
-from common.utils.string import clean_text
+from common.utils.string import clean_string
 
 
 class BookmarkWeightedDocumentBuilder:
@@ -21,7 +21,7 @@ class BookmarkWeightedDocumentBuilder:
 
         weighted_words = {}
         for phrase, weight in weight_sheet:
-            phrase = clean_text(phrase)
+            phrase = clean_string(phrase)
 
             words = phrase.split(' ')
             for word in words:
