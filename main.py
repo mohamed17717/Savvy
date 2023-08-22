@@ -11,7 +11,7 @@ def main():
     # tests.test_scraper()
     # tests.test_document_builder()
     # tests.test_clean_documents()
-    from controllers import classifier
+    from controllers import document_cluster
 
 if __name__ == '__main__':
     main()
