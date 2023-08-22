@@ -12,6 +12,9 @@ class BookmarkWeightedDocumentBuilder:
     def build(self) -> Dict[str, int]:
         # output is { word: weight }
         weight_sheet = (
+            # TODO Weights must be dynamic
+            # for example meta with name keyword must
+            # be heavier than meta with name viewport
             (self.webpage.url, 2),
             (self.webpage.title, 8),
             (self.bookmark.title, 5),
@@ -21,6 +24,7 @@ class BookmarkWeightedDocumentBuilder:
 
         weighted_words = {}
         for phrase, weight in weight_sheet:
+            # TODO clean string must be dynamic on the data you clean
             phrase = clean_string(phrase)
 
             words = phrase.split(' ')
