@@ -1,4 +1,5 @@
 
+import os
 import json
 from dataclasses import asdict
 
@@ -6,6 +7,7 @@ from pprint import pprint
 from controllers.link_collector import BrowserBookmarkCollector
 from controllers.scraper import BrowserBookmarkScraper
 from controllers.document_builder import BookmarkDocumentBuilder, BookmarkWeightedDocumentBuilder
+from controllers.document_cluster import CosineSimilarityCluster
 
 from common.utils.files import dump_to_file, load_file
 from common.utils.dto import BookmarkWebpage, Bookmark, HTMLMetaTag
@@ -71,15 +73,45 @@ def test_document_builder():
         # builder = BookmarkDocumentBuilder(bookmark, webpage)
         builder = BookmarkWeightedDocumentBuilder(bookmark, webpage)
         document = json.dumps(builder.build(), ensure_ascii=False, indent=2)
-        dump_to_file(f'resources/results/document-builder/<5-test>/{webpage.id+1}.json', document)
+        dump_to_file(
+            f'resources/results/document-builder/<5-test>/{webpage.id+1}.json', document)
         print(document)
         print('----------------')
 
 
 def test_clean_documents():
-    files = [f'resources/results/document-builder/1-text/{i}.txt' for i in range(1, 20)]
+    files = [
+        f'resources/results/document-builder/1-text/{i}.txt' for i in range(1, 20)]
     docs = map(load_file, files)
-    
+
     for path, doc in zip(files, docs):
         dump_to_file(f'{path}.cleaned', clean_string(doc))
-        
+
+
+def test_cluster_documents():
+    def get_paths() -> list[str]:
+        DIR = './resources/results/document-builder/4-weighted-json-cleaned/'
+
+        def fname(i): return int(
+            i.split('/')[-1].split('.')[0].strip('+'))  # get filename
+
+        files = os.listdir(DIR)
+        files = filter(lambda f: f.endswith('.json'), files)
+        files = map(lambda f: DIR + f, files)
+        files = list(files)
+        files = sorted(files, key=fname)
+
+        return files
+
+    files = get_paths()
+
+    documents = map(load_file, files)
+    documents = map(json.loads, documents)
+    documents = tuple(documents)
+
+    cosine_sim = CosineSimilarityCluster(documents)
+
+    pprint(
+        cosine_sim.get_clusters(0.4)
+    )
+
