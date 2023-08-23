@@ -111,7 +111,16 @@ def test_cluster_documents():
 
     cosine_sim = CosineSimilarityCluster(documents)
 
-    pprint(
-        cosine_sim.get_clusters(0.4)
-    )
+    clusters = cosine_sim.get_clusters(0.4)
+
+    # translate indexes to names
+    t_clusters = []
+    for cluster in clusters:
+        t_cluster = []
+        for index in cluster:
+            t_cluster.append(files[index])
+        t_clusters.append(t_cluster)
+
+    print(clusters)
+    print(json.dumps(t_clusters, indent=2))
 
