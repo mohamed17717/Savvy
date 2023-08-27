@@ -8,6 +8,7 @@ from controllers.link_collector import BrowserBookmarkCollector
 from controllers.scraper import BrowserBookmarkScraper
 from controllers.document_builder import BookmarkDocumentBuilder, BookmarkWeightedDocumentBuilder
 from controllers.document_cluster import CosineSimilarityCluster
+from controllers.labelling import ClusterLabelBuilder
 
 from common.utils.files import dump_to_file, load_file
 from common.utils.dto import BookmarkWebpage, Bookmark, HTMLMetaTag
@@ -123,4 +124,23 @@ def test_cluster_documents():
 
     print(clusters)
     print(json.dumps(t_clusters, indent=2))
+
+
+def test_label_clusters():
+    clusters_paths = load_file('resources/results/cluster/1.json')
+    clusters_paths = json.loads(clusters_paths)
+
+    load_cluster_paths = lambda cluster_paths: [json.loads(load_file(path)) for path in cluster_paths]
+
+    clusters = map(load_cluster_paths, clusters_paths)
+    clusters = tuple(clusters)
+
+    clusters = map(lambda c: ClusterLabelBuilder(c).build(), clusters)
+
+    for paths, cluster in zip(clusters_paths, clusters):
+        if len(paths) == 1: continue
+        print(paths)
+        print()
+        print(cluster)
+        print('---------------')
 
