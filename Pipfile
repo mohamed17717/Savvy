@@ -6,14 +6,14 @@ name = "pypi"
 [packages]
 beautifulsoup4 = "*"
 requests = "*"
-sklearn = "*"
 pandas = "*"
 numpy = "*"
 spacy = "*"
 nltk = "*"
 arabic-stopwords = "*"
 langdetect = "*"
-iso639 = "*"
+scikit-learn = "*"
+iso639-lang = "*"
 
 [dev-packages]
 
