@@ -128,12 +128,12 @@ class TextCleaner:
 
     def uncamelcase(self) -> 'TextCleaner':
         # add space before every uppercase
-        self.text = re.sub(r'([A-Z])', r' \1',self.text)
+        self.text = re.sub(r'([A-Z])', r' \1', self.text)
         return self
 
     def _get_language(self):
-        lang = detect(self.text) # ai detect lang symbol
-        lang = Lang(lang) # symbol to name
+        lang = detect(self.text)  # ai detect lang symbol
+        lang = Lang(lang)  # symbol to name
         return lang.name.lower()
 
     def full_clean(self) -> 'TextCleaner':
@@ -157,15 +157,16 @@ class TextCleaner:
                 .stemming(method='spacy')
         )
 
+
 print(
-TextCleaner(
-    '<span href="https://google.com">Mo Salah is a famous egyptian, &copy; who playing football'
-    ' in liverpool with_number 11 and he l//**-oves @shakira website is a  a www.xnxxx.com</span>'
-    '\n\n\n\n#never_walk_alone salah@yahoo.com\n\n\n\n'
-).full_clean().text
+    TextCleaner(
+        '<span href="https://google.com">Mo Salah is a famous egyptian, &copy; who playing football'
+        ' in liverpool with_number 11 and he l//**-oves @shakira website is a  a www.xnxxx.com</span>'
+        '\n\n\n\n#never_walk_alone salah@yahoo.com\n\n\n\n'
+    ).full_clean().text
 )
+
 
 class TextWeight:
     # Should be constant in settings contain all this shit
     ...
-
