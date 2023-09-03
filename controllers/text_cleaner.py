@@ -126,6 +126,11 @@ class TextCleaner:
     def spelling_correction(self) -> 'TextCleaner':
         return self
 
+    def uncamelcase(self) -> 'TextCleaner':
+        # add space before every uppercase
+        self.text = re.sub(r'([A-Z])', r' \1',self.text)
+        return self
+
     def _get_language(self):
         lang = detect(self.text) # ai detect lang symbol
         lang = Lang(lang) # symbol to name
@@ -138,6 +143,7 @@ class TextCleaner:
                 .emails()
                 .usernames()
                 .links()
+                .uncamelcase()
                 .lowercase()
                 .hashtags()
                 .repeating_chars()
