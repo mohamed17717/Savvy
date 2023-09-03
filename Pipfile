@@ -9,6 +9,11 @@ requests = "*"
 sklearn = "*"
 pandas = "*"
 numpy = "*"
+spacy = "*"
+nltk = "*"
+arabic-stopwords = "*"
+langdetect = "*"
+iso639 = "*"
 
 [dev-packages]
 
