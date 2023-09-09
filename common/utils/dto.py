@@ -103,8 +103,8 @@ class BookmarkWebpage:
         meta_data = ''
         if self.meta_tags:
             for meta in self.meta_tags:
-                if meta.is_allowed:
-                    meta_data += ' ' + meta.content
+                if meta.get('is_allowed'):
+                    meta_data += ' ' + meta.get('content')
 
         return meta_data
 
