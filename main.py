@@ -13,7 +13,8 @@ def main():
     # tests.test_document_builder()
     # tests.test_clean_documents()
     # tests.test_cluster_documents()
-    tests.test_label_clusters()
+    # tests.test_label_clusters()
+    from controllers import text_cleaner
 
 
 if __name__ == '__main__':
