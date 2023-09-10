@@ -11,3 +11,15 @@ def stringify_dict(_dict: dict) -> str:
     for key, value in _dict.items():
         data += f'{key}: {value}\n'
     return data
+
+
+def merge_dicts(d1: dict, *args: dict, method=lambda a, b: a+b):
+    result = d1.copy()
+    for d2 in args:
+        for key, value in d2.items():
+            stored_value = result.get(key)
+            if stored_value is None:
+                result[key] = value
+            else:
+                result[key] = method(stored_value, value)
+    return result
