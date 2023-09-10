@@ -1,7 +1,7 @@
 import re
 from typing import Dict
 from common.utils.dto import Bookmark, BookmarkWebpage
-from common.utils.string import clean_string
+from common.utils.string_utils import clean_string
 
 
 class BookmarkWeightedDocumentBuilder:

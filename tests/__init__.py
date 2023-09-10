@@ -10,9 +10,9 @@ from controllers.document_builder import BookmarkDocumentBuilder, BookmarkWeight
 from controllers.document_cluster import CosineSimilarityCluster
 from controllers.labelling import ClusterLabelBuilder
 
-from common.utils.files import dump_to_file, load_file
+from common.utils.file_utils import dump_to_file, load_file
 from common.utils.dto import BookmarkWebpage, Bookmark, HTMLMetaTag
-from common.utils.string import clean_string
+from common.utils.string_utils import clean_string
 
 
 def test_collector_from_html():

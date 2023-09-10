@@ -1,5 +1,5 @@
 from common.utils.dto import Bookmark, BookmarkWebpage
-from common.utils.dicts import merge_dicts
+from common.utils.dict_utils import merge_dicts
 from common.utils.list_utils import list_counter
 from common.utils.class_utils import filter_class_methods
 

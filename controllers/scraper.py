@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from common.utils.dto import Bookmark, BookmarkWebpage, HTMLMetaTag
-from common.utils.dicts import get_by_alias
+from common.utils.dict_utils import get_by_alias
 
 
 class BrowserBookmarkScraper:

@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from dataclasses import asdict
 
 from common.utils.dto import Bookmark
-from common.utils.files import load_file
+from common.utils.file_utils import load_file
 
 
 class BrowserBookmarkCollector:
