@@ -130,7 +130,8 @@ def test_label_clusters():
     clusters_paths = load_file('resources/results/cluster/1.json')
     clusters_paths = json.loads(clusters_paths)
 
-    load_cluster_paths = lambda cluster_paths: [json.loads(load_file(path)) for path in cluster_paths]
+    def load_cluster_paths(cluster_paths): return [
+        json.loads(load_file(path)) for path in cluster_paths]
 
     clusters = map(load_cluster_paths, clusters_paths)
     clusters = tuple(clusters)
@@ -138,9 +139,203 @@ def test_label_clusters():
     clusters = map(lambda c: ClusterLabelBuilder(c).build(), clusters)
 
     for paths, cluster in zip(clusters_paths, clusters):
-        if len(paths) == 1: continue
+        if len(paths) == 1:
+            continue
         print(paths)
         print()
         print(cluster)
         print('---------------')
 
+
+def test_text_cleaner():
+    from controllers.text_cleaner import TextCleaner
+    result = TextCleaner(
+        '<span href="https://google.com">Mo Salah is a famous egyptian, &copy; who playing football'
+        ' in liverpool with_number 11 and he l//**-oves @shakira website is a  a www.xnxxx.com</span>'
+        '\n\n\n\n#never_walk_alone salah@yahoo.com\n\n\n\n'
+    ).full_clean().text
+
+    print(result)
+
+
+def test_bookmark_weight_sheet():
+    from controllers.text_cleaner import BookmarkWeightsSheet
+
+    bookmark = Bookmark(
+        **{
+            "url": "https://www.kali.org/",
+            "title": "Kali Linux",
+            "icon": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAACbklEQVRYhcXXS4jNYRjH8c8MMyzcxUZZyEaRe1gSohDJuIQsNE1NSSxcCrNBIlbKgoXNoJGNhUSJ3MslYWEiuUXKNSczxrB43zP/v3HOzJzhnPnV2zn/8/8/z/M97/O+z/P+4T6a8QEvcRX12IH5GKbI2o9GtOBXnnEPuzED5cUC6YsJWBmDXcDXHDBPMb0YAH0iwArU4QCO4Qret4Oo/Z+BN+CJjlPQfmzN4WcIFqFXoQD1aMUb3EQDDmInNgrpuObPdJzN4Wd1vHcNowuFqEx9L8dsHMYLuWfgJ1a181EWoVvxWdhBBWkQtuFZjoA/8BgncTf1+6MIWotpEX45MkJK13Y1+PpInXX8EWei48nCDhED1OcAzI63OIJqIWUtqOoKwMVIfRILUJHnuePtAmaEtZPxd4ruxM8MpnYGUClsw460NBXgBRaid7xXLtSGo3LXjtcY2BlEZ3ocnTVhbAfPDUCNULDSENv/JfiIlKMTXbSpEP551u4bhnYXYGbK0ZYC7GbhYcr2llAvCtbUlJO9BdqWCbusCd+FbVtwtewvWelPJIuvEC3BvG7YtalBMguHugnxTxrlz2LVGEE2CC18LqZgpCKeGRYLeeysW37DdewSSnTZ/4QYj/NC0+lq+36AdfJX2G5pOOZgDTZhD07hUwcg94VDT1HVB5vxJQ9Es1DWi65xeCVp5/sk5blJOHMUXWMkKbktlOLL8fq5pM0XVVWS6V+GfpLGVl0KAMIZMjsLhIXYihulApgkmYXsLjgtFLaS6VwEqIvXgzGxlACzIsClUgZNqxfeCW9ZPaYzwiwM6CmAGuG9o60n/AaaQPLjXpBeAAAAAABJRU5ErkJggg==",
+            "icon_uri": "https://www.kali.org/images/favicon.ico",
+            "add_date": "1653747378",
+            "last_modified": "1653747378",
+        }
+    )
+    webpage = BookmarkWebpage(
+        **{
+            "id": 0,
+            "url": "https://www.kali.org/",
+            "title": "Kali Linux | Penetration Testing and Ethical Hacking Linux Distribution",
+            "meta_tags": [
+                {
+                    "name": "viewport",
+                    "content": "width=device-width",
+                    "simple_name": "viewport",
+                    "is_allowed": False
+                },
+                {
+                    "name": "name",
+                    "content": "Kali Linux | Penetration Testing and Ethical Hacking Linux Distribution",
+                    "simple_name": "name",
+                    "is_allowed": True
+                },
+                {
+                    "name": "application-name",
+                    "content": "Kali Linux | Penetration Testing and Ethical Hacking Linux Distribution",
+                    "simple_name": "application-name",
+                    "is_allowed": True
+                },
+                {
+                    "name": "twitter:title",
+                    "content": "Kali Linux | Penetration Testing and Ethical Hacking Linux Distribution",
+                    "simple_name": "title",
+                    "is_allowed": True
+                },
+                {
+                    "name": "og:site_name",
+                    "content": "Kali Linux",
+                    "simple_name": "site_name",
+                    "is_allowed": True
+                },
+                {
+                    "name": "og:title",
+                    "content": "Kali Linux | Penetration Testing and Ethical Hacking Linux Distribution",
+                    "simple_name": "title",
+                    "is_allowed": True
+                },
+                {
+                    "name": "description",
+                    "content": "Home of Kali Linux, an Advanced Penetration Testing Linux distribution used for Penetration Testing, Ethical Hacking and network security assessments.",
+                    "simple_name": "description",
+                    "is_allowed": True
+                },
+                {
+                    "name": "description",
+                    "content": "Home of Kali Linux, an Advanced Penetration Testing Linux distribution used for Penetration Testing, Ethical Hacking and network security assessments.",
+                    "simple_name": "description",
+                    "is_allowed": True
+                },
+                {
+                    "name": "twitter:description",
+                    "content": "Home of Kali Linux, an Advanced Penetration Testing Linux distribution used for Penetration Testing, Ethical Hacking and network security assessments.",
+                    "simple_name": "description",
+                    "is_allowed": True
+                },
+                {
+                    "name": "og:description",
+                    "content": "Home of Kali Linux, an Advanced Penetration Testing Linux distribution used for Penetration Testing, Ethical Hacking and network security assessments.",
+                    "simple_name": "description",
+                    "is_allowed": True
+                },
+                {
+                    "name": "keywords",
+                    "content": "kali,linux,kalilinux,Penetration,Testing,Penetration Testing,Distribution,Advanced",
+                    "simple_name": "keywords",
+                    "is_allowed": True
+                },
+                {
+                    "name": "apple-mobile-web-app-status-bar-style",
+                    "content": "black-translucent",
+                    "simple_name": "apple-mobile-web-app-status-bar-style",
+                    "is_allowed": False
+                },
+                {
+                    "name": "msapplication-navbutton-color",
+                    "content": "#367BF0",
+                    "simple_name": "msapplication-navbutton-color",
+                    "is_allowed": False
+                },
+                {
+                    "name": "theme-color",
+                    "content": "#367BF0",
+                    "simple_name": "theme-color",
+                    "is_allowed": False
+                },
+                {
+                    "name": "language",
+                    "content": "English",
+                    "simple_name": "language",
+                    "is_allowed": True
+                },
+                {
+                    "name": "og:locale",
+                    "content": "en_US",
+                    "simple_name": "locale",
+                    "is_allowed": True
+                },
+                {
+                    "name": "image",
+                    "content": "https://www.kali.org/images/kali-logo.svg",
+                    "simple_name": "image",
+                    "is_allowed": True
+                },
+                {
+                    "name": "og:image",
+                    "content": "https://www.kali.org/images/kali-logo.svg",
+                    "simple_name": "image",
+                    "is_allowed": True
+                },
+                {
+                    "name": "twitter:image",
+                    "content": "https://www.kali.org/images/kali-logo.svg",
+                    "simple_name": "image",
+                    "is_allowed": True
+                },
+                {
+                    "name": "twitter:image:src",
+                    "content": "https://www.kali.org/images/kali-logo.svg",
+                    "simple_name": "image",
+                    "is_allowed": True
+                },
+                {
+                    "name": "og:updated_time",
+                    "content": "2023-08-10T00:00:00Z",
+                    "simple_name": "updated_time",
+                    "is_allowed": True
+                },
+                {
+                    "name": "twitter:site",
+                    "content": "@kalilinux",
+                    "simple_name": "site",
+                    "is_allowed": True
+                },
+                {
+                    "name": "twitter:creator",
+                    "content": "@kalilinux",
+                    "simple_name": "creator",
+                    "is_allowed": True
+                },
+                {
+                    "name": "twitter:url",
+                    "content": "https://www.kali.org/",
+                    "simple_name": "url",
+                    "is_allowed": True
+                },
+                {
+                    "name": "url",
+                    "content": "https://www.kali.org/",
+                    "simple_name": "url",
+                    "is_allowed": True
+                },
+                {
+                    "name": "og:url",
+                    "content": "https://www.kali.org/",
+                    "simple_name": "url",
+                    "is_allowed": True
+                }
+            ],
+        },
+    )
+    print(
+        BookmarkWeightsSheet(bookmark, webpage).generate()
+    )
