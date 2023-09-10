@@ -14,6 +14,7 @@ arabic-stopwords = "*"
 langdetect = "*"
 scikit-learn = "*"
 iso639-lang = "*"
+scrapy = "*"
 
 [dev-packages]
 
