@@ -15,6 +15,7 @@ langdetect = "*"
 scikit-learn = "*"
 iso639-lang = "*"
 scrapy = "*"
+scrapy-fake-useragent = "*"
 
 [dev-packages]
 
