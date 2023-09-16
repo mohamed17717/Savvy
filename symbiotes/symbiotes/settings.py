@@ -58,6 +58,9 @@ DOWNLOADER_MIDDLEWARES = {
     # 'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
     'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
     # 'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 401,
+    
+    'symbiotes.middlewares.LogResponseMiddleware': 543,  # Adjust the priority as needed
+
 }
 
 
@@ -115,3 +118,15 @@ USER_AGENT = 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15
 DOWNLOAD_TIMEOUT = 3
 RETRY_TIMES = 3
 # CONCURRENT_REQUESTS = 1
+
+
+# Define the desired JSON export settings
+FEED_FORMAT = 'json'  # Use 'jsonlines' for JSON lines format
+FEED_URI = 'output.json'  # Specify the desired output file name and location
+
+
+# Specify the path to your SQLite database file
+DATABASE_PATH = 'sqlite.db'
+
+# Specify the directory where response body files will be stored
+STORAGE_PATH = 'response_bodies'
