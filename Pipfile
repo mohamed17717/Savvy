@@ -16,6 +16,7 @@ scikit-learn = "*"
 iso639-lang = "*"
 scrapy = "*"
 scrapy-fake-useragent = "*"
+django = "*"
 
 [dev-packages]
 
