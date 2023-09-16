@@ -3,7 +3,9 @@
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
+import scrapy
 from scrapy import signals
+from scrapy.spidermiddlewares.offsite import OffsiteMiddleware
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
@@ -11,7 +13,8 @@ from itemadapter import is_item, ItemAdapter
 import os
 import sqlite3
 import hashlib
-import scrapy
+
+from urllib.parse import urlencode
 
 
 class SymbiotesSpiderMiddleware:
@@ -142,7 +145,7 @@ class LogResponseMiddleware:
     def check_url_in_database(self, url):
         # Check if the URL exists in the 'url_status' table
         self.cursor.execute(
-            "SELECT COUNT(*) FROM url_status WHERE url = ?", (url,))
+            "SELECT COUNT(*) FROM url_status WHERE url = ? AND exception_message IS NULL", (url,))
         count = self.cursor.fetchone()[0]
 
         # If count is greater than 0, the URL exists in the database
@@ -206,3 +209,27 @@ class LogResponseMiddleware:
     def close_spider(self, spider):
         # Close the database connection when the spider is closed
         self.conn.close()
+
+
+class ScrapeOpsRotateProxyMiddleware:
+    DOMAIN = 'proxy.scrapeops.io'
+
+    def get_proxy_url(self, url):
+        API_KEY = 'b89ad8f8-a2f2-4e89-a8eb-844dbb0ead32'
+        payload = {'api_key': API_KEY, 'url': url}
+        proxy_url = f'https://{self.DOMAIN}/v1/?{urlencode(payload)}'
+
+        return proxy_url
+
+    def process_request(self, request, spider):
+        if self.DOMAIN not in request.url:
+            proxy_url = self.get_proxy_url(request.url)
+            request = request.replace(url=proxy_url)
+
+            return request
+
+    def spider_opened(self, spider):
+        if self.DOMAIN not in spider.allowed_domains:
+            spider.allowed_domains.append(self.DOMAIN)
+
+        spider.logger.info('Spider opened: %s' % spider.name)
