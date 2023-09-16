@@ -14,7 +14,6 @@ import hashlib
 import scrapy
 
 
-
 class SymbiotesSpiderMiddleware:
     # Not all methods need to be defined. If a method is not defined,
     # scrapy acts as if the spider middleware does not modify the
@@ -109,7 +108,6 @@ class SymbiotesDownloaderMiddleware:
         spider.logger.info("Spider opened: %s" % spider.name)
 
 
-
 class LogResponseMiddleware:
     def __init__(self, database_path, storage_path):
         self.database_path = database_path
@@ -122,8 +120,10 @@ class LogResponseMiddleware:
     def from_crawler(cls, crawler):
         # Retrieve settings from Scrapy settings.py
         settings = crawler.settings
-        database_path = settings.get('DATABASE_PATH')  # Set this in your settings
-        storage_path = settings.get('STORAGE_PATH')  # Set this in your settings
+        # Set this in your settings
+        database_path = settings.get('DATABASE_PATH')
+        # Set this in your settings
+        storage_path = settings.get('STORAGE_PATH')
 
         # Initialize the middleware instance with the database and storage paths
         return cls(database_path, storage_path)
@@ -141,7 +141,8 @@ class LogResponseMiddleware:
 
     def check_url_in_database(self, url):
         # Check if the URL exists in the 'url_status' table
-        self.cursor.execute("SELECT COUNT(*) FROM url_status WHERE url = ?", (url,))
+        self.cursor.execute(
+            "SELECT COUNT(*) FROM url_status WHERE url = ?", (url,))
         count = self.cursor.fetchone()[0]
 
         # If count is greater than 0, the URL exists in the database
@@ -153,7 +154,8 @@ class LogResponseMiddleware:
 
         if url_exists_in_database:
             # If the URL exists in the database, skip the request
-            spider.logger.info(f"URL {request.url} already exists in the database. Skipping.")
+            spider.logger.info(
+                f"URL {request.url} already exists in the database. Skipping.")
             raise scrapy.exceptions.IgnoreRequest()
 
     def process_response(self, request, response, spider):
