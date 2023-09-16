@@ -1,5 +1,5 @@
 import scrapy
-import json
+from symbiotes.items import BookmarkItemLoader
 
 
 class VenomSpider(scrapy.Spider):
@@ -36,18 +36,21 @@ class VenomSpider(scrapy.Spider):
             yield scrapy.Request(url, callback=self.parse)
 
     def parse(self, response):
-        # TODO Extract all possible data that may help
-        #   - meta
-        #   - headers
-        #   - page title
-        #   - url
         # TODO add proxy middleware
-        # TODO save every link with its response info (code, error message, ...)
         # TODO save every item in db
         # TODO read links dynamically
 
-        meta_tags = response.xpath('//head/meta').extract()
-        # self.log(f'{response.request.headers}')
-        # self.log(f'[{response.status}] {response.url}')
-        # self.log(meta_tags)
-        # self.log('\n\n')
+        bookmark_item_loader = BookmarkItemLoader(response=response)
+
+        bookmark_item_loader.add_value(
+            'meta_tags', response.xpath('//head/meta').attrib)
+        bookmark_item_loader.add_value('page_title', response.xpath(
+            '//head/title/text()').extract_first())
+        bookmark_item_loader.add_value('url', response.url)
+        bookmark_item_loader.add_value('headers', {
+            f'h{i}': response.xpath(f'//h{i}//text()').extract()
+            for i in range(1, 6+1)
+        })
+
+        # Yield the loaded Item
+        yield bookmark_item_loader.load_item()
