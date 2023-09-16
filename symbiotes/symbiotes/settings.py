@@ -60,6 +60,7 @@ DOWNLOADER_MIDDLEWARES = {
     # 'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 401,
     
     'symbiotes.middlewares.LogResponseMiddleware': 543,  # Adjust the priority as needed
+    'symbiotes.middlewares.ScrapeOpsRotateProxyMiddleware': 380,
 
 }
 
