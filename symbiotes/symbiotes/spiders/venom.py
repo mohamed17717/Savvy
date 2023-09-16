@@ -8,6 +8,7 @@ class VenomSpider(scrapy.Spider):
     # start_urls = ["https://venom.com"]
 
     def start_requests(self):
+        # TODO read urls dynamically
         urls = [
             "https://www.kali.org/",
             "https://www.kali.org/tools/",
@@ -36,14 +37,12 @@ class VenomSpider(scrapy.Spider):
             yield scrapy.Request(url, callback=self.parse)
 
     def parse(self, response):
-        # TODO add proxy middleware
-        # TODO save every item in db
-        # TODO read links dynamically
-
         bookmark_item_loader = BookmarkItemLoader(response=response)
 
-        bookmark_item_loader.add_value(
-            'meta_tags', response.xpath('//head/meta').attrib)
+        bookmark_item_loader.add_value('meta_tags', [
+            meta.attrib
+            for meta in response.xpath('//head/meta')
+        ])
         bookmark_item_loader.add_value('page_title', response.xpath(
             '//head/title/text()').extract_first())
         bookmark_item_loader.add_value('url', response.url)
