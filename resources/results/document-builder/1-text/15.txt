@@ -1,7 +1,0 @@
-[GET https://demo.florinz.com/login]
-
-title: Florinz - Marketing Cloud System
-secondary_title: Florinz - Marketing Cloud System
-
-
-domain: demo.florinz.com

@@ -1,7 +1,0 @@
-[GET https://www.exploit-db.com/]
-
-title: Error request [403]
-secondary_title: Exploit-DB
-
-
-domain: www.exploit-db.com

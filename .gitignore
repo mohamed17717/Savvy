@@ -120,3 +120,8 @@ cython_debug/
 symbiotes/**/*.db
 symbiotes/**/*.html
 symbiotes/**/*.json
+
+# resources
+resources/**/*.json
+resources/**/*.html
+resources/**/*.txt*
