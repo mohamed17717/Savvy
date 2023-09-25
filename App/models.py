@@ -3,10 +3,14 @@ import urllib3
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator
-
+from django.core.exceptions import ValidationError
 
 from common.utils.model_utils import validate_file_size, validate_file_extension
 from common.utils.file_utils import load_file
+
+from App.controllers import (
+    BookmarkFileManager, BookmarkHTMLFileManager, BookmarkJSONFileManager
+)
 
 User = get_user_model()
 
@@ -55,6 +59,30 @@ class BookmarkFile(models.Model):
     def is_json(self) -> bool:
         return self.path.endswith('.json')
 
+    @property
+    def file_manager(self) -> BookmarkFileManager:
+        manager = None
+        if self.is_html:
+            manager = BookmarkHTMLFileManager
+        elif self.is_json:
+            manager = BookmarkJSONFileManager
+
+        if manager is None:
+            raise ValidationError('Can\'t get the file manager')
+
+        return manager
+
+    @property
+    def file_obj(self) -> BookmarkFileManager:
+        obj = self.file_manager(self.location)
+        return obj
+
+    @property
+    def bookmarks(self):
+        file_obj = self.file_obj
+        file_obj.validate(raise_exception=True)
+        return file_obj.get_links()
+
 
 class Bookmark(models.Model):
     """Main bookmark that got clustered and the whole next flow depend on it
@@ -96,6 +124,17 @@ class Bookmark(models.Model):
     @property
     def site_name(self) -> str:
         return self.domain.split('.')[-2]
+
+    # shortcuts
+    @classmethod
+    def instance_by_parent(cls, parent, data):
+        return cls(
+            user=parent.user,
+            parent_file=parent,
+            url=data.pop('url'),
+            title=data.pop('title', None),
+            more_data=data or None
+        )
 
 
 class ScrapyResponseLog(models.Model):
