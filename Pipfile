@@ -17,6 +17,7 @@ iso639-lang = "*"
 scrapy = "*"
 scrapy-fake-useragent = "*"
 django = "*"
+validators = "*"
 
 [dev-packages]
 
