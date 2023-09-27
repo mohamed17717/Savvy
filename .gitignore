@@ -125,3 +125,5 @@ crawler/**/*.json
 resources/**/*.json
 resources/**/*.html
 resources/**/*.txt*
+
+.vscode/
