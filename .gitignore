@@ -116,10 +116,10 @@ cython_debug/
 
 *.lock
 
-# scrapy symbiotes
-symbiotes/**/*.db
-symbiotes/**/*.html
-symbiotes/**/*.json
+# scrapy crawler
+crawler/**/*.db
+crawler/**/*.html
+crawler/**/*.json
 
 # resources
 resources/**/*.json
