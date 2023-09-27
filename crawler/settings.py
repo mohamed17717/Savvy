@@ -1,4 +1,4 @@
-# Scrapy settings for symbiotes project
+# Scrapy settings for crawler project
 #
 # For simplicity, this file contains only settings considered important or
 # commonly used. You can find more settings consulting the documentation:
@@ -7,14 +7,14 @@
 #     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = "symbiotes"
+BOT_NAME = "crawler"
 
-SPIDER_MODULES = ["symbiotes.spiders"]
-NEWSPIDER_MODULE = "symbiotes.spiders"
+SPIDER_MODULES = ["crawler.spiders"]
+NEWSPIDER_MODULE = "crawler.spiders"
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-# USER_AGENT = "symbiotes (+http://www.yourdomain.com)"
+# USER_AGENT = "crawler (+http://www.yourdomain.com)"
 
 # Obey robots.txt rules
 # ROBOTSTXT_OBEY = True
@@ -46,21 +46,21 @@ ROBOTSTXT_OBEY = False
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 # SPIDER_MIDDLEWARES = {
-#    "symbiotes.middlewares.SymbiotesSpiderMiddleware": 543,
+#    "crawler.middlewares.CrawlerSpiderMiddleware": 543,
 # }
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    #    "symbiotes.middlewares.SymbiotesDownloaderMiddleware": 543,
+    #    "crawler.middlewares.CrawlerDownloaderMiddleware": 543,
 
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     # 'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
     'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
     # 'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 401,
 
-    'symbiotes.middlewares.LogResponseMiddleware': 543,  # Adjust the priority as needed
-    'symbiotes.middlewares.ScrapeOpsRotateProxyMiddleware': 380,
+    'crawler.middlewares.LogResponseMiddleware': 543,  # Adjust the priority as needed
+    'crawler.middlewares.ScrapeOpsRotateProxyMiddleware': 380,
 
 }
 
@@ -74,8 +74,8 @@ DOWNLOADER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    #    "symbiotes.pipelines.SymbiotesPipeline": 300,
-    'symbiotes.pipelines.SQLitePipeline': 300,  # Adjust the priority as needed
+    #    "crawler.pipelines.CrawlerPipeline": 300,
+    'crawler.pipelines.SQLitePipeline': 300,  # Adjust the priority as needed
 
 }
 
@@ -129,11 +129,11 @@ RETRY_TIMES = 3
 
 # Define the desired JSON export settings
 FEED_FORMAT = 'json'  # Use 'jsonlines' for JSON lines format
-FEED_URI = 'output.json'  # Specify the desired output file name and location
+FEED_URI = 'crawler/output.json'  # Specify the desired output file name and location
 
 
 # Specify the path to your SQLite database file
-DATABASE_PATH = 'sqlite.db'
+DATABASE_PATH = 'crawler/sqlite.db'
 
 # Specify the directory where response body files will be stored
-STORAGE_PATH = 'response_bodies'
+STORAGE_PATH = 'crawler/response_bodies'

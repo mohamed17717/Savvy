@@ -9,7 +9,7 @@ from itemadapter import ItemAdapter
 import sqlite3
 
 
-class SymbiotesPipeline:
+class CrawlerPipeline:
     def process_item(self, item, spider):
         return item
 

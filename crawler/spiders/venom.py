@@ -1,5 +1,5 @@
 import scrapy
-from symbiotes.items import BookmarkItemLoader
+from crawler.items import BookmarkItemLoader
 
 
 class VenomSpider(scrapy.Spider):
