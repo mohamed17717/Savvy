@@ -7,7 +7,7 @@ class VenomSpider(scrapy.Spider):
     # allowed_domains = ["venom.com"]
     # start_urls = ["https://venom.com"]
 
-    def start_requests(self):
+    def start_requests(self, urls):
         # TODO read urls dynamically
         urls = [
             "https://www.kali.org/",
