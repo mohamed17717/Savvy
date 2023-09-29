@@ -127,3 +127,4 @@ resources/**/*.html
 resources/**/*.txt*
 
 .vscode/
+*.html
