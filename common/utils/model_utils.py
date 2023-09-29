@@ -4,27 +4,21 @@ from datetime import date
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.utils.deconstruct import deconstructible
 
 User = get_user_model()
 
 
-def validate_file_extension(*allowed_extensions: list[str]):
-    def func(value):
-        # allowed_extensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif']
-        extension = os.path.splitext(value.name)[1].lower()
-        if extension not in allowed_extensions:
-            raise ValidationError(
-                _(f'Only {",".join(allowed_extensions)} files are allowed.'))
-    return func
+@deconstructible
+class FileSizeValidator:
+    def __init__(self, size_MB: int):
+        self.size_MB = size_MB
 
-
-def validate_file_size(size_MB: int):
-    def func(value):
-        max_size = size_MB * 1024 * 1024  # 5MB
+    def __call__(self, value):
+        max_size = self.size_MB * 1024 * 1024  # 5MB
         if value.size > max_size:
             raise ValidationError(
-                _(f'File size should not exceed {size_MB}MB.'))
-    return func
+                _(f'File size should not exceed {self.size_MB}MB.'))
 
 
 def is_future_date_validator(value: date):
