@@ -1,11 +1,17 @@
+import os
 import urllib3
+import hashlib
+from datetime import date, timedelta
 
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
+from django.core.files import File
 
-from common.utils.model_utils import validate_file_size, validate_file_extension
+from crawler import settings as scrapy_settings
+
+from common.utils.model_utils import FileSizeValidator
 from common.utils.file_utils import load_file
 
 from App.controllers import (
@@ -33,8 +39,7 @@ class BookmarkFile(models.Model):
     location = models.FileField(
         upload_to='users/bookmarks/',
         validators=[
-            validate_file_extension('.html', '.json'),
-            validate_file_size(5),
+            FileExtensionValidator(['.html', '.json']), FileSizeValidator(5)
         ]
     )
 
@@ -146,19 +151,45 @@ class ScrapyResponseLog(models.Model):
     # Required
     url = models.URLField()
     status_code = models.PositiveSmallIntegerField()
+
+    # Optional
     html_file = models.FileField(
         upload_to='scrape/html/',
         validators=[
-            validate_file_extension('.html'), validate_file_size(5),
-        ]
+            FileExtensionValidator(['.html']), FileSizeValidator(5),
+        ],
+        blank=True, null=True
     )
-
-    # Optional
     error = models.TextField(blank=True, null=True)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def store_file(self, content):
+        # Create a unique file name based on the URL hash
+        url_hash = hashlib.md5(self.url.encode()).hexdigest()
+        file_name = f"{url_hash}.html"
+        file_path = os.path.join(scrapy_settings.STORAGE_PATH, file_name)
+        i = 0
+        while os.path.exists(file_path):
+            i += 1
+            file_name = f"{url_hash}({i}).html"
+            file_path = os.path.join(scrapy_settings.STORAGE_PATH, file_name)
+
+        with open(file_path, 'wb+') as f:
+            dj_file = File(f)
+            dj_file.write(content)
+            self.html_file = dj_file
+            self.save()
+
+    @classmethod
+    def is_url_exists(cls, url):
+        # if passed 50 days then scrape it again
+        white_date = date.today() - timedelta(days=50)
+        return cls.objects.filter(
+            url=url, error__isnull=True, created_at_date__gte=white_date
+        ).exists()
 
 
 class BookmarkWebpage(models.Model):
