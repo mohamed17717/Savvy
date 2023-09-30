@@ -146,7 +146,9 @@ class ScrapyResponseLog(models.Model):
     # Relations
     bookmark = models.ForeignKey(
         'App.Bookmark', on_delete=models.CASCADE,
-        related_name='scrapes', blank=True, null=True
+        related_name='scrapes',
+        # TODO remove this
+        blank=True, null=True
     )
     # Required
     url = models.URLField()
@@ -195,7 +197,9 @@ class ScrapyResponseLog(models.Model):
 class BookmarkWebpage(models.Model):
     # Relations
     bookmark = models.ForeignKey(
-        'App.Bookmark', on_delete=models.CASCADE, related_name='webpages'
+        'App.Bookmark', on_delete=models.CASCADE, related_name='webpages',
+        # TODO remove this
+        blank=True, null=True
     )
     # meta_tags, headers
 
@@ -225,6 +229,16 @@ class WebpageMetaTag(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @classmethod
+    def bulk_create(cls, webpage: BookmarkWebpage, tags: list[dict]):
+        tag_objects = []
+        for tag in tags:
+            tag_objects.append(cls(
+                webpage=webpage, name=tag.get('name'),
+                content=tag.get('content'), attrs=tag
+            ))
+        return cls.objects.bulk_create(tag_objects)
+
 
 class WebpageHeader(models.Model):
     webpage = models.ForeignKey(
@@ -244,6 +258,20 @@ class WebpageHeader(models.Model):
     @property
     def tagname(self) -> str:
         return f'h{self.level}'
+
+    @classmethod
+    def bulk_create(cls, webpage: BookmarkWebpage, headers: dict):
+        header_objects = []
+
+        for header, texts in headers.items():
+            level = int(header.strip('h'))  # [1-6]
+
+            for text in texts:
+                header_objects.append(
+                    cls(webpage=webpage, text=text, level=level)
+                )
+
+        return cls.objects.bulk_create(header_objects)
 
 
 class DocumentWordWeight(models.Model):
