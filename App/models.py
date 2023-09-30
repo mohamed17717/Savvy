@@ -190,7 +190,7 @@ class ScrapyResponseLog(models.Model):
         # if passed 50 days then scrape it again
         white_date = date.today() - timedelta(days=50)
         return cls.objects.filter(
-            url=url, error__isnull=True, created_at_date__gte=white_date
+            url=url, error__isnull=True, created_at__date__gte=white_date
         ).exists()
 
 
