@@ -5,11 +5,16 @@ from crawler.items import BookmarkItemLoader
 class BookmarkSpider(scrapy.Spider):
     name = "bookmark"
     
-    def __init__(self, urls: list[str]):
-        self.urls = urls
+    def __init__(self, bookmarks: list): #: list[str]):
+        # self.urls = urls
+        self.bookmarks = bookmarks
 
     def start_requests(self):
-        for url in self.urls:
+        # for url in self.urls:
+        print('\n\n', self.bookmarks, '\n\n')
+        for bookmark in self.bookmarks:
+            self.bookmark = bookmark
+            url = bookmark.url
             domain = url.split('://')[1].split('/')[0]
             self.allowed_domains = [domain]
             yield scrapy.Request(url, callback=self.parse)
