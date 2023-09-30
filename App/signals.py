@@ -2,6 +2,8 @@ from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
 
 from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
+
 from crawler.spiders.bookmark import BookmarkSpider
 
 from App import models
@@ -20,8 +22,8 @@ def on_create_bookmark_file_extract_urls(sender, instance: models.BookmarkFile, 
 
     # run them in background celery task
     urls = [bookmark['url'] for bookmark in instance.bookmarks]
-    process = CrawlerProcess()
-    process.crawl(BookmarkSpider, urls)
+    process = CrawlerProcess(settings=get_project_settings())
+    process.crawl(BookmarkSpider, urls=urls)
     process.start()
 
 
