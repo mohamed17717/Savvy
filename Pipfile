@@ -18,6 +18,7 @@ scrapy = "*"
 scrapy-fake-useragent = "*"
 django = "*"
 validators = "*"
+asgiref = "*"
 
 [dev-packages]
 
