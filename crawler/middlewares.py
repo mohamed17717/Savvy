@@ -1,44 +1,56 @@
 import scrapy
 from urllib.parse import urlencode
+from datetime import date, timedelta
+from asgiref.sync import sync_to_async
 
 from App import models
 
 
 class LogResponseMiddleware:
+    @sync_to_async
+    def is_url_exists(self, url):
+        print('\n\nURL EXIST CHECK\n\n')
+        # if passed 50 days then scrape it again
+        white_date = date.today() - timedelta(days=50)
+        return models.ScrapyResponseLog.objects.filter(
+            url=url, error__isnull=True, created_at__date__gte=white_date
+        ).exists() and False
+
     def process_request(self, request, spider):
-        if models.ScrapyResponseLog.is_url_exists(request.url):
-            # If the URL exists in the database, skip the request
-            message = f"URL {request.url} already exists in the database. Skipping."
-            spider.logger.info(message)
-            raise scrapy.exceptions.IgnoreRequest()
+        pass
+        # if self.is_url_exists(request.url):
+        #     # If the URL exists in the database, skip the request
+        #     message = f"URL {request.url} already exists in the database. Skipping."
+        #     spider.logger.info(message)
+        #     raise scrapy.exceptions.IgnoreRequest()
 
-    def process_response(self, request, response, spider):
-        # Store the URL, status code, and response body in a file, and store the file path in the database
-        url = request.url
-        status_code = response.status
-        exception_message = None
-
-        if status_code != 200:
-            exception_message = f"HTTP status code {status_code}"
-
+    @sync_to_async
+    def write_to_django(self, request, response, spider, error_msg=None):
         log = models.ScrapyResponseLog.objects.create(
-            url=url,
-            status_code=status_code,
-            error=exception_message,
+            bookmark=spider.bookmark,
+            url=request.url,
+            status_code=response.status if response else 500,
+            error=error_msg,
         )
-        log.store_file(response.body)
+        if response:
+            log.store_file(response.body)
+
+    async def process_response(self, request, response, spider):
+        print('\n\nWRITING\n\n')
+        # Store the URL, status code, and response body in a file, and store the file path in the database
+        error_msg = None
+        if response.status != 200:
+            error_msg = f"HTTP status code {response.status}"
+
+        await self.write_to_django(request, response, spider, error_msg)
 
         return response
 
-    def process_exception(self, request, exception, spider):
+    async def process_exception(self, request, exception, spider):
         if isinstance(exception, scrapy.exceptions.IgnoreRequest):
             return None  # Do nothing for IgnoreRequest
 
-        models.ScrapyResponseLog.objects.create(
-            url=request.url,
-            status_code=500,
-            error=str(exception)
-        )
+        await self.write_to_django(request, None, spider, str(exception))
 
 
 class ScrapeOpsRotateProxyMiddleware:
