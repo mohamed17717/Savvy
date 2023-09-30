@@ -2,8 +2,8 @@ import scrapy
 from crawler.items import BookmarkItemLoader
 
 
-class VenomSpider(scrapy.Spider):
-    name = "venom"
+class BookmarkSpider(scrapy.Spider):
+    name = "bookmark"
 
     def start_requests(self, urls: list[str]):
         for url in urls:

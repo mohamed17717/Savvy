@@ -2,7 +2,7 @@ from django.db.models.signals import pre_save, post_save, post_delete
 from django.dispatch import receiver
 
 from scrapy.crawler import CrawlerProcess
-from crawler.spiders.venom import VenomSpider
+from crawler.spiders.bookmark import BookmarkSpider
 
 from App import models
 
@@ -21,7 +21,7 @@ def on_create_bookmark_file_extract_urls(sender, instance: models.BookmarkFile, 
     # run them in background celery task
     urls = [bookmark['url'] for bookmark in instance.bookmarks]
     process = CrawlerProcess()
-    process.crawl(VenomSpider, urls)
+    process.crawl(BookmarkSpider, urls)
     process.start()
 
 
