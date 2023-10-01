@@ -234,7 +234,7 @@ class WebpageMetaTag(models.Model):
         tag_objects = []
         for tag in tags:
             tag_objects.append(cls(
-                webpage=webpage, name=tag.get('name'),
+                webpage=webpage, name=tag.get('name', 'UNKNOWN'),
                 content=tag.get('content'), attrs=tag
             ))
         return cls.objects.bulk_create(tag_objects)
@@ -260,16 +260,17 @@ class WebpageHeader(models.Model):
         return f'h{self.level}'
 
     @classmethod
-    def bulk_create(cls, webpage: BookmarkWebpage, headers: dict):
+    def bulk_create(cls, webpage: BookmarkWebpage, headers: list[dict]):
         header_objects = []
 
-        for header, texts in headers.items():
-            level = int(header.strip('h'))  # [1-6]
+        for headers_dict in headers:
+            for header, texts in headers_dict.items():
+                level = int(header.strip('h'))  # [1-6]
 
-            for text in texts:
-                header_objects.append(
-                    cls(webpage=webpage, text=text, level=level)
-                )
+                for text in texts:
+                    header_objects.append(
+                        cls(webpage=webpage, text=text, level=level)
+                    )
 
         return cls.objects.bulk_create(header_objects)
 
