@@ -11,7 +11,6 @@ class BookmarkSpider(scrapy.Spider):
 
     def start_requests(self):
         # for url in self.urls:
-        print('\n\n', self.bookmarks, '\n\n')
         for bookmark in self.bookmarks:
             self.bookmark = bookmark
             url = bookmark.url
@@ -43,3 +42,8 @@ class BookmarkSpider(scrapy.Spider):
         bookmark_item_loader.add_value('headers', headers)
 
         yield bookmark_item_loader.load_item()
+
+    def closed(self, reason):
+        # calculate for all bookmarks
+        # self.bookmarks = 
+        pass
