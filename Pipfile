@@ -19,6 +19,18 @@ scrapy-fake-useragent = "*"
 django = "*"
 validators = "*"
 asgiref = "*"
+djangorestframework = "*"
+django-filter = "*"
+django-rest-knox = "*"
+celery = "*"
+redis = "*"
+django-celery-results = "*"
+django-celery-beat = "*"
+markdown = "*"
+django-redis = "*"
+psycopg2 = "*"
+drf-yasg = "*"
+python-dotenv = "*"
 
 [dev-packages]
 
