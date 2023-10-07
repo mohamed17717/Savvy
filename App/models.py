@@ -15,7 +15,8 @@ from common.utils.model_utils import FileSizeValidator
 from common.utils.file_utils import load_file
 
 from App.controllers import (
-    BookmarkFileManager, BookmarkHTMLFileManager, BookmarkJSONFileManager
+    BookmarkFileManager, BookmarkHTMLFileManager, BookmarkJSONFileManager,
+    TextCleaner
 )
 
 User = get_user_model()
@@ -221,6 +222,7 @@ class WebpageMetaTag(models.Model):
     # Required
     name = models.CharField(max_length=64, default='undefined')
     content = models.TextField(blank=True, null=True)
+    cleaned_content = models.TextField(blank=True, null=True)
 
     # Optional
     attrs = models.JSONField(blank=True, null=True)
@@ -228,6 +230,14 @@ class WebpageMetaTag(models.Model):
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs) -> None:
+        if self.content:
+            cleaner = TextCleaner(self.content)
+            cleaner.full_clean()
+            self.cleaned_content = cleaner.text
+
+        return super().save(*args, **kwargs)
 
     @classmethod
     def bulk_create(cls, webpage: BookmarkWebpage, tags: list[dict]):
@@ -250,10 +260,18 @@ class WebpageHeader(models.Model):
     level = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(6)]
     )
+    cleaned_text = models.TextField(blank=True, null=True)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save(self, *args, **kwargs) -> None:
+        cleaner = TextCleaner(self.text)
+        cleaner.full_clean()
+        self.cleaned_text = cleaner.text
+
+        return super().save(*args, **kwargs)
 
     @property
     def tagname(self) -> str:
