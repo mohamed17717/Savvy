@@ -31,6 +31,7 @@ django-redis = "*"
 psycopg2 = "*"
 drf-yasg = "*"
 python-dotenv = "*"
+drf-excel = "*"
 
 [dev-packages]
 
