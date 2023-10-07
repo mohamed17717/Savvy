@@ -39,3 +39,7 @@ class DjangoProxy:
 
             self.webpage_write_meta_tags(webpage, meta_tags)
             self.webpage_write_headers(webpage, headers)
+
+    @sync_to_async
+    def store_bookmark_weights(self, bookmark):
+        bookmark.store_word_vector()
