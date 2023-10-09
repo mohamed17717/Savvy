@@ -1,5 +1,9 @@
 import scrapy
+
 from crawler.items import BookmarkItemLoader
+from crawler.orm import DjangoProxy
+
+dj_proxy = DjangoProxy()
 
 
 class BookmarkSpider(scrapy.Spider):
@@ -44,6 +48,4 @@ class BookmarkSpider(scrapy.Spider):
         yield bookmark_item_loader.load_item()
 
     def closed(self, reason):
-        # calculate for all bookmarks
-        # self.bookmarks = 
-        pass
+        dj_proxy.cluster_bookmarks(self.bookmarks)

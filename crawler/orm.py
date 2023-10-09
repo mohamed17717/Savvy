@@ -43,3 +43,7 @@ class DjangoProxy:
     @sync_to_async
     def store_bookmark_weights(self, bookmark):
         bookmark.store_word_vector()
+
+    @sync_to_async
+    def cluster_bookmarks(self, bookmarks):
+        return models.Bookmark.cluster_bookmarks(bookmarks)
