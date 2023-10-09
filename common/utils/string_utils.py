@@ -9,8 +9,8 @@ import spacy
 import arabicstopwords.arabicstopwords as stp
 
 
-def random_string() -> str:
-    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=6))
+def random_string(length=6) -> str:
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
 
 
 def clean_string(string: str) -> str:
