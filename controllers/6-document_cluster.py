@@ -32,6 +32,10 @@ class CosineSimilarityCluster:
 
         return weights_matrix
 
+    def calculate_similarity(self):
+        similarities = cosine_similarity(self._weights_matrix)
+        return similarities
+
     def _cluster_docs(self, break_point: float = 0.4) -> Dict[int, list[int]]:
         similarities = self.calculate_similarity()
 
@@ -66,10 +70,6 @@ class CosineSimilarityCluster:
         ]
 
         return merged
-
-    def calculate_similarity(self):
-        similarities = cosine_similarity(self._weights_matrix)
-        return similarities
 
     def display(self):
         similarities = self.calculate_similarity()
