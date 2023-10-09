@@ -8,16 +8,19 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
 from django.core.files import File
+from django.db.models import QuerySet
 
 from crawler import settings as scrapy_settings
 
 from common.utils.model_utils import FileSizeValidator
 from common.utils.file_utils import load_file
+from common.utils.string_utils import random_string
 
 from App.controllers import (
     BookmarkFileManager, BookmarkHTMLFileManager, BookmarkJSONFileManager,
     TextCleaner
 )
+from App.controllers import document_cluster as doc_cluster
 
 User = get_user_model()
 
@@ -181,6 +184,7 @@ class Bookmark(models.Model):
 
         return vector
 
+    # methods
     def store_word_vector(self):
         # Delete the old data , store new ones
         self.words_weights.delete()
@@ -203,6 +207,26 @@ class Bookmark(models.Model):
             title=data.pop('title', None),
             more_data=data or None
         )
+
+    @classmethod
+    def cluster_bookmarks(cls, bookmarks: QuerySet['Bookmark']):
+        bookmark_id = [b.id for b in bookmarks]
+        vectors = [b.word_vector for b in bookmarks]
+
+        sim_calculator = doc_cluster.CosineSimilarityCalculator(vectors)
+        similarity_matrix = sim_calculator.similarity()
+
+        cluster_maker = doc_cluster.ClusterMaker(
+            bookmark_id, similarity_matrix, 0.4)
+        flat_clusters = cluster_maker.clusters_flat()
+
+        clusters_qs = [bookmarks.filter(id__in=cluster)
+                       for cluster in flat_clusters]
+        clusters_objects = [
+            DocumentCluster(bookmarks=cluster, name=random_string(12))
+            for cluster in clusters_qs
+        ]
+        return DocumentCluster.objects.bulk_create(clusters_objects)
 
 
 class ScrapyResponseLog(models.Model):
@@ -382,6 +406,7 @@ class DocumentWordWeight(models.Model):
 
 
 class DocumentCluster(models.Model):
+    # TODO should have user field here
     # Relations
     bookmarks = models.ManyToManyField('App.Bookmark', related_name='clusters')
 
