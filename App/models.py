@@ -417,6 +417,16 @@ class DocumentCluster(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    @property
+    def general_words_vector(self):
+        general_vector = {}
+        for b in self.bookmarks.all():
+            for word, weight in b.word_vector.items():
+                general_vector.setdefault(word, 0)
+                general_vector[word] += weight
+
+        return general_vector
+
 
 class ClusterTag(models.Model):
     # Relations
