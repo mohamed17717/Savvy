@@ -32,6 +32,7 @@ psycopg2 = "*"
 drf-yasg = "*"
 python-dotenv = "*"
 drf-excel = "*"
+humanize = "*"
 
 [dev-packages]
 
