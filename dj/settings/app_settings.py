@@ -14,6 +14,7 @@ INSTALLED_APPS = [
 
     # apps
     'App',
+    'Users',
 
     # Third Party
     'rest_framework',
@@ -54,3 +55,5 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'dj.wsgi.application'
+
+AUTH_USER_MODEL = "Users.User"
