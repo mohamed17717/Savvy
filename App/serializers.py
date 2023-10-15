@@ -7,6 +7,9 @@ class BookmarkFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.BookmarkFile
         fields = '__all__'
+        extra_kwargs = {
+            'user': {'read_only': True}
+        }
 
 
 class BookmarkSerializer(serializers.ModelSerializer):
