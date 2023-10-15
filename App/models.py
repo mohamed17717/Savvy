@@ -87,7 +87,7 @@ class BookmarkFile(models.Model):
         return obj
 
     @property
-    def bookmarks(self):
+    def bookmarks_links(self):
         file_obj = self.file_obj
         file_obj.validate(raise_exception=True)
         return file_obj.get_links()
@@ -122,6 +122,9 @@ class Bookmark(models.Model):
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.url
 
     # Computed
     @property
