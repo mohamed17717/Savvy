@@ -10,14 +10,13 @@ from App import models
 
 
 @receiver(post_save, sender=models.BookmarkFile)
-def on_create_bookmark_file_extract_urls(sender, instance, **kwargs):
-    created = instance.pk is None
+def on_create_bookmark_file_extract_urls(sender, instance, created, **kwargs):
     if created is False:
         return
 
     bookmarks = [
         models.Bookmark.instance_by_parent(instance, bookmark)
-        for bookmark in instance.bookmarks
+        for bookmark in instance.bookmarks_links
     ]
     models.Bookmark.objects.bulk_create(bookmarks)
 
