@@ -5,13 +5,14 @@ import validators
 from bs4 import BeautifulSoup
 from abc import ABC, abstractmethod
 
-
+from django.db.models import FieldFile
 from django.core.exceptions import ValidationError
-
-from common.utils.file_utils import load_file
 
 
 class BookmarkFileManager(ABC):
+    def __init__(self, file_field: FieldFile) -> None:
+        super().__init__()
+
     @abstractmethod
     def validate(self, raise_exception: bool = False) -> bool:
         pass
@@ -22,9 +23,8 @@ class BookmarkFileManager(ABC):
 
 
 class BookmarkHTMLFileManager(BookmarkFileManager):
-    def __init__(self, location):
-        self.location = location
-        self.src = load_file(location)
+    def __init__(self, file_field: FieldFile):
+        self.src = file_field.read().decode('utf8')
         self.soup = None
         self.is_valid = None
 
@@ -102,9 +102,8 @@ class BookmarkHTMLFileManager(BookmarkFileManager):
 
 
 class BookmarkJSONFileManager(BookmarkFileManager):
-    def __init__(self, location):
-        self.location = location
-        self.data = json.loads(load_file(location))
+    def __init__(self, file_field: FieldFile):
+        self.data = json.loads(file_field.read().decode('utf8'))
         self.is_valid = None
 
     # --getters--
