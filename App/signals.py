@@ -18,13 +18,13 @@ def on_create_bookmark_file_extract_urls(sender, instance, created, **kwargs):
         models.Bookmark.instance_by_parent(instance, bookmark)
         for bookmark in instance.bookmarks_links
     ]
-    models.Bookmark.objects.bulk_create(bookmarks)
+    # models.Bookmark.objects.bulk_create(bookmarks)
 
     # run them in background celery task
-    urls = [bookmark['url'] for bookmark in instance.bookmarks]
-    process = CrawlerProcess(settings=get_project_settings())
-    process.crawl(BookmarkSpider, urls=urls)
-    process.start()
+    # urls = [bookmark['url'] for bookmark in instance.bookmarks]
+    # process = CrawlerProcess(settings=get_project_settings())
+    # process.crawl(BookmarkSpider, urls=urls)
+    # process.start()
 
 
 @receiver(pre_save, sender=models.BookmarkFile)
