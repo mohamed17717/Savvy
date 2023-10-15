@@ -100,6 +100,12 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         fields = '__all__'
         extra_kwargs = {
             'email_verified': {'read_only': True},
+            'is_staff': {'read_only': True},
+            'is_active': {'read_only': True},
+            'is_superuser': {'read_only': True},
+
+            'first_name': {'required': True},
+            'last_name': {'required': True},
         }
 
     def validate(self, attrs):
