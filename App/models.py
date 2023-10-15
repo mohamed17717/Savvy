@@ -43,7 +43,7 @@ class BookmarkFile(models.Model):
     location = models.FileField(
         upload_to='users/bookmarks/',
         validators=[
-            FileExtensionValidator(['.html', '.json']), FileSizeValidator(5)
+            FileExtensionValidator(['html', 'json']), FileSizeValidator(5)
         ]
     )
 
