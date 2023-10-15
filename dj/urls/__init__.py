@@ -6,6 +6,7 @@ from django.conf import settings
 from .swagger import swagger_urls
 
 urlpatterns = [
+    path('bm/', include('App.urls', namespace='app')),
     path('users/', include('Users.urls', namespace='users')),
     path('api-auth/', include('rest_framework.urls')),
     path('admin/', admin.site.urls),
