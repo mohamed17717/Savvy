@@ -16,3 +16,16 @@ class CRDLViewSet(mixins.CreateModelMixin,
                   mixins.ListModelMixin,
                   viewsets.GenericViewSet):
     pass
+
+
+class RLViewSet(mixins.RetrieveModelMixin,
+                mixins.ListModelMixin,
+                viewsets.GenericViewSet):
+    pass
+
+
+class RDLViewSet(mixins.RetrieveModelMixin,
+                 mixins.DestroyModelMixin,
+                 mixins.ListModelMixin,
+                 viewsets.GenericViewSet):
+    pass
