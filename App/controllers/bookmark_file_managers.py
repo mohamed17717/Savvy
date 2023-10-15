@@ -5,7 +5,7 @@ import validators
 from bs4 import BeautifulSoup
 from abc import ABC, abstractmethod
 
-from django.db.models import FieldFile
+from django.db.models.fields.files import FieldFile
 from django.core.exceptions import ValidationError
 
 
