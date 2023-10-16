@@ -13,7 +13,6 @@ from django.db.models import QuerySet
 from crawler import settings as scrapy_settings
 
 from common.utils.model_utils import FileSizeValidator
-from common.utils.file_utils import load_file
 from common.utils.string_utils import random_string
 
 from App.controllers import (
@@ -58,7 +57,7 @@ class BookmarkFile(models.Model):
 
     @property
     def file_content(self) -> str:
-        return load_file(self.path)
+        return self.location.read() # .decode('utf8')
 
     @property
     def is_html(self) -> bool:
@@ -318,6 +317,12 @@ class WebpageMetaTag(models.Model):
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # TODO may need this
+    # ALLOWED_NAMES = [
+    #     'name', 'application-name', 'title', 'site_name', 'description', 'keywords', 
+    #     'language', 'locale', 'image', 'updated_time', 'site', 'creator', 'url'
+    # ]
 
     def save(self, *args, **kwargs) -> None:
         if self.content:
