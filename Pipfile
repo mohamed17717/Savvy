@@ -33,6 +33,8 @@ drf-yasg = "*"
 python-dotenv = "*"
 drf-excel = "*"
 humanize = "*"
+django-extensions = "*"
+pygraphviz = "*"
 
 [dev-packages]
 
