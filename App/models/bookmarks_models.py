@@ -21,6 +21,7 @@ from App.controllers import (
 )
 from App.controllers import document_cluster as doc_cluster
 
+
 User = get_user_model()
 
 
@@ -57,7 +58,7 @@ class BookmarkFile(models.Model):
 
     @property
     def file_content(self) -> str:
-        return self.location.read() # .decode('utf8')
+        return self.location.read()  # .decode('utf8')
 
     @property
     def is_html(self) -> bool:
@@ -188,6 +189,7 @@ class Bookmark(models.Model):
 
     # methods
     def store_word_vector(self):
+        from . import DocumentWordWeight
         # Delete the old data , store new ones
         self.words_weights.delete()
 
@@ -212,6 +214,8 @@ class Bookmark(models.Model):
 
     @classmethod
     def cluster_bookmarks(cls, bookmarks: QuerySet['Bookmark']):
+        from . import DocumentCluster
+
         bookmark_id = [b.id for b in bookmarks]
         vectors = [b.word_vector for b in bookmarks]
 
@@ -320,7 +324,7 @@ class WebpageMetaTag(models.Model):
 
     # TODO may need this
     # ALLOWED_NAMES = [
-    #     'name', 'application-name', 'title', 'site_name', 'description', 'keywords', 
+    #     'name', 'application-name', 'title', 'site_name', 'description', 'keywords',
     #     'language', 'locale', 'image', 'updated_time', 'site', 'creator', 'url'
     # ]
 
@@ -395,58 +399,3 @@ class WebpageHeader(models.Model):
                     )
 
         return cls.objects.bulk_create(header_objects)
-
-
-class DocumentWordWeight(models.Model):
-    # Relations
-    # TODO in future -> this field become generic relation
-    # to relate with (bookmark / youtube / linkedin / etc...)
-    document = models.ForeignKey(
-        'App.Bookmark', on_delete=models.CASCADE, related_name='words_weights')
-
-    # Required
-    word = models.CharField(max_length=64)
-    weight = models.PositiveSmallIntegerField()
-
-    # Timing
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-
-class DocumentCluster(models.Model):
-    # TODO should have user field here
-    # Relations
-    bookmarks = models.ManyToManyField('App.Bookmark', related_name='clusters')
-
-    # Required
-    name = models.CharField(max_length=128)
-
-    # Timing
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    @property
-    def general_words_vector(self):
-        general_vector = {}
-        for b in self.bookmarks.all():
-            for word, weight in b.word_vector.items():
-                general_vector.setdefault(word, 0)
-                general_vector[word] += weight
-
-        return general_vector
-
-
-class ClusterTag(models.Model):
-    # Relations
-    cluster = models.ForeignKey(
-        'App.DocumentCluster', on_delete=models.CASCADE, related_name='tags'
-    )
-    # Required
-    name = models.CharField(max_length=64)
-
-    # Defaults
-    show = models.BooleanField(default=True)
-
-    # Timing
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
