@@ -47,5 +47,5 @@ class BookmarkSpider(scrapy.Spider):
 
         yield bookmark_item_loader.load_item()
 
-    def closed(self, reason):
-        dj_proxy.cluster_bookmarks(self.bookmarks)
+    async def closed(self, reason):
+        await dj_proxy.cluster_bookmarks(self.bookmarks)

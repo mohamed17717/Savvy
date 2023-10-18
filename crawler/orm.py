@@ -22,14 +22,6 @@ class DjangoProxy:
             log.store_file(response.body)
 
     @sync_to_async
-    def webpage_write_meta_tags(self, webpage, tags):
-        return models.WebpageMetaTag.bulk_create(webpage, tags)
-
-    @sync_to_async
-    def webpage_write_headers(self, webpage, headers):
-        return models.WebpageHeader.bulk_create(webpage, headers)
-
-    @sync_to_async
     def webpage_write(self, spider, url, page_title, meta_tags, headers):
         with transaction.atomic():
             webpage = models.BookmarkWebpage.objects.create(
@@ -37,8 +29,10 @@ class DjangoProxy:
                 url=url, title=page_title
             )
 
-            self.webpage_write_meta_tags(webpage, meta_tags)
-            self.webpage_write_headers(webpage, headers)
+            # self.webpage_write_meta_tags(webpage, meta_tags)
+            models.WebpageMetaTag.bulk_create(webpage, meta_tags)
+            # self.webpage_write_headers(webpage, headers)
+            models.WebpageHeader.bulk_create(webpage, headers)
 
     @sync_to_async
     def store_bookmark_weights(self, bookmark):

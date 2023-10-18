@@ -34,7 +34,7 @@ class CosineSimilarityCalculator:
         return weight_matrix
 
     def similarity(self) -> np.ndarray:
-        return cosine_similarity(self._weights_matrix)
+        return cosine_similarity(self._doc_to_word_weight_matrix)
 
 
 class ClusterMaker:
@@ -86,7 +86,8 @@ class ClusterMaker:
             other_ids = [other_id for other_id, _ in similarities]
 
             # get_ids, sort, str, to remove repeated ones
-            flat_cluster = [doc_id].extend(other_ids)
+            flat_cluster = [doc_id]
+            flat_cluster.extend(other_ids)
             flat_cluster = sorted(flat_cluster)
             flat_cluster = map(str, flat_cluster)
             flat_cluster = ','.join(flat_cluster)  # 'doc1,doc2,doc3'

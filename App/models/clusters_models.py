@@ -33,7 +33,8 @@ class ClusterTag(models.Model):
         'App.DocumentCluster', on_delete=models.CASCADE, related_name='tags'
     )
     # Required
-    name = models.CharField(max_length=64)
+    # TODO make it 64 when cleaner work fine
+    name = models.CharField(max_length=2048)
 
     # Defaults
     show = models.BooleanField(default=True)

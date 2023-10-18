@@ -14,7 +14,8 @@ class DocumentWordWeight(models.Model):
         'App.Bookmark', on_delete=models.CASCADE, related_name='words_weights')
 
     # Required
-    word = models.CharField(max_length=64)
+    # TODO make it 64 when cleaner work fine
+    word = models.CharField(max_length=2048)
     weight = models.PositiveSmallIntegerField()
 
     # Timing

@@ -124,7 +124,7 @@ class Bookmark(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
-        return self.url
+        return f'{self.id} - {self.url}'
 
     # Computed
     @property
@@ -149,21 +149,25 @@ class Bookmark(models.Model):
             'title': (self.title, 5),
             'domain': (self.domain, 4),
             'site_name': (self.site_name, 4),
-            'webpage': {
-                'url': (wp.url, 5),
-                'title': (wp.title, 5),
-                # NOTE already cleaned
-                'headers': {
-                    h.tagname: (h.cleaned_text, 2 * h.weight_factor)
-                    for h in wp.headers.all()
-                },
-                # NOTE already cleaned
-                'meta_data': [
-                    (meta.cleaned_content, 3*meta.weight_factor)
-                    for meta in wp.meta_tags.all()
-                ]
-            }
         }
+        if wp:
+            result.update({
+                'webpage': {
+                    'url': (wp.url, 5),
+                    'title': (wp.title, 5),
+                    # NOTE already cleaned
+                    'headers': {
+                        h.tagname: (h.cleaned_text, 2 * h.weight_factor)
+                        for h in wp.headers.all()
+                    },
+                    # NOTE already cleaned
+                    'meta_data': [
+                        # (meta.cleaned_content, 3*meta.weight_factor)
+                        (meta.content, 3*meta.weight_factor)
+                        for meta in wp.meta_tags.all()
+                    ]
+                }
+            })
         return result
 
     @property
@@ -181,6 +185,8 @@ class Bookmark(models.Model):
     def word_vector(self) -> dict:
         vector = {}
         for text, weight in self.summary_flat:
+            if text is None: continue
+
             for word in text.split(' '):
                 vector.setdefault(word, 0)
                 vector[word] += weight
@@ -191,7 +197,7 @@ class Bookmark(models.Model):
     def store_word_vector(self):
         from . import DocumentWordWeight
         # Delete the old data , store new ones
-        self.words_weights.delete()
+        self.words_weights.all().delete()
 
         words_weights = []
         for word, weight in self.word_vector.items():
@@ -217,6 +223,7 @@ class Bookmark(models.Model):
         from . import DocumentCluster
 
         bookmark_id = [b.id for b in bookmarks]
+        bookmarks = cls.objects.filter(id__in=bookmark_id)
         vectors = [b.word_vector for b in bookmarks]
 
         sim_calculator = doc_cluster.CosineSimilarityCalculator(vectors)
@@ -228,11 +235,13 @@ class Bookmark(models.Model):
 
         clusters_qs = [bookmarks.filter(id__in=cluster)
                        for cluster in flat_clusters]
-        clusters_objects = [
-            DocumentCluster(bookmarks=cluster, name=random_string(12))
-            for cluster in clusters_qs
-        ]
-        return DocumentCluster.objects.bulk_create(clusters_objects)
+        clusters_objects = []
+        for cluster in clusters_qs:
+            user = cluster[0].user
+            cluster_object = DocumentCluster.objects.create(user=user, name=random_string(12))
+            cluster_object.bookmarks.set(cluster)
+            clusters_objects.append(cluster_object)
+        return clusters_objects # DocumentCluster.objects.bulk_create(clusters_objects)
 
 
 class ScrapyResponseLog(models.Model):
@@ -260,6 +269,9 @@ class ScrapyResponseLog(models.Model):
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.id} - [{self.status_code}] {self.url} -> ({self.bookmark.id})'
 
     def store_file(self, content):
         # Create a unique file name based on the URL hash
@@ -311,7 +323,8 @@ class WebpageMetaTag(models.Model):
     )
 
     # Required
-    name = models.CharField(max_length=64, default='undefined')
+    # TODO make it 64 when cleaner work fine
+    name = models.CharField(max_length=2048, default='undefined')
     content = models.TextField(blank=True, null=True)
     cleaned_content = models.TextField(blank=True, null=True)
 
@@ -331,6 +344,7 @@ class WebpageMetaTag(models.Model):
     def save(self, *args, **kwargs) -> None:
         if self.content:
             cleaner = TextCleaner(self.content)
+            # TODO cleaner return null
             cleaner.full_clean()
             self.cleaned_content = cleaner.text
 
