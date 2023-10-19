@@ -10,7 +10,9 @@ class SQLitePipeline:
         url = item['url'][0]
         page_title = item.get('page_title', ['Undefined'])[0]
 
-        await dj_proxy.webpage_write(spider, url, page_title, meta_tags, headers)
-        await dj_proxy.store_bookmark_weights(spider.bookmark)
+        bookmark = item.get('bookmark', [None])[0]
+
+        await dj_proxy.webpage_write(bookmark, url, page_title, meta_tags, headers)
+        await dj_proxy.store_bookmark_weights(bookmark)
 
         return item

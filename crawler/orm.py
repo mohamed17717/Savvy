@@ -13,7 +13,7 @@ class DjangoProxy:
     @sync_to_async
     def response_log_write(self, request, response, spider, error_message=None):
         log = models.ScrapyResponseLog.objects.create(
-            bookmark=spider.bookmark,
+            bookmark=request.meta.get('bookmark'),
             url=request.url,
             status_code=response.status if response else 500,
             error=error_message,
@@ -22,16 +22,13 @@ class DjangoProxy:
             log.store_file(response.body)
 
     @sync_to_async
-    def webpage_write(self, spider, url, page_title, meta_tags, headers):
+    def webpage_write(self, bookmark, url, page_title, meta_tags, headers):
         with transaction.atomic():
             webpage = models.BookmarkWebpage.objects.create(
-                bookmark=spider.bookmark,
-                url=url, title=page_title
+                bookmark=bookmark, url=url, title=page_title
             )
 
-            # self.webpage_write_meta_tags(webpage, meta_tags)
             models.WebpageMetaTag.bulk_create(webpage, meta_tags)
-            # self.webpage_write_headers(webpage, headers)
             models.WebpageHeader.bulk_create(webpage, headers)
 
     @sync_to_async

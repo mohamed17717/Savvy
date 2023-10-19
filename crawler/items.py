@@ -7,6 +7,7 @@ class BookmarkItem(scrapy.Item):
     headers = scrapy.Field()
     url = scrapy.Field()
     page_title = scrapy.Field()
+    bookmark = scrapy.Field()
 
 
 class BookmarkItemLoader(ItemLoader):
