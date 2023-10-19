@@ -43,8 +43,7 @@ USER_AGENT = 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15
 DOWNLOAD_TIMEOUT = 3
 RETRY_TIMES = 3
 
-FEED_FORMAT = 'json'
-FEED_URI = 'crawler/output.json'
-
-DATABASE_PATH = 'crawler/sqlite.db'
+# FEED_FORMAT = 'json'
+# FEED_URI = 'crawler/output.json'
+# DATABASE_PATH = 'crawler/sqlite.db'
 STORAGE_PATH = 'crawler/response_bodies'
