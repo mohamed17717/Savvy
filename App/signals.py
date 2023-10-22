@@ -14,7 +14,7 @@ def on_create_bookmark_file_extract_urls(sender, instance, created, **kwargs):
         for bookmark in instance.bookmarks_links
     ]
     models.Bookmark.objects.bulk_create(bookmarks)
-    tasks.scrapy_runner.delay(bookmarks)
+    tasks.crawl_bookmarks_task.apply_async(kwargs={'bookmarks': bookmarks})
 
 
 @receiver(pre_save, sender=models.BookmarkFile)
