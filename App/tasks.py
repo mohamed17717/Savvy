@@ -1,16 +1,19 @@
-from django.conf import settings
+import json
+import subprocess
 
 from celery import shared_task
 
-from scrapy.crawler import CrawlerProcess
-from scrapy.utils.project import get_project_settings
-
-from crawler.spiders.bookmark import BookmarkSpider
-
-
 
 @shared_task
-def scrapy_runner(bookmarks):
-    process = CrawlerProcess(settings=get_project_settings())
-    process.crawl(BookmarkSpider, bookmarks)
-    process.start()
+def crawl_bookmarks_task(bookmarks):
+    ids = json.dumps([bm.id for bm in bookmarks])
+    command = ['python', 'manage.py', 'crawl_bookmarks', ids]
+
+    try:
+        result = subprocess.run(
+            command, capture_output=True, text=True, check=True
+        )
+        # TODO log the prints
+        print("Command output:", result.stdout)
+    except subprocess.CalledProcessError as e:
+        print("Command failed with error:", e)
