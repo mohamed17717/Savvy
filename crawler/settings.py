@@ -47,3 +47,7 @@ RETRY_TIMES = 3
 # FEED_URI = 'crawler/output.json'
 # DATABASE_PATH = 'crawler/sqlite.db'
 STORAGE_PATH = 'crawler/response_bodies'
+
+LOG_ENABLED = True  # Enable logging
+LOG_FILE = 'logs/scrapy.log'
+LOG_LEVEL = 'INFO'
