@@ -1,9 +1,6 @@
 import scrapy
 
 from crawler.items import BookmarkItemLoader
-from crawler.orm import DjangoProxy
-
-dj_proxy = DjangoProxy()
 
 
 class BookmarkSpider(scrapy.Spider):
@@ -12,6 +9,9 @@ class BookmarkSpider(scrapy.Spider):
     def __init__(self, bookmarks: list):
         # self.urls = urls
         self.bookmarks = bookmarks
+
+        from crawler.orm import DjangoProxy
+        self.dj_proxy = DjangoProxy()
 
     def start_requests(self):
         # for url in self.urls:
@@ -30,6 +30,7 @@ class BookmarkSpider(scrapy.Spider):
         headers_dict = {}
         for h in headers:
             headers_dict.update(h)
+        return headers_dict
 
     def parse(self, response, bookmark):
         bookmark_item_loader = BookmarkItemLoader(response=response)
@@ -48,4 +49,4 @@ class BookmarkSpider(scrapy.Spider):
         yield bookmark_item_loader.load_item()
 
     async def closed(self, reason):
-        await dj_proxy.cluster_bookmarks(self.bookmarks)
+        await self.dj_proxy.cluster_bookmarks(self.bookmarks)
