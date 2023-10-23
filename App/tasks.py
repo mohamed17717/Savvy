@@ -4,7 +4,7 @@ import subprocess
 from celery import shared_task
 
 
-@shared_task
+@shared_task(queue='scrapy')
 def crawl_bookmarks_task(bookmarks):
     ids = json.dumps([bm.id for bm in bookmarks])
     command = ['python', 'manage.py', 'crawl_bookmarks', ids]
