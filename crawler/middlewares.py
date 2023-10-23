@@ -1,14 +1,14 @@
 import scrapy
 from urllib.parse import urlencode
 
-from crawler.orm import DjangoProxy
-
-dj_proxy = DjangoProxy()
-
 
 class LogResponseMiddleware:
+    def __init__(self) -> None:
+        from crawler.orm import DjangoProxy
+        self.dj_proxy = DjangoProxy()
+
     async def process_request(self, request, spider):
-        exists = await dj_proxy.response_log_url_exists(request.url)
+        exists = await self.dj_proxy.response_log_url_exists(request.url)
         if exists:
             # If the URL exists in the database, skip the request
             message = f"URL {request.url} already exists in the database. Skipping."
@@ -21,7 +21,7 @@ class LogResponseMiddleware:
         if response.status != 200:
             error_msg = f"HTTP status code {response.status}"
 
-        await dj_proxy.response_log_write(request, response, spider, error_msg)
+        await self.dj_proxy.response_log_write(request, response, spider, error_msg)
 
         return response
 
@@ -29,7 +29,7 @@ class LogResponseMiddleware:
         if isinstance(exception, scrapy.exceptions.IgnoreRequest):
             return None  # Do nothing for IgnoreRequest
 
-        await dj_proxy.response_log_write(request, None, spider, str(exception))
+        await self.dj_proxy.response_log_write(request, None, spider, str(exception))
 
 
 class ScrapeOpsRotateProxyMiddleware:

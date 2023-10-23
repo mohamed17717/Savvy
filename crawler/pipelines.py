@@ -1,9 +1,9 @@
-from crawler.orm import DjangoProxy
-
-dj_proxy = DjangoProxy()
-
-
 class SQLitePipeline:
+    def __init__(self) -> None:
+        # because its block scrapy shell
+        from crawler.orm import DjangoProxy
+        self.dj_proxy = DjangoProxy()
+
     async def process_item(self, item, spider):
         meta_tags = item.get('meta_tags', [])
         headers = item.get('headers', [])
@@ -12,7 +12,7 @@ class SQLitePipeline:
 
         bookmark = item.get('bookmark', [None])[0]
 
-        await dj_proxy.webpage_write(bookmark, url, page_title, meta_tags, headers)
-        await dj_proxy.store_bookmark_weights(bookmark)
+        await self.dj_proxy.webpage_write(bookmark, url, page_title, meta_tags, headers)
+        await self.dj_proxy.store_bookmark_weights(bookmark)
 
         return item
