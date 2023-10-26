@@ -35,6 +35,7 @@ drf-excel = "*"
 humanize = "*"
 django-extensions = "*"
 pygraphviz = "*"
+django-debug-toolbar = "*"
 
 [dev-packages]
 

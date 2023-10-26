@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django_celery_results',
     'django_celery_beat',
     'django_extensions',
+    'debug_toolbar',
 
 ]
 
@@ -35,6 +36,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+
 ]
 
 ROOT_URLCONF = 'dj.urls'
@@ -57,4 +61,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'dj.wsgi.application'
 
-AUTH_USER_MODEL = "Users.User"
+AUTH_USER_MODEL = 'Users.User'
+
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+        'api_key': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'value': 'Token 54da3defde81841587f99f04e3d6e7b2e56c69e077e9d4f5bcb853d551763935'
+        }
+    },
+    'USE_SESSION_AUTH': False,
+    'JSON_EDITOR': True,
+}
+
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]
