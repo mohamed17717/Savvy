@@ -44,37 +44,15 @@ class BookmarkHTMLFileManager(BookmarkFileManager):
         return is_valid
 
     # --validation--
-    def __validate_netscape(self):
-        ptrn = r'<!DOCTYPE NETSCAPE-Bookmark.*?>'
-        netscape = re.search(ptrn, self.src)
-        return bool(netscape)
-
-    def __validate_list_structure(self):
-        soup = self.__get_soup()
-        list_structure = soup.select_one('dl dt')
-        return bool(list_structure)
-
     def __validate_contain_links(self):
         soup = self.__get_soup()
         contain_links = soup.select_one('a[href]')
         return bool(contain_links)
 
-    def __validate_auto_comment(self):
-        comment = re.search(r'<!--[\s\w\.!]+?-->', self.src)
-        comment = comment and comment.group() or ''
-        has_comment = 'automatically generated file' in comment
-        return has_comment
-
     def validate(self, raise_exception=False):
-        # optional = [
-        #     self.__validate_netscape(),
-        #     self.__validate_list_structure(),
-        #     self.__validate_auto_comment()
-        # ]
+        # TODO keep only absolute links -- should have a schema too
         required = [self.__validate_contain_links()]
 
-        # is_optional_pass = optional.count(True) / len(optional) > 0.60
-        # self.is_valid = is_optional_pass and all(required)
         self.is_valid = all(required)
 
         if not self.is_valid and raise_exception:
