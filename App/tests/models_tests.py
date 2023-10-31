@@ -105,12 +105,16 @@ class BookmarkFileTestCase(TestCase):
         self.assertTrue(self.json_obj.is_json)
 
     def test_file_manager_property(self):
-        self.assertIs(self.html_obj.file_manager, models.BookmarkHTMLFileManager)
-        self.assertIs(self.json_obj.file_manager, models.BookmarkJSONFileManager)
+        self.assertIs(self.html_obj.file_manager,
+                      models.BookmarkHTMLFileManager)
+        self.assertIs(self.json_obj.file_manager,
+                      models.BookmarkJSONFileManager)
 
     def test_file_obj_property(self):
-        self.assertIsInstance(self.html_obj.file_obj, models.BookmarkHTMLFileManager)
-        self.assertIsInstance(self.json_obj.file_obj, models.BookmarkJSONFileManager)
+        self.assertIsInstance(self.html_obj.file_obj,
+                              models.BookmarkHTMLFileManager)
+        self.assertIsInstance(self.json_obj.file_obj,
+                              models.BookmarkJSONFileManager)
 
     def test_bookmarks_links_property(self):
         # list of dicts contain urls
@@ -123,3 +127,67 @@ class BookmarkFileTestCase(TestCase):
         self.assertIsInstance(self.json_obj.bookmarks_links[0].get('url'), str)
 
 
+class BookmarkTestCase(TestCase):
+    model = models.Bookmark
+
+    def setUp(self) -> None:
+        disconnect_signals(self.model)
+
+    def test_domain_property(self):
+        pass
+
+    def test_site_name_property(self):
+        pass
+
+    def test_summary_property(self):
+        pass
+
+    def test_summary_flat_property(self):
+        pass
+
+    def test_word_vector_property(self):
+        pass
+
+    def test_store_word_vector_method(self):
+        pass
+
+    def test_instance_by_parent_class_method(self):
+        pass
+
+    def test_cluster_bookmarks_class_method(self):
+        pass
+
+
+class ScrapyResponseLogTestCase(TestCase):
+    model = models.ScrapyResponseLog
+
+    def setUp(self) -> None:
+        disconnect_signals(self.model)
+
+    def test_store_file_method(self):
+        pass
+
+    def test_is_url_exists_class_method(self):
+        pass
+
+
+class BookmarkWebpageTestCase(TestCase):
+    # NOTE no methods or property
+    model = models.BookmarkWebpage
+
+    def setUp(self) -> None:
+        disconnect_signals(self.model)
+
+
+class WebpageMetaTagTestCase(TestCase):
+    model = models.WebpageMetaTag
+
+    def setUp(self) -> None:
+        disconnect_signals(self.model)
+
+
+class WebpageHeaderTestCase(TestCase):
+    model = models.WebpageHeader
+
+    def setUp(self) -> None:
+        disconnect_signals(self.model)
