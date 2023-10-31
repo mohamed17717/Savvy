@@ -66,15 +66,16 @@ class BookmarkHTMLFileManager(BookmarkFileManager):
         return has_comment
 
     def validate(self, raise_exception=False):
-        optional = [
-            self.__validate_netscape(),
-            self.__validate_list_structure(),
-            self.__validate_auto_comment()
-        ]
+        # optional = [
+        #     self.__validate_netscape(),
+        #     self.__validate_list_structure(),
+        #     self.__validate_auto_comment()
+        # ]
         required = [self.__validate_contain_links()]
 
-        is_optional_pass = optional.count(True) / len(optional) > 0.60
-        self.is_valid = is_optional_pass and all(required)
+        # is_optional_pass = optional.count(True) / len(optional) > 0.60
+        # self.is_valid = is_optional_pass and all(required)
+        self.is_valid = all(required)
 
         if not self.is_valid and raise_exception:
             raise ValidationError('Not valid html file.')
