@@ -62,7 +62,7 @@ class BookmarkFile(models.Model):
 
     @property
     def file_content(self) -> str:
-        return self.location.read()  # .decode('utf8')
+        return self.location.read().decode('utf8')
 
     @property
     def is_html(self) -> bool:
@@ -87,6 +87,7 @@ class BookmarkFile(models.Model):
 
     @property
     def file_obj(self) -> BookmarkFileManager:
+        self.location.seek(0)
         obj = self.file_manager(self.location)
         return obj
 
