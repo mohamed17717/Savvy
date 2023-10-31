@@ -51,6 +51,10 @@ class BookmarkFile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        self.full_clean()  # To make sure field validators run
+        return super().save(*args, **kwargs)
+
     # Computed
     @property
     def path(self) -> str:
@@ -185,7 +189,8 @@ class Bookmark(models.Model):
     def word_vector(self) -> dict:
         vector = {}
         for text, weight in self.summary_flat:
-            if text is None: continue
+            if text is None:
+                continue
 
             for word in text.split(' '):
                 vector.setdefault(word, 0)
@@ -238,10 +243,12 @@ class Bookmark(models.Model):
         clusters_objects = []
         for cluster in clusters_qs:
             user = cluster[0].user
-            cluster_object = DocumentCluster.objects.create(user=user, name=random_string(12))
+            cluster_object = DocumentCluster.objects.create(
+                user=user, name=random_string(12))
             cluster_object.bookmarks.set(cluster)
             clusters_objects.append(cluster_object)
-        return clusters_objects # DocumentCluster.objects.bulk_create(clusters_objects)
+        # DocumentCluster.objects.bulk_create(clusters_objects)
+        return clusters_objects
 
 
 class ScrapyResponseLog(models.Model):
