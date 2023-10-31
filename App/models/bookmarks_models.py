@@ -278,6 +278,10 @@ class ScrapyResponseLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+       self.full_clean()
+       super().save(*args, **kwargs)
+
     def __str__(self):
         return f'{self.id} - [{self.status_code}] {self.url} -> ({self.bookmark.id})'
 
@@ -297,6 +301,8 @@ class ScrapyResponseLog(models.Model):
             dj_file.write(content)
             self.html_file = dj_file
             self.save()
+
+        return file_path
 
     @classmethod
     def is_url_exists(cls, url):
@@ -360,6 +366,7 @@ class WebpageMetaTag(models.Model):
 
     @property
     def weight_factor(self) -> int:
+        # TODO make sure name saved lower case and without and colon prefix or suffix
         factors_map = {
             'keywords': 5
         }
