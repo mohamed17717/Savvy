@@ -88,22 +88,38 @@ class BookmarkFileTestCase(TestCase):
             ObjFactory.create_bookmark_file(user=self.user, location=text_file)
 
     def test_path_property(self):
-        pass
+        self.assertRegex(self.html_obj.path, r'^(.+)\/([^\/]+)\.html$')
+        self.assertRegex(self.json_obj.path, r'^(.+)\/([^\/]+)\.json$')
 
     def test_file_content_property(self):
-        pass
+        self.assertIsInstance(self.html_obj.file_content, str)
+        # json valid
+        self.assertIsInstance(json.loads(self.json_obj.file_content), list)
 
     def test_is_html_property(self):
-        pass
+        self.assertTrue(self.html_obj.is_html)
+        self.assertFalse(self.json_obj.is_html)
 
     def test_is_json_property(self):
-        pass
+        self.assertFalse(self.html_obj.is_json)
+        self.assertTrue(self.json_obj.is_json)
 
     def test_file_manager_property(self):
-        pass
+        self.assertIs(self.html_obj.file_manager, models.BookmarkHTMLFileManager)
+        self.assertIs(self.json_obj.file_manager, models.BookmarkJSONFileManager)
 
     def test_file_obj_property(self):
-        pass
+        self.assertIsInstance(self.html_obj.file_obj, models.BookmarkHTMLFileManager)
+        self.assertIsInstance(self.json_obj.file_obj, models.BookmarkJSONFileManager)
 
     def test_bookmarks_links_property(self):
-        pass
+        # list of dicts contain urls
+        self.assertIsInstance(self.html_obj.bookmarks_links, list)
+        self.assertIsInstance(self.html_obj.bookmarks_links[0], dict)
+        self.assertIsInstance(self.html_obj.bookmarks_links[0].get('url'), str)
+
+        self.assertIsInstance(self.json_obj.bookmarks_links, list)
+        self.assertIsInstance(self.json_obj.bookmarks_links[0], dict)
+        self.assertIsInstance(self.json_obj.bookmarks_links[0].get('url'), str)
+
+
