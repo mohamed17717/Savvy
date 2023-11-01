@@ -1,7 +1,9 @@
 import json
+from datetime import timedelta
+from time import sleep
 
 from django.test import TestCase
-from django.db.models import signals
+from django.db.models import signals, Sum
 from django.dispatch import Signal
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.contrib.auth import get_user_model
@@ -59,10 +61,22 @@ class ObjFactory:
         return SimpleUploadedFile(f'test_file.{file_type}', data.encode('utf8'))
 
     @staticmethod
-    def create_bookmark_file(**kwargs):
-        _file = models.BookmarkFile(**kwargs)
+    def create_bookmark_file(user, location, **kwargs):
+        _file = models.BookmarkFile(user=user, location=location, **kwargs)
         _file.save()
         return _file
+
+    @staticmethod
+    def create_bookmark(user, url, **kwargs):
+        bm = models.Bookmark(user=user, url=url, **kwargs)
+        bm.save()
+        return bm
+
+    @staticmethod
+    def create_bookmark_webpage(bookmark, url, title, **kwargs):
+        return models.BookmarkWebpage.objects.create(
+            bookmark=bookmark, url=url, title=title
+        )
 
 
 class BookmarkFileTestCase(TestCase):
@@ -132,29 +146,92 @@ class BookmarkTestCase(TestCase):
 
     def setUp(self) -> None:
         disconnect_signals(self.model)
+        disconnect_signals(models.BookmarkFile)
+
+        self.url = 'https://quotes.toscrape.com/'
+        self.user = ObjFactory.create_user()
+        self.obj = ObjFactory.create_bookmark(user=self.user, url=self.url)
 
     def test_domain_property(self):
-        pass
+        self.assertEqual(self.obj.domain, 'quotes.toscrape.com')
 
     def test_site_name_property(self):
-        pass
+        self.assertEqual(self.obj.site_name, 'toscrape')
 
     def test_summary_property(self):
-        pass
+        keys = ['url', 'title', 'domain', 'site_name']
+        self.assertTrue(
+            all([key in self.obj.summary for key in keys])
+        )
 
     def test_summary_flat_property(self):
-        pass
+        # validate the structure
+        flat = self.obj.summary_flat
+        self.assertIsInstance(flat, list)
+        for item in flat:
+            self.assertIsInstance(item, tuple)
+            self.assertEqual(len(item), 2)
+
+            text, weight = item
+            # TODO remove this line
+            if text is None: continue
+            self.assertIsInstance(text, str)
+            self.assertIsInstance(weight, int)
 
     def test_word_vector_property(self):
-        pass
+        # it depend on summary flat so i override it
+        obj = self.obj
+        obj.summary_flat = [
+            ('this is mhmd test', 10),
+            ('this test', 5),
+            {'mhmd', 50}
+        ]
+        vector = obj.word_vector
+        self.assertEqual(vector.get('this'), 15)
+        self.assertEqual(vector.get('is'), 10)
+        self.assertEqual(vector.get('mhmd'), 60)
+        self.assertEqual(vector.get('test'), 15)
 
     def test_store_word_vector_method(self):
-        pass
+        # it depend on word vector property
+        obj = self.obj
+        obj.word_vector = {
+            'this': 15, 'is': 10, 'mhmd': 60, 'test': 15,
+        }
+        # words created
+        obj.store_word_vector()
+        self.assertEqual(obj.words_weights.count(), 4)
+        # words not duplicated
+        obj.store_word_vector()
+        self.assertEqual(obj.words_weights.count(), 4)
+
+        # weights stored right
+        total = obj.words_weights.all().aggregate(total=Sum('weight'))['total']
+        self.assertEqual(total, 100)
+
+        for word, weight in obj.word_vector.items():
+            self.assertEqual(
+                obj.words_weights.get(word=word).weight, weight
+            )
 
     def test_instance_by_parent_class_method(self):
-        pass
+        data = {
+            'url': 'https://quotes.toscrape.com/',
+            'title': 'this is test url',
+            'more': 'this is more data'
+        }
+        bookmark_file = ObjFactory.create_bookmark_file(
+            user=self.user, location=ObjFactory.create_file('json', 5)
+        )
+        obj = self.model.instance_by_parent(bookmark_file, data.copy())
+
+        self.assertIs(obj.parent_file, bookmark_file)
+        self.assertEqual(obj.url, data['url'])
+        self.assertEqual(obj.title, data['title'])
+        self.assertDictEqual(obj.more_data, {'more': 'this is more data'})
 
     def test_cluster_bookmarks_class_method(self):
+        # should be refactored
         pass
 
 
@@ -164,11 +241,26 @@ class ScrapyResponseLogTestCase(TestCase):
     def setUp(self) -> None:
         disconnect_signals(self.model)
 
+        self.url = 'https://quotes.toscrape.com/'
+        self.obj = self.model.objects.create(
+            url=self.url,
+            status_code=200
+        )
+
     def test_store_file_method(self):
-        pass
+        content = 'this is content'
+        self.obj.store_file(content)
+
+        with open(self.obj.html_file.path, 'r') as f:
+            self.assertEqual(f.read(), content)
 
     def test_is_url_exists_class_method(self):
-        pass
+        self.assertTrue(self.obj.is_url_exists(self.url))
+
+        # expire it and check the exist after expiration
+        # self.obj.LIFE_LONG = timedelta(seconds=2)
+        sleep(5)
+        self.assertFalse(self.obj.is_url_exists(self.url, timedelta(seconds=2)))
 
 
 class BookmarkWebpageTestCase(TestCase):
@@ -177,6 +269,17 @@ class BookmarkWebpageTestCase(TestCase):
 
     def setUp(self) -> None:
         disconnect_signals(self.model)
+        disconnect_signals(models.Bookmark)
+
+        self.url = 'https://quotes.toscrape.com/'
+        self.title = 'this is title'
+        self.user = ObjFactory.create_user()
+        self.bookmark = ObjFactory.create_bookmark(
+            user=self.user, url=self.url)
+
+        self.webpage = ObjFactory.create_bookmark_webpage(
+            bookmark=self.bookmark, url=self.url, title=self.title
+        )
 
 
 class WebpageMetaTagTestCase(TestCase):
@@ -185,9 +288,79 @@ class WebpageMetaTagTestCase(TestCase):
     def setUp(self) -> None:
         disconnect_signals(self.model)
 
+        wb = BookmarkWebpageTestCase()
+        wb.setUp()
+
+        self.wb = wb
+        self.name = 'name'
+        self.content = 'yes, this is meta_tag'
+        self.obj = self.model.objects.create(
+            webpage=wb.webpage, name=self.name, content=self.content)
+
+    def test_save_method(self):
+        # is content cleaned
+        self.assertIsNotNone(self.obj.cleaned_content)
+        self.assertEqual(self.obj.cleaned_content,  'yes meta tag')
+
+    def test_weight_factor_property(self):
+        obj = self.obj
+        self.assertEqual(obj.weight_factor, 1)
+
+        obj.name = 'keywords'
+        self.assertEqual(obj.weight_factor, 5)
+
+    def test_bulk_create_class_method(self):
+        # just run to make sure not raise errors
+        old_count = self.wb.webpage.meta_tags.count()
+        self.model.bulk_create(
+            self.wb.webpage, tags=[
+                {'name': 'keywords', 'content': 'one, two, three'},
+                {'name': 'name', 'content': 'one, two, three'},
+                {'name': 'pla pla pla', 'content': 'one, two, three'},
+            ]
+        )
+        self.assertEqual(self.wb.webpage.meta_tags.count(), old_count + 3)
+
 
 class WebpageHeaderTestCase(TestCase):
     model = models.WebpageHeader
 
     def setUp(self) -> None:
         disconnect_signals(self.model)
+
+        wb = BookmarkWebpageTestCase()
+        wb.setUp()
+
+        self.wb = wb
+        self.text = 'yes, this is meta_tag'
+        self.level = 1
+        self.obj = self.model.objects.create(
+            webpage=wb.webpage, text=self.text, level=self.level)
+
+
+    def test_save_method(self):
+        # is content cleaned
+        self.assertIsNotNone(self.obj.cleaned_text)
+        self.assertEqual(self.obj.cleaned_text,  'yes meta tag')
+
+    def test_tagname_property(self):
+        self.assertEqual(self.obj.tagname, 'h1')
+
+    def test_weight_factor_property(self):
+        obj = self.obj
+        self.assertEqual(obj.weight_factor, 6)
+
+        obj.level = 6
+        self.assertEqual(obj.weight_factor, 1)
+
+    def test_bulk_create_class_method(self):
+        # just run to make sure not raise errors
+        old_count = self.wb.webpage.headers.count()
+        self.model.bulk_create(
+            self.wb.webpage, headers=[
+                {'h1': ['keywords', 'content', 'one, two, three']},
+                {'h2': ['keywords', 'content', 'one, two, three']},
+                {'h3': ['keywords', 'content', 'one, two, three']},
+            ]
+        )
+        self.assertEqual(self.wb.webpage.headers.count(), old_count + 9)
