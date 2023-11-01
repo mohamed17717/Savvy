@@ -9,6 +9,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator, FileExt
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.db.models import QuerySet
+from django.utils import timezone
 
 from crawler import settings as scrapy_settings
 
@@ -205,11 +206,12 @@ class Bookmark(models.Model):
         # Delete the old data , store new ones
         self.words_weights.all().delete()
 
-        words_weights = []
-        for word, weight in self.word_vector.items():
-            words_weights.append(
-                DocumentWordWeight(document=self, word=word, weight=weight)
+        words_weights = [
+            DocumentWordWeight(
+                document=self, word=word, weight=weight
             )
+            for word, weight in self.word_vector.items()
+        ]
 
         return DocumentWordWeight.objects.bulk_create(words_weights)
 
@@ -268,7 +270,7 @@ class ScrapyResponseLog(models.Model):
     html_file = models.FileField(
         upload_to='scrape/html/',
         validators=[
-            FileExtensionValidator(['.html']), FileSizeValidator(5),
+            FileExtensionValidator(['html']), FileSizeValidator(5),
         ],
         blank=True, null=True
     )
@@ -278,9 +280,11 @@ class ScrapyResponseLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    LIFE_LONG = timedelta(days=50)
+
     def save(self, *args, **kwargs):
-       self.full_clean()
-       super().save(*args, **kwargs)
+        self.full_clean()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.id} - [{self.status_code}] {self.url} -> ({self.bookmark.id})'
@@ -298,18 +302,25 @@ class ScrapyResponseLog(models.Model):
 
         with open(file_path, 'wb+') as f:
             dj_file = File(f)
-            dj_file.write(content)
+            dj_file.write(content.encode('utf8'))
             self.html_file = dj_file
             self.save()
 
         return file_path
 
     @classmethod
-    def is_url_exists(cls, url):
+    def is_url_exists(cls, url, life_long=None):
+        if life_long is None:
+            life_long = cls.LIFE_LONG
         # if passed 50 days then scrape it again
-        white_date = date.today() - timedelta(days=50)
+        # white_date = date.today() - cls.LIFE_LONG
+        # return cls.objects.filter(
+        #     url=url, error__isnull=True, created_at__date__gte=white_date
+        # ).exists()
+        
+        white_date = timezone.now() - life_long
         return cls.objects.filter(
-            url=url, error__isnull=True, created_at__date__gte=white_date
+            url=url, error__isnull=True, created_at__gte=white_date
         ).exists()
 
 
@@ -357,10 +368,7 @@ class WebpageMetaTag(models.Model):
 
     def save(self, *args, **kwargs) -> None:
         if self.content:
-            cleaner = TextCleaner(self.content)
-            # TODO cleaner return null
-            cleaner.full_clean()
-            self.cleaned_content = cleaner.text
+            self.cleaned_content = TextCleaner(self.content).full_clean().text
 
         return super().save(*args, **kwargs)
 
