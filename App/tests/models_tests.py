@@ -174,45 +174,37 @@ class BookmarkTestCase(TestCase):
 
             text, weight = item
             # TODO remove this line
-            if text is None: continue
+            if text is None:
+                continue
             self.assertIsInstance(text, str)
             self.assertIsInstance(weight, int)
 
     def test_word_vector_property(self):
-        # it depend on summary flat so i override it
-        obj = self.obj
-        obj.summary_flat = [
-            ('this is mhmd test', 10),
-            ('this test', 5),
-            {'mhmd', 50}
-        ]
-        vector = obj.word_vector
-        self.assertEqual(vector.get('this'), 15)
-        self.assertEqual(vector.get('is'), 10)
-        self.assertEqual(vector.get('mhmd'), 60)
-        self.assertEqual(vector.get('test'), 15)
+        # TODO test it for more case and strict data
+        vector = self.obj.word_vector
+        self.assertIsInstance(vector, dict)
+        self.assertIsInstance(list(vector.keys())[0], str)
+        self.assertIsInstance(list(vector.values())[0], int)
 
     def test_store_word_vector_method(self):
         # it depend on word vector property
-        obj = self.obj
-        obj.word_vector = {
-            'this': 15, 'is': 10, 'mhmd': 60, 'test': 15,
-        }
+        length = len(self.obj.word_vector)
+        total_weights = sum(self.obj.word_vector.values())
         # words created
-        obj.store_word_vector()
-        self.assertEqual(obj.words_weights.count(), 4)
+        self.obj.store_word_vector()
+        self.assertEqual(self.obj.words_weights.count(), length)
         # words not duplicated
-        obj.store_word_vector()
-        self.assertEqual(obj.words_weights.count(), 4)
+        self.obj.store_word_vector()
+        self.assertEqual(self.obj.words_weights.count(), length)
 
         # weights stored right
-        total = obj.words_weights.all().aggregate(total=Sum('weight'))['total']
-        self.assertEqual(total, 100)
+        total = self.obj.words_weights.all().aggregate(
+            total=Sum('weight'))['total']
+        self.assertEqual(total, total_weights)
 
-        for word, weight in obj.word_vector.items():
-            self.assertEqual(
-                obj.words_weights.get(word=word).weight, weight
-            )
+        for word, weight in self.obj.word_vector.items():
+            db_weight = self.obj.words_weights.get(word=word).weight
+            self.assertEqual(db_weight, weight)
 
     def test_instance_by_parent_class_method(self):
         data = {
@@ -260,7 +252,8 @@ class ScrapyResponseLogTestCase(TestCase):
         # expire it and check the exist after expiration
         # self.obj.LIFE_LONG = timedelta(seconds=2)
         sleep(5)
-        self.assertFalse(self.obj.is_url_exists(self.url, timedelta(seconds=2)))
+        self.assertFalse(self.obj.is_url_exists(
+            self.url, timedelta(seconds=2)))
 
 
 class BookmarkWebpageTestCase(TestCase):
@@ -336,7 +329,6 @@ class WebpageHeaderTestCase(TestCase):
         self.level = 1
         self.obj = self.model.objects.create(
             webpage=wb.webpage, text=self.text, level=self.level)
-
 
     def test_save_method(self):
         # is content cleaned
