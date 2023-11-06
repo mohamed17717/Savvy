@@ -251,9 +251,9 @@ class ScrapyResponseLogTestCase(TestCase):
 
         # expire it and check the exist after expiration
         # self.obj.LIFE_LONG = timedelta(seconds=2)
-        sleep(5)
+        sleep(1.5)
         self.assertFalse(self.obj.is_url_exists(
-            self.url, timedelta(seconds=2)))
+            self.url, timedelta(seconds=1)))
 
 
 class BookmarkWebpageTestCase(TestCase):
