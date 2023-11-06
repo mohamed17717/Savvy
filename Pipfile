@@ -36,6 +36,7 @@ humanize = "*"
 django-extensions = "*"
 pygraphviz = "*"
 django-debug-toolbar = "*"
+tblib = "*"
 
 [dev-packages]
 
