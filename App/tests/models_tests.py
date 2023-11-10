@@ -1,4 +1,6 @@
 import json
+import string
+import random
 from datetime import timedelta
 from time import sleep
 
@@ -76,6 +78,18 @@ class ObjFactory:
     def create_bookmark_webpage(bookmark, url, title, **kwargs):
         return models.BookmarkWebpage.objects.create(
             bookmark=bookmark, url=url, title=title
+        )
+
+    @staticmethod
+    def create_dummy_bookmark_file(user):
+        return ObjFactory.create_bookmark_file(
+            user=user, location=ObjFactory.create_file('json')
+        )
+
+    @staticmethod
+    def create_cluster(user):
+        return models.DocumentCluster.objects.create(
+            user=user, name=''.join(random.choices(string.ascii_letters, k=8))
         )
 
 
