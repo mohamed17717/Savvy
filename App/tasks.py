@@ -23,7 +23,7 @@ def crawl_bookmarks_task(bookmark_ids: list[int]):
 
     if os.getenv("DJANGO_TEST_MODE"):
         # make scrapy aware we inside a test env
-        command.append('--test-env')
+        command.extend(['--settings', 'dj.settings.settings_test'])
 
     try:
         result = subprocess.run(
