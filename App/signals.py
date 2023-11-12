@@ -6,15 +6,21 @@ from App import models, tasks
 
 @receiver(post_save, sender=models.BookmarkFile)
 def on_create_bookmark_file_extract_urls(sender, instance, created, **kwargs):
-    if created is False:
+    # TODO make location is not editable
+    if not created:
         return
 
     bookmarks = [
         models.Bookmark.instance_by_parent(instance, bookmark)
         for bookmark in instance.bookmarks_links
     ]
+    # TODO add batch size or batch the data in the task
     models.Bookmark.objects.bulk_create(bookmarks)
-    tasks.crawl_bookmarks_task.apply_async(kwargs={'bookmarks': bookmarks})
+    task = tasks.crawl_bookmarks_task.apply_async(
+        kwargs={'bookmark_ids': [bm.id for bm in bookmarks]})
+
+    instance.tasks.append(task.task_id)
+    instance.save()
 
 
 @receiver(pre_save, sender=models.BookmarkFile)
