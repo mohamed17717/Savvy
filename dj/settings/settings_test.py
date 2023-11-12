@@ -1,8 +1,8 @@
 from . import *
 
-import logging
-logging.disable(logging.CRITICAL)
-DEBUG = False
+# import logging
+# logging.disable(logging.CRITICAL)
+# DEBUG = False
 TEMPLATE_DEBUG = False
 PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.MD5PasswordHasher',
@@ -21,3 +21,5 @@ DATABASES = {
         'NAME': ':memory'
     }
 }
+
+os.environ['DJANGO_TEST_MODE'] = 'True'
