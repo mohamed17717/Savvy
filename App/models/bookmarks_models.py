@@ -48,6 +48,9 @@ class BookmarkFile(models.Model):
         ]
     )
 
+    # Holder
+    tasks = models.JSONField(default=list, blank=True)
+
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
