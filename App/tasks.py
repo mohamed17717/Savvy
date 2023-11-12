@@ -1,4 +1,4 @@
-import json
+import json, os
 import subprocess
 
 from celery import shared_task
@@ -20,6 +20,10 @@ def update_sent_state(sender=None, headers=None, **kwargs):
 @shared_task(queue='scrapy')
 def crawl_bookmarks_task(bookmark_ids: list[int]):
     command = ['python', 'manage.py', 'crawl_bookmarks', json.dumps(bookmark_ids)]
+
+    if os.getenv("DJANGO_TEST_MODE"):
+        # make scrapy aware we inside a test env
+        command.append('--test-env')
 
     try:
         result = subprocess.run(
