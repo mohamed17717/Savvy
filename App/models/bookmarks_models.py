@@ -305,7 +305,11 @@ class ScrapyResponseLog(models.Model):
 
         with open(file_path, 'wb+') as f:
             dj_file = File(f)
-            dj_file.write(content.encode('utf8'))
+
+            if type(content) is str:
+                content = content.encode('utf8')
+
+            dj_file.write(content)
             self.html_file = dj_file
             self.save()
 
