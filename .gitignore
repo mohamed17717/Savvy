@@ -128,3 +128,5 @@ resources/**/*.txt*
 
 .vscode/
 *.html
+
+*.rdb
