@@ -25,19 +25,26 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'django_extensions',
     'debug_toolbar',
+    'silk',
+    'django_prometheus',
 
 ]
 
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'silk.middleware.SilkyMiddleware',
+
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    
+
     'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware',
 
 ]
 
@@ -77,8 +84,9 @@ SWAGGER_SETTINGS = {
     'JSON_EDITOR': True,
 }
 
-INTERNAL_IPS = [
-    # ...
-    "127.0.0.1",
-    # ...
-]
+INTERNAL_IPS = ['127.0.0.1']
+
+PROMETHEUS_EXPORT_MIGRATIONS = True
+
+SILKY_PYTHON_PROFILER = True
+SILKY_META = True
