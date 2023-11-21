@@ -8,9 +8,12 @@ from .swagger import swagger_urls
 urlpatterns = [
     path('bm/', include('App.urls', namespace='app')),
     path('users/', include('Users.urls', namespace='users')),
+
+    path('silk/', include('silk.urls', namespace='silk')),
+    path('', include('django_prometheus.urls')),
     path('api-auth/', include('rest_framework.urls')),
     path('admin/', admin.site.urls),
-    path("__debug__/", include("debug_toolbar.urls")),
+    path('__debug__/', include('debug_toolbar.urls')),
 ]
 
 
