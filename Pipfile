@@ -37,6 +37,8 @@ django-extensions = "*"
 pygraphviz = "*"
 django-debug-toolbar = "*"
 tblib = "*"
+django-prometheus = "*"
+django-silk = "*"
 
 [dev-packages]
 
