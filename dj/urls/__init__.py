@@ -8,15 +8,20 @@ from .swagger import swagger_urls
 urlpatterns = [
     path('bm/', include('App.urls', namespace='app')),
     path('users/', include('Users.urls', namespace='users')),
-
-    path('silk/', include('silk.urls', namespace='silk')),
-    path('', include('django_prometheus.urls')),
-    path('api-auth/', include('rest_framework.urls')),
-    path('admin/', admin.site.urls),
-    path('__debug__/', include('debug_toolbar.urls')),
 ]
 
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    urlpatterns += swagger_urls
+    urlpatterns += [
+        path('api-auth/', include('rest_framework.urls')),
+        path('admin/', admin.site.urls),
+
+        # monitoring
+        path('', include('django_prometheus.urls')),
+        path('silk/', include('silk.urls', namespace='silk')),
+        path('__debug__/', include('debug_toolbar.urls')),
+
+        *swagger_urls,
+        *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
+        *static(settings.STATIC_URL, document_root=settings.STATIC_ROOT),
+    ]
