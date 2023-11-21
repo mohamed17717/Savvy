@@ -22,4 +22,6 @@ DATABASES = {
     }
 }
 
+CELERY_BROKER_URL = 'redis://localhost:6379/1'
+
 os.environ['DJANGO_TEST_MODE'] = 'True'
