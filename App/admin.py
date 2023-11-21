@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from App import models
+from silk import models as silky_models
 
 
 admin.site.register(models.BookmarkFile)
@@ -12,3 +13,8 @@ admin.site.register(models.WebpageHeader)
 admin.site.register(models.DocumentWordWeight)
 admin.site.register(models.DocumentCluster)
 admin.site.register(models.ClusterTag)
+
+admin.site.register(silky_models.Request)
+admin.site.register(silky_models.Response)
+admin.site.register(silky_models.SQLQuery)
+admin.site.register(silky_models.Profile)
