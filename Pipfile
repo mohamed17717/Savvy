@@ -39,6 +39,7 @@ django-debug-toolbar = "*"
 tblib = "*"
 django-prometheus = "*"
 django-silk = "*"
+django-cors-headers = "*"
 
 [dev-packages]
 
