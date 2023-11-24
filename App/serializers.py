@@ -88,6 +88,15 @@ class BookmarkDetailsSerializer(serializers.ModelSerializer):
     webpages = BookmarkWebpageDetailsSerializer(read_only=True, many=True)
     clusters = DocumentClusterWithTagsSerializer(read_only=True, many=True)
 
+    title = serializers.SerializerMethodField()
+
+    def get_title(self, obj):
+        return (
+            obj.title
+            or (obj.webpages.last() and obj.webpages.last().title)
+            or obj.url
+        )
+
     class Meta:
         model = models.Bookmark
         fields = '__all__'
