@@ -62,7 +62,7 @@ class ClusterTagSerializer(serializers.ModelSerializer):
 
 # Details Serializers
 
-class DocumentClusterDetailsSerializer(serializers.ModelSerializer):
+class DocumentClusterWithTagsSerializer(serializers.ModelSerializer):
     tags = ClusterTagSerializer(read_only=True, many=True)
 
     class Meta:
@@ -86,8 +86,17 @@ class BookmarkDetailsSerializer(serializers.ModelSerializer):
     words_weights = DocumentWordWeightSerializer(read_only=True, many=True)
 
     webpages = BookmarkWebpageDetailsSerializer(read_only=True, many=True)
-    clusters = DocumentClusterDetailsSerializer(read_only=True, many=True)
+    clusters = DocumentClusterWithTagsSerializer(read_only=True, many=True)
 
     class Meta:
         model = models.Bookmark
+        fields = '__all__'
+
+
+class DocumentClusterDetailsSerializer(serializers.ModelSerializer):
+    tags = ClusterTagSerializer(read_only=True, many=True)
+    bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = models.DocumentCluster
         fields = '__all__'
