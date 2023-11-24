@@ -253,7 +253,8 @@ class Bookmark(models.Model):
                 user=user, name=random_string(12))
             cluster_object.bookmarks.set(cluster)
             clusters_objects.append(cluster_object)
-        # DocumentCluster.objects.bulk_create(clusters_objects)
+            cluster_object.refresh_labels()
+
         return clusters_objects
 
 
