@@ -1,5 +1,4 @@
 from functools import partial
-from typing import Any
 
 from django.db import models
 from django.db.models.signals import post_save, pre_save
@@ -24,11 +23,6 @@ class SignalsCustomManager(models.Manager):
         for signal in signals.values():
             for i in objs:
                 signal(instance=i)
-
-    def create(self, **kwargs: Any) -> Any:
-        obj = super().create(**kwargs)
-        self._trigger(obj)
-        return obj
 
     def bulk_create(self, objs, **kwargs):
         result = super().bulk_create(objs, **kwargs)
