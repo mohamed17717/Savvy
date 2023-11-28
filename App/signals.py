@@ -31,11 +31,12 @@ def on_save_bookmark_file_validate_file_content(sender, instance, **kwargs):
 @receiver(post_save, sender=models.DocumentWordWeight)
 def on_create_word_update_tags(sender, instance, created, **kwargs):
     if created:
-        tag, _ = models.Tag.objects.get_or_create(
+        tag, created = models.Tag.objects.get_or_create(
             user=instance.bookmark.user,
             name=instance.word
         )
 
-        tag.bookmarks.add(instance.bookmark)
+        print(f'({tag.name}) .. {created=} -> {tag.weight=}, {instance.weight=}')
+        # tag.bookmarks.add(instance.bookmark)
         tag.weight += instance.weight
         tag.save()
