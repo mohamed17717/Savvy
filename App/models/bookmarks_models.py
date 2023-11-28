@@ -211,7 +211,7 @@ class Bookmark(models.Model):
 
         words_weights = [
             DocumentWordWeight(
-                document=self, word=word, weight=weight
+                bookmark=self, word=word, weight=weight
             )
             for word, weight in self.word_vector.items()
         ]
@@ -253,7 +253,7 @@ class Bookmark(models.Model):
                 user=user, name=random_string(12))
             cluster_object.bookmarks.set(cluster)
             clusters_objects.append(cluster_object)
-            cluster_object.refresh_labels()
+            # cluster_object.refresh_labels()
 
         return clusters_objects
 
