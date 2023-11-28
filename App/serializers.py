@@ -54,16 +54,19 @@ class DocumentClusterSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class ClusterTagSerializer(serializers.ModelSerializer):
+class TagSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.ClusterTag
+        model = models.Tag
         fields = '__all__'
+        extra_kwargs = {
+            'user': {'read_only': True}
+        }
 
 
 # Details Serializers
 
 class DocumentClusterWithTagsSerializer(serializers.ModelSerializer):
-    tags = ClusterTagSerializer(read_only=True, many=True)
+    # tags = ClusterTagSerializer(read_only=True, many=True)
 
     class Meta:
         model = models.DocumentCluster
@@ -103,7 +106,7 @@ class BookmarkDetailsSerializer(serializers.ModelSerializer):
 
 
 class DocumentClusterDetailsSerializer(serializers.ModelSerializer):
-    tags = ClusterTagSerializer(read_only=True, many=True)
+    # tags = ClusterTagSerializer(read_only=True, many=True)
     bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
 
     class Meta:
