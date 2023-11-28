@@ -20,7 +20,7 @@ class ClusterAPI(RLViewSet):
     serializer_class = serializers.DocumentClusterDetailsSerializer
 
     def get_queryset(self):
-        return self.request.user.clusters.all().prefetch_related('tags', 'bookmarks')
+        return self.request.user.clusters.all().prefetch_related('bookmarks')
 
 
 class BookmarkAPI(RLViewSet):
