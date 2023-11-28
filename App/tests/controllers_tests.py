@@ -181,11 +181,11 @@ class TextCleanerTestCase(TestCase):
 
 class CosineSimilarityCalculatorTestCase(TestCase):
     def setUp(self) -> None:
-        documents = [
+        rcs = [
             {'red': 5, 'blue': 4},
             {'doctor': 2, 'blood': 11, 'red': 50},
         ]
-        self.obj = CosineSimilarityCalculator(documents)
+        self.obj = CosineSimilarityCalculator(rcs)
 
     def test__unique_words_property(self):
         keys = ['red', 'blue', 'doctor', 'blood']
@@ -209,12 +209,12 @@ class CosineSimilarityCalculatorTestCase(TestCase):
 
 class ClusterMakerTestCase(TestCase):
     def setUp(self) -> None:
-        documents = ['doc1', 'doc2']
+        rcs = ['doc1', 'doc2']
         similarity = [
             [1, 0.76204993],
             [0.76204993, 1]
         ]
-        self.obj = ClusterMaker(documents, similarity, 0.4)
+        self.obj = ClusterMaker(rcs, similarity, 0.4)
 
     def test_clusters_method(self):
         self.obj.clusters()
