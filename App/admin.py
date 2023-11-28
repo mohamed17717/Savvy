@@ -12,7 +12,7 @@ admin.site.register(models.WebpageMetaTag)
 admin.site.register(models.WebpageHeader)
 admin.site.register(models.DocumentWordWeight)
 admin.site.register(models.DocumentCluster)
-admin.site.register(models.ClusterTag)
+admin.site.register(models.Tag)
 
 admin.site.register(silky_models.Request)
 admin.site.register(silky_models.Response)
