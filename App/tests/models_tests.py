@@ -370,3 +370,56 @@ class WebpageHeaderTestCase(TestCase):
             ]
         )
         self.assertEqual(self.wb.webpage.headers.count(), old_count + 9)
+
+
+class TagTestCase(TestCase):
+    model = models.Tag
+
+    def setUp(self) -> None:
+        self.user = ObjFactory.create_user()
+        self.bookmark = ObjFactory.create_bookmark(
+            user=self.user, url='https://google.com')
+
+    def test_create_word_reflect_tag(self):
+        word, weight1 = 'hello', 10
+        word_obj = models.DocumentWordWeight(
+            bookmark=self.bookmark, word=word, weight=weight1
+        )
+        word_obj.save()
+
+        # check tag created with word
+        tag = models.Tag.objects.filter(user=self.user, name=word)
+        self.assertEqual(tag.count(), 1)
+        self.assertEqual(tag[0].weight, weight1)
+
+        # create again and make sure tag merged not duplicated
+        word, weight2 = 'hello', 3
+        word_obj = models.DocumentWordWeight.objects.create(
+            bookmark=self.bookmark, word=word, weight=weight2
+        )
+
+        tag = models.Tag.objects.filter(user=self.user, name=word)
+        self.assertEqual(tag.count(), 1)
+        self.assertEqual(tag[0].weight, weight1 + weight2)
+
+        # check bulk create words reflect tag
+        words = [
+            {'word': 'fun', 'weight': 10},
+            {'word': 'hi', 'weight': 8},
+            {'word': 'you', 'weight': 3},
+            {'word': 'me', 'weight': 4},
+        ]
+        words_objs = models.DocumentWordWeight.objects.bulk_create([
+            models.DocumentWordWeight(bookmark=self.bookmark, **word)
+            for word in words
+        ])
+
+        tags = models.Tag.objects.filter(user=self.user, name__in=[
+            word_obj.word for word_obj in words_objs
+        ])
+
+        self.assertEqual(tags.count(), 4)
+        self.assertEqual(
+            tags.aggregate(total=Sum('weight'))['total'],
+            sum([word_obj.weight for word_obj in words_objs])
+        )
