@@ -233,6 +233,15 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
             
         return weights
 
+    @property
+    def total_weight(self):
+        assert self.instance, 'You need to set an instance'
+
+        total = {}
+        for weight in self.data.values():
+            total = self.__merge_weights(total, weight)
+        return total
+
     class Meta:
         model = models.Bookmark
         fields = [
