@@ -147,11 +147,15 @@ class Bookmark(models.Model):
         return self.domain.split('.')[-2]
 
     @property
+    def webpage(self):
+        return self.webpages.order_by('-id').first()
+
+    @property
     def summary(self) -> dict:
         """Return the minimum text/phrases you
         will use in weighting and processing
         """
-        wp = self.webpages.order_by('-id').first()
+        wp = self.webpage
         result = {
             # TODO get the useful text from the url
             'url': (self.url, 5),
