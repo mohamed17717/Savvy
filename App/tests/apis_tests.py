@@ -199,3 +199,68 @@ class ClusterAPITestCase(APITestCase):
         response = self.client.get(endpoint)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class TagsMostWeightedListAPITestCase(APITestCase):
+    model = models.Tag
+
+    def setUp(self) -> None:
+        user = ObjFactory.create_user(username='mhameho')
+        knox_authorize(user, self)
+
+        self.user = user
+        self.bookmark = ObjFactory.create_bookmark(
+            user, url='https://google.com')
+        self.tag = models.Tag.objects.create(
+            user=self.user, name='hello', weight=10
+        )
+        self.tag.bookmarks.add(self.bookmark)
+
+    def test_tag_read(self):
+        endpoint = reverse('app:tag_read-detail', args=(self.tag.pk,))
+        response = self.client.get(endpoint)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_tag_list(self):
+        endpoint = reverse('app:tag_read-list')
+        response = self.client.get(endpoint)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_tag_list_unowned_tag(self):
+        other_user = ObjFactory.create_user(username='the_other')
+        other_bookmark = ObjFactory.create_bookmark(
+            other_user, url='https://google.com')
+        other_tag = models.Tag.objects.create(
+            user=other_user, name='hello', weight=10
+        )
+        other_tag.bookmarks.add(other_bookmark)
+
+        endpoint = reverse('app:tag_read-detail', args=(other_tag.pk,))
+        response = self.client.get(endpoint)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_tag_most_weighted_list(self):
+        endpoint = reverse('app:tag_most_weighted')
+        response = self.client.get(endpoint)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_tag_change_alias_name(self):
+        endpoint = reverse('app:tag_alias_name', args=(self.tag.pk,))
+        alias_name = 'This is new alias'
+        response = self.client.patch(endpoint, {'alias_name': alias_name})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.tag.refresh_from_db()
+        self.assertEqual(self.tag.alias_name, alias_name)
+
+        # clear alias name
+        response = self.client.patch(endpoint, json.dumps(
+            {'alias_name': None}), content_type="application/json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.tag.refresh_from_db()
+        self.assertIsNone(self.tag.alias_name)
