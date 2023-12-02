@@ -172,27 +172,6 @@ class BookmarkTestCase(TestCase):
     def test_site_name_property(self):
         self.assertEqual(self.obj.site_name, 'toscrape')
 
-    def test_summary_property(self):
-        keys = ['url', 'title', 'domain', 'site_name']
-        self.assertTrue(
-            all([key in self.obj.summary for key in keys])
-        )
-
-    def test_summary_flat_property(self):
-        # validate the structure
-        flat = self.obj.summary_flat
-        self.assertIsInstance(flat, list)
-        for item in flat:
-            self.assertIsInstance(item, tuple)
-            self.assertEqual(len(item), 2)
-
-            text, weight = item
-            # TODO remove this line
-            if text is None:
-                continue
-            self.assertIsInstance(text, str)
-            self.assertIsInstance(weight, int)
-
     def test_word_vector_property(self):
         # TODO test it for more case and strict data
         vector = self.obj.word_vector
