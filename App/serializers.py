@@ -69,6 +69,9 @@ class TagUpdateAliasNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Tag
         fields = ['alias_name']
+        extra_kwargs = {
+            'alias_name': {'allow_null': True}
+        }
 
 
 # ------------------------ Details Serializers ------------------------ #
