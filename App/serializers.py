@@ -179,17 +179,26 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
     def get_url(self, obj) -> Dict[str, int]:
         WEIGHT_FACTOR = 1
 
-        url = obj.url or obj.webpage.url # TODO if urls are not the same do something
-        cleaned = self.__clean_url(url)
+        # TODO if urls are not the same do something
+        wp = obj.webpage
+        wp_url = wp and wp.url
+        url = obj.url or wp_url
 
+        cleaned = self.__clean_url(url)
         return self.__weight(cleaned, WEIGHT_FACTOR)
 
     def get_title(self, obj) -> Dict[str, int]:
         WEIGHT_FACTOR = 1
 
-        title = obj.title or obj.webpage.title # TODO if titles are not the same do something
-        cleaned = self.__clean_text(title)
+        # TODO if titles are not the same do something
+        wp = obj.webpage
+        wp_title = wp and wp.title
+        title = obj.title or wp_title
 
+        if title is None:
+            return {}
+
+        cleaned = self.__clean_text(title)
         return self.__weight(cleaned, WEIGHT_FACTOR)
     
     def get_domain(self, obj) -> Dict[str, int]:
@@ -205,7 +214,11 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
     def get_webpage_headers(self, obj) -> Dict[str, int]:
         WEIGHT_FACTOR = 1
 
-        headers = obj.webpage.headers.all()
+        wp = obj.webpage
+        if wp is None:
+            return {}
+
+        headers = wp.headers.all()
         weights = {}
         for header in headers:
             cleaned = self.__clean_text(header.text)
@@ -219,7 +232,11 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
     def get_webpage_meta_data(self, obj) -> Dict[str, int]:
         WEIGHT_FACTOR = 1
 
-        meta_tags = obj.webpage.meta_tags.all()
+        wp = obj.webpage
+        if wp is None:
+            return {}
+
+        meta_tags = wp.meta_tags.all()
         weights = {}
         for meta in meta_tags:
             if meta.content is None:
