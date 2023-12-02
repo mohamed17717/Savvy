@@ -36,7 +36,6 @@ def on_create_word_update_tags(sender, instance, created, **kwargs):
             name=instance.word
         )
 
-        print(f'({tag.name}) .. {created=} -> {tag.weight=}, {instance.weight=}')
-        # tag.bookmarks.add(instance.bookmark)
+        tag.bookmarks.add(instance.bookmark)
         tag.weight += instance.weight
         tag.save()
