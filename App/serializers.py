@@ -65,10 +65,16 @@ class TagSerializer(serializers.ModelSerializer):
         }
 
 
-# Details Serializers
+class TagUpdateAliasNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Tag
+        fields = ['alias_name']
+
+
+# ------------------------ Details Serializers ------------------------ #
 
 class DocumentClusterWithTagsSerializer(serializers.ModelSerializer):
-    # tags = ClusterTagSerializer(read_only=True, many=True)
+    tags = TagSerializer(read_only=True, many=True)    
 
     class Meta:
         model = models.DocumentCluster
@@ -108,11 +114,19 @@ class BookmarkDetailsSerializer(serializers.ModelSerializer):
 
 
 class DocumentClusterDetailsSerializer(serializers.ModelSerializer):
-    # tags = ClusterTagSerializer(read_only=True, many=True)
+    tags = TagSerializer(read_only=True, many=True)
     bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
 
     class Meta:
         model = models.DocumentCluster
+        fields = '__all__'
+
+
+class TagDetailsSerializer(serializers.ModelSerializer):
+    bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = models.Tag
         fields = '__all__'
 
 
