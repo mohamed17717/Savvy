@@ -151,61 +151,9 @@ class Bookmark(models.Model):
         return self.webpages.order_by('-id').first()
 
     @property
-    def summary(self) -> dict:
-        """Return the minimum text/phrases you
-        will use in weighting and processing
-        """
-        wp = self.webpage
-        result = {
-            # TODO get the useful text from the url
-            'url': (self.url, 5),
-            'title': (self.title, 5),
-            'domain': (self.domain, 4),
-            'site_name': (self.site_name, 4),
-        }
-        if wp:
-            result.update({
-                'webpage': {
-                    'url': (wp.url, 5),
-                    'title': (wp.title, 5),
-                    # NOTE already cleaned
-                    'headers': {
-                        h.tagname: (h.cleaned_text, 2 * h.weight_factor)
-                        for h in wp.headers.all()
-                    },
-                    # NOTE already cleaned
-                    'meta_data': [
-                        # (meta.cleaned_content, 3*meta.weight_factor)
-                        (meta.content, 3*meta.weight_factor)
-                        for meta in wp.meta_tags.all()
-                    ]
-                }
-            })
-        return result
-
-    @property
-    def summary_flat(self) -> list:
-        # TODO skip nulls
-        summary = self.summary
-        wp = summary.pop('webpage', {})
-        headers = wp.pop('headers', {})
-        meta = wp.pop('meta_data', [])
-        return [
-            *summary.values(), *wp.values(), *headers.values(), *meta
-        ]
-
-    @property
     def word_vector(self) -> dict:
-        vector = {}
-        for text, weight in self.summary_flat:
-            if text is None:
-                continue
-
-            for word in text.split(' '):
-                vector.setdefault(word, 0)
-                vector[word] += weight
-
-        return vector
+        from App.serializers import BookmarkWeightingSerializer
+        return BookmarkWeightingSerializer(self).total_weight
 
     # methods
     def store_word_vector(self):
