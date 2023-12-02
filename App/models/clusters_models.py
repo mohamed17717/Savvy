@@ -21,9 +21,11 @@ class DocumentCluster(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # @property
-    # def tags(self):
-    #     return ...
+    @property
+    def tags(self):
+        tags = Tag.objects.filter(
+            bookmarks__in=self.bookmarks.all()).distinct()
+        return tags
 
     @property
     def general_words_vector(self):
@@ -34,18 +36,6 @@ class DocumentCluster(models.Model):
                 general_vector[word] += weight
 
         return general_vector
-
-    def refresh_labels(self):
-        general_vector = self.general_words_vector
-
-        # sort words desc on its general weight
-        words = sorted(general_vector.keys(), key=lambda i: -general_vector[i])
-
-        # 2/3 of words consider tops but less than 10
-        MAX_WORDS_COUNT = 10
-        top_words_count = len(words) * 2 // 3
-        top_words_count = min(MAX_WORDS_COUNT, top_words_count)
-        top_words = words[:top_words_count]
 
 
 class Tag(models.Model):
