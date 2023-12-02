@@ -44,7 +44,7 @@ class TagAPI(RLViewSet):
 
 
 class TagUpdateAliasNameAPI(UpdateAPIView):
-    serializer_class = serializers.TagAliasNameSerializer
+    serializer_class = serializers.TagUpdateAliasNameSerializer
 
     def get_queryset(self):
         user = self.request.user
