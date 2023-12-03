@@ -319,12 +319,6 @@ class WebpageMetaTag(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    # TODO may need this
-    # ALLOWED_NAMES = [
-    #     'name', 'application-name', 'title', 'site_name', 'description', 'keywords',
-    #     'language', 'locale', 'image', 'updated_time', 'site', 'creator', 'url'
-    # ]
-
     def save(self, *args, **kwargs) -> None:
         if self.content:
             self.cleaned_content = TextCleaner(self.content).full_clean().text
@@ -332,11 +326,53 @@ class WebpageMetaTag(models.Model):
         return super().save(*args, **kwargs)
 
     @property
-    def weight_factor(self) -> int:
+    def weight_factor(self) -> int:        
         # TODO make sure name saved lower case and without and colon prefix or suffix
+        name = self.name.lower().split(':')[-1]
         factors_map = {
-            'keywords': 5
+            # Web and SEO Metadata
+            'site': 2,
+            'apple-mobile-web-app-title': 1,
+            'tweetmeme-title': 1,
+            'alt': 3,
+            'application-name': 1,
+            'site_name': 2,
+            'handheldfriendly': 1,
+            'description': 5,
+            'keywords': 5,
+            'news_keywords': 5,
+
+            # Content Identification and Description
+            'name': 4,
+            'title': 5,
+            'summary': 5,
+            'subtitle': 4,
+            'topic': 5,
+            'subject': 4,
+            'category': 4,
+            'classification': 3,
+            'type': 3,
+            'medium': 3,
+            'coverage': 3,
+            'distribution': 2,
+            'directory': 2,
+            'pagename': 4,
+            'rating': 2,
+            'target': 3,
+            
+            # Authorship and Ownership
+            'artist': 3,
+            'author': 4,
+            'creator': 4,
+            'designer': 3,
+            'owner': 2,
+            'copyright': 1,
+            
+            # Specific Media or Content Types
+            'album': 3,
+            'image': 2
         }
+
         return factors_map.get(self.name, 1)
 
     @classmethod
@@ -379,7 +415,14 @@ class WebpageHeader(models.Model):
 
     @property
     def weight_factor(self) -> int:
-        return 7 - self.level
+        return {
+            'h1': 9,
+            'h2': 7,
+            'h3': 5,
+            'h4': 4,
+            'h5': 3,
+            'h6': 2
+        }.get(self.tagname, 1)
 
     @classmethod
     def bulk_create(cls, webpage: BookmarkWebpage, headers: list[dict]):

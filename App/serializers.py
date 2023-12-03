@@ -194,7 +194,7 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
         return cleaned
 
     def get_url(self, obj) -> Dict[str, int]:
-        WEIGHT_FACTOR = 1
+        WEIGHT_FACTOR = 6
 
         # TODO if urls are not the same do something
         wp = obj.webpage
@@ -205,7 +205,7 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
         return self.__weight(cleaned, WEIGHT_FACTOR)
 
     def get_title(self, obj) -> Dict[str, int]:
-        WEIGHT_FACTOR = 1
+        WEIGHT_FACTOR = 10
 
         # TODO if titles are not the same do something
         wp = obj.webpage
@@ -219,12 +219,12 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
         return self.__weight(cleaned, WEIGHT_FACTOR)
     
     def get_domain(self, obj) -> Dict[str, int]:
-        WEIGHT_FACTOR = 1
+        WEIGHT_FACTOR = 3
         domain = obj.domain
         return self.__weight(domain, WEIGHT_FACTOR)
 
     def get_site_name(self, obj) -> Dict[str, int]:
-        WEIGHT_FACTOR = 1
+        WEIGHT_FACTOR = 3
         site_name = obj.site_name
         return self.__weight(site_name, WEIGHT_FACTOR)
 
