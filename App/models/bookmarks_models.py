@@ -118,11 +118,12 @@ class Bookmark(models.Model):
         related_name='bookmarks', blank=True, null=True
     )
 
+    # TODO make url and title max length shorter
     # Required
-    url = models.URLField()
+    url = models.URLField(max_length=2048)
 
     # Optionals
-    title = models.CharField(max_length=512, blank=True, null=True)
+    title = models.CharField(max_length=2048, blank=True, null=True)
     more_data = models.JSONField(blank=True, null=True)
 
     # Defaults
