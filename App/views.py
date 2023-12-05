@@ -52,6 +52,7 @@ class TagUpdateAliasNameAPI(UpdateAPIView):
 
 
 class TagMostWeightedListAPI(GenericAPIView):
+    # TODO move this endpoint to TagAPI list method instead
     serializer_class = serializers.TagSerializer
     TAGS_COUNT = 50
 
