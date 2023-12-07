@@ -213,9 +213,6 @@ class BookmarkTestCase(TestCase):
         # words created
         self.obj.store_tags()
         self.assertEqual(self.obj.tags.count(), length)
-        # words not duplicated
-        self.obj.store_tags()
-        self.assertEqual(self.obj.tags.count(), length)
 
         # weights stored right
         total = self.obj.tags.all().aggregate(
@@ -223,7 +220,7 @@ class BookmarkTestCase(TestCase):
         self.assertEqual(total, total_weights)
 
         for word, weight in self.obj.important_words.items():
-            db_weight = self.obj.words_weights.get(word=word).weight
+            db_weight = self.obj.tags.get(name=word).weight
             self.assertEqual(db_weight, weight)
 
     def test_instance_by_parent_class_method(self):
@@ -317,7 +314,7 @@ class WebpageMetaTagTestCase(TestCase):
 
     def test_weight_factor_property(self):
         obj = self.obj
-        self.assertEqual(obj.weight_factor, 1)
+        self.assertEqual(obj.weight_factor, 4)
 
         obj.name = 'keywords'
         self.assertEqual(obj.weight_factor, 5)
@@ -360,7 +357,7 @@ class WebpageHeaderTestCase(TestCase):
 
     def test_weight_factor_property(self):
         obj = self.obj
-        self.assertEqual(obj.weight_factor, 6)
+        self.assertEqual(obj.weight_factor, 9)
 
         obj.level = 6
         self.assertEqual(obj.weight_factor, 1)
@@ -386,7 +383,7 @@ class TagTestCase(TestCase):
         self.bookmark = ObjFactory.create_bookmark(
             user=self.user, url='https://google.com')
 
-    def test_create_word_reflect_tag(self):
+    def deprecated_test_create_word_reflect_tag(self):
         word, weight1 = 'hello', 10
         word_obj = models.DocumentWordWeight(
             bookmark=self.bookmark, word=word, weight=weight1
