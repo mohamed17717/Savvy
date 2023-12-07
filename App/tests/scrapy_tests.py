@@ -11,7 +11,6 @@ from .models_tests import ObjFactory
 
 class BookmarkSpiderTestCase(TestCase):
     def setUp(self) -> None:
-        print(f'\n\n{settings.DATABASES["default"]["NAME"]}\n\n')
         self.urls = [
             'https://dev.to/koladev/authentication-in-tests-with-drf-4jin',
             # 'https://dev.to/devteam/what-was-your-win-this-week-30k1',

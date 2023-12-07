@@ -120,7 +120,6 @@ class BookmarkFileUploadAPITestCase(APITestCase):
             sleep(WAIT)
 
             task = AsyncResult(task_id)
-            print(f'{task_id=}, {task.state=}, ({try_number=}), {MAX_TRIES=}')
             if task.state.upper() == 'SUCCESS':
                 task_status = True
                 break

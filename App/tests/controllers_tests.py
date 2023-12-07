@@ -125,7 +125,7 @@ class TextCleanerTestCase(TestCase):
         self.assertEqual(c.text, expected)
 
     def test_longer_than_method(self):
-        text = 'hello fjdshakclsowifjvmxssajkcdsadkj word'
+        text = 'hello fjdshakclsowifjvmxssajkcdsadkj world'
         expected = 'hello  world'
 
         c = TextCleaner(text)

@@ -62,10 +62,6 @@ def tokenize_phrase():
     # Tokenizer in deep
     sequence = 'Using transformers network is simple'
     res = tokenizer(sequence)
-    print(res)
     tokens = tokenizer.tokenize(sequence)
-    print(tokens)
     ids = tokenizer.convert_tokens_to_ids(tokens)
-    print(ids)
     decode_string = tokenizer.decode(ids)
-    print(decode_string)
