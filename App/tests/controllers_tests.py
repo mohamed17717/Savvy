@@ -63,7 +63,7 @@ class TextCleanerTestCase(TestCase):
 
     def test_hashtags_method(self):
         text = 'i like #pizza'
-        expected = 'i like'
+        expected = 'i like pizza'
 
         c = TextCleaner(text)
         c.hashtags()
@@ -121,6 +121,15 @@ class TextCleanerTestCase(TestCase):
 
         c = TextCleaner(text)
         c.shorter_than()
+
+        self.assertEqual(c.text, expected)
+
+    def test_longer_than_method(self):
+        text = 'hello fjdshakclsowifjvmxssajkcdsadkj word'
+        expected = 'hello  world'
+
+        c = TextCleaner(text)
+        c.longer_than()
 
         self.assertEqual(c.text, expected)
 
