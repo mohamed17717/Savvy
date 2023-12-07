@@ -156,6 +156,22 @@ class Bookmark(models.Model):
         from App.serializers import BookmarkWeightingSerializer
         return BookmarkWeightingSerializer(self).total_weight
 
+    @property
+    def important_words(self) -> dict:
+        word_vector = self.word_vector
+
+        top_weights_ranks = 5
+        weights = sorted(set(word_vector.values()))
+        if len(weights) > top_weights_ranks:
+            weight_break_point = weights[-top_weights_ranks:][0]
+            word_vector = filter(
+                lambda item: item[1] >= weight_break_point, word_vector.items())
+            word_vector = {
+                k: v for k, v in word_vector
+            }
+
+        return word_vector
+
     # methods
     def store_word_vector(self):
         from . import DocumentWordWeight
@@ -170,6 +186,25 @@ class Bookmark(models.Model):
         ]
 
         return DocumentWordWeight.objects.bulk_create(words_weights)
+
+    def store_tags(self):
+        # TODO make this more efficient
+        from . import Tag
+
+        tags = []
+        for word, weight in self.important_words.items():
+            tag, _ = Tag.objects.get_or_create(
+                user=self.user,
+                name=word
+            )
+
+            tag.bookmarks.add(self)
+            tag.weight += weight
+            tag.save()
+
+            tags.append(tag)
+
+        return tags
 
     # shortcuts
     @classmethod
@@ -272,12 +307,7 @@ class ScrapyResponseLog(models.Model):
     def is_url_exists(cls, url, life_long=None):
         if life_long is None:
             life_long = cls.LIFE_LONG
-        # if passed 50 days then scrape it again
-        # white_date = date.today() - cls.LIFE_LONG
-        # return cls.objects.filter(
-        #     url=url, error__isnull=True, created_at__date__gte=white_date
-        # ).exists()
-        
+
         white_date = timezone.now() - life_long
         return cls.objects.filter(
             url=url, error__isnull=True, created_at__gte=white_date
@@ -327,7 +357,7 @@ class WebpageMetaTag(models.Model):
         return super().save(*args, **kwargs)
 
     @property
-    def weight_factor(self) -> int:        
+    def weight_factor(self) -> int:
         # TODO make sure name saved lower case and without and colon prefix or suffix
         name = self.name.lower().split(':')[-1]
         factors_map = {
@@ -360,7 +390,7 @@ class WebpageMetaTag(models.Model):
             'pagename': 4,
             'rating': 2,
             'target': 3,
-            
+
             # Authorship and Ownership
             'artist': 3,
             'author': 4,
@@ -368,10 +398,7 @@ class WebpageMetaTag(models.Model):
             'designer': 3,
             'owner': 2,
             'copyright': 1,
-            
-            # Specific Media or Content Types
-            'album': 3,
-            'image': 2
+
         }
 
         return factors_map.get(self.name, 1)
@@ -419,10 +446,10 @@ class WebpageHeader(models.Model):
         return {
             'h1': 9,
             'h2': 7,
-            'h3': 5,
-            'h4': 4,
-            'h5': 3,
-            'h6': 2
+            'h3': 4,
+            'h4': 3,
+            'h5': 2,
+            'h6': 1
         }.get(self.tagname, 1)
 
     @classmethod
