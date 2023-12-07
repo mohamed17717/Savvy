@@ -179,6 +179,13 @@ class BookmarkTestCase(TestCase):
         self.assertIsInstance(list(vector.keys())[0], str)
         self.assertIsInstance(list(vector.values())[0], int)
 
+    def test_important_words_property(self):
+        # TODO test it for more case and strict data
+        vector = self.obj.important_words
+        self.assertIsInstance(vector, dict)
+        self.assertIsInstance(list(vector.keys())[0], str)
+        self.assertIsInstance(list(vector.values())[0], int)
+
     def test_store_word_vector_method(self):
         # it depend on word vector property
         length = len(self.obj.word_vector)
@@ -196,6 +203,26 @@ class BookmarkTestCase(TestCase):
         self.assertEqual(total, total_weights)
 
         for word, weight in self.obj.word_vector.items():
+            db_weight = self.obj.words_weights.get(word=word).weight
+            self.assertEqual(db_weight, weight)
+
+    def test_store_tags_method(self):
+        # it depend on word vector property
+        length = len(self.obj.important_words)
+        total_weights = sum(self.obj.important_words.values())
+        # words created
+        self.obj.store_tags()
+        self.assertEqual(self.obj.tags.count(), length)
+        # words not duplicated
+        self.obj.store_tags()
+        self.assertEqual(self.obj.tags.count(), length)
+
+        # weights stored right
+        total = self.obj.tags.all().aggregate(
+            total=Sum('weight'))['total']
+        self.assertEqual(total, total_weights)
+
+        for word, weight in self.obj.important_words.items():
             db_weight = self.obj.words_weights.get(word=word).weight
             self.assertEqual(db_weight, weight)
 
