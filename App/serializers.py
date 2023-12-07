@@ -57,9 +57,14 @@ class DocumentClusterSerializer(serializers.ModelSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    def get_name(self, obj):
+        return obj.alias_name or obj.name
+
     class Meta:
         model = models.Tag
-        fields = '__all__'
+        fields = ['id', 'name', 'weight']
         extra_kwargs = {
             'user': {'read_only': True}
         }
@@ -77,7 +82,7 @@ class TagUpdateAliasNameSerializer(serializers.ModelSerializer):
 # ------------------------ Details Serializers ------------------------ #
 
 class DocumentClusterWithTagsSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(read_only=True, many=True)    
+    tags = TagSerializer(read_only=True, many=True)
 
     class Meta:
         model = models.DocumentCluster
@@ -94,20 +99,20 @@ class BookmarkWebpageDetailsSerializer(serializers.ModelSerializer):
 
 
 class BookmarkDetailsSerializer(serializers.ModelSerializer):
-    parent_file = BookmarkFileSerializer(read_only=True)
+    # parent_file = BookmarkFileSerializer(read_only=True)
 
-    scrapes = ScrapyResponseLogSerializer(read_only=True, many=True)
-    words_weights = DocumentWordWeightSerializer(read_only=True, many=True)
+    # scrapes = ScrapyResponseLogSerializer(read_only=True, many=True)
+    # words_weights = DocumentWordWeightSerializer(read_only=True, many=True)
 
-    webpages = BookmarkWebpageDetailsSerializer(read_only=True, many=True)
-    clusters = DocumentClusterWithTagsSerializer(read_only=True, many=True)
+    # webpages = BookmarkWebpageDetailsSerializer(read_only=True, many=True)
+    # clusters = DocumentClusterWithTagsSerializer(read_only=True, many=True)
 
-    title = serializers.SerializerMethodField()
+    # title = serializers.SerializerMethodField()
 
     def get_title(self, obj):
         return (
             obj.title
-            or (obj.webpages.last() and obj.webpages.last().title)
+            or (obj.webpage and obj.webpage.title)
             or obj.url
         )
 
@@ -117,8 +122,24 @@ class BookmarkDetailsSerializer(serializers.ModelSerializer):
 
 
 class DocumentClusterDetailsSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(read_only=True, many=True)
-    bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
+    # tags = TagSerializer(read_only=True, many=True)
+    # bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
+
+    tags = serializers.SerializerMethodField()
+    bookmarks = serializers.SerializerMethodField()
+
+    def get_tags(self, obj):
+        total_tags = []
+        ids = []
+        for bm in obj.bookmarks.all():
+            tags = bm.tags.all()
+            tags = list(filter(lambda t: t.id not in ids, tags))
+            total_tags.extend(TagSerializer(tags, many=True).data)
+            ids.extend([t.id for t in tags])
+        return total_tags
+
+    def get_bookmarks(self, obj):
+        return BookmarkDetailsSerializer(obj.bookmarks.all(), many=True).data
 
     class Meta:
         model = models.DocumentCluster
@@ -149,6 +170,9 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
         for word in text.split(' '):
             weights.setdefault(word, 0)
             weights[word] += weight_factor
+
+        # remove empty keys
+        weights.pop('', None)
         return weights
 
     def __merge_weights(self, weight1, weight2) -> Dict[str, int]:
@@ -166,15 +190,17 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
             .usernames()
             .links()
             .hashtags()
+            .longer_than(length=20)
             .repeating_chars()
             .lines()
             .not_letters()
             .underscore()
             .numbers()
-            .uncamelcase()
+            # .uncamelcase()
             .lowercase()
             .stop_words()
             .shorter_than(length=2)
+            .stemming(method='lem')
             .double_spaces()
         ).text
         return cleaned
@@ -217,7 +243,7 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
 
         cleaned = self.__clean_text(title)
         return self.__weight(cleaned, WEIGHT_FACTOR)
-    
+
     def get_domain(self, obj) -> Dict[str, int]:
         WEIGHT_FACTOR = 3
         domain = obj.domain
@@ -243,7 +269,7 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
             header_weight = self.__weight(cleaned, weight_factor)
 
             weights = self.__merge_weights(weights, header_weight)
-            
+
         return weights
 
     def get_webpage_meta_data(self, obj) -> Dict[str, int]:
@@ -256,7 +282,7 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
         meta_tags = wp.meta_tags.all()
         weights = {}
         for meta in meta_tags:
-            if meta.content is None:
+            if meta.content is None or meta.name.endswith('id'):
                 continue
 
             cleaned = self.__clean_text(meta.content)
@@ -264,7 +290,7 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
             meta_weight = self.__weight(cleaned, weight_factor)
 
             weights = self.__merge_weights(weights, meta_weight)
-            
+
         return weights
 
     @property
