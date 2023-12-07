@@ -26,16 +26,3 @@ def on_create_bookmark_file_extract_urls(sender, instance, created, **kwargs):
 @receiver(pre_save, sender=models.BookmarkFile)
 def on_save_bookmark_file_validate_file_content(sender, instance, **kwargs):
     instance.file_obj.validate(raise_exception=True)
-
-
-@receiver(post_save, sender=models.DocumentWordWeight)
-def on_create_word_update_tags(sender, instance, created, **kwargs):
-    if created:
-        tag, created = models.Tag.objects.get_or_create(
-            user=instance.bookmark.user,
-            name=instance.word
-        )
-
-        tag.bookmarks.add(instance.bookmark)
-        tag.weight += instance.weight
-        tag.save()
