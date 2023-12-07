@@ -45,7 +45,7 @@ class TextCleaner:
         return self
 
     def hashtags(self) -> 'TextCleaner':
-        self.text = re.sub(r'#(\w+)', '', self.text).strip()
+        self.text = re.sub(r'#(\w+)', r'\1', self.text).strip()
         return self
 
     def repeating_chars(self) -> 'TextCleaner':
@@ -77,12 +77,23 @@ class TextCleaner:
         self.text = re.sub(pattern, '', self.text).strip()
         return self
 
+    def longer_than(self, length=20) -> 'TextCleaner':
+        # Remove anything that is less than two characters
+        # r'\b\w{1}\b'
+        pattern = r'\b\w{%d,}\b' % (length)
+        self.text = re.sub(pattern, '', self.text).strip()
+        return self
+
     def stop_words(self, words=[], lang='english') -> 'TextCleaner':
         # remove this words
         words += {
             'english': lambda: (
                 nltk.corpus.stopwords.words('english')
                 + 'and,of,en,us,org,com,an,english,for,our'.split(',')
+                + ['use', 'home', 'being', 'repo', 'php', 'let',
+                   'day', 'month', 'week', 'year', 'second', 'minute',
+                   'non', 'please', 'id', 'key', 'click', 'data', 'create',
+                   'co', 'find', 'full', 'oct']
             ),
             'arabic': lambda: (
                 nltk.corpus.stopwords.words("arabic")
