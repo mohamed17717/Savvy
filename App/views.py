@@ -1,3 +1,5 @@
+from django.db.models import Prefetch
+
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import UpdateAPIView, GenericAPIView
 from rest_framework.response import Response
@@ -20,9 +22,13 @@ class BookmarkFileAPI(CRDLViewSet):
 
 class ClusterAPI(RLViewSet):
     serializer_class = serializers.DocumentClusterDetailsSerializer
+    # TODO remove this line and leave the pagination
+    pagination_class = None
 
     def get_queryset(self):
-        return self.request.user.clusters.all().prefetch_related('bookmarks')
+        from App.models import Tag
+        tags_prefetch = Prefetch('bookmarks__tags', queryset=Tag.objects.all().order_by('-weight'))
+        return self.request.user.clusters.all().prefetch_related('bookmarks', tags_prefetch)
 
 
 class BookmarkAPI(RLViewSet):
