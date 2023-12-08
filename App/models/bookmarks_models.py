@@ -223,12 +223,13 @@ class Bookmark(models.Model):
 
         bookmark_id = [b.id for b in bookmarks]
         bookmarks = cls.objects.filter(id__in=bookmark_id)
-        vectors = [b.word_vector for b in bookmarks]
+        # vectors = [b.word_vector for b in bookmarks]
+        vectors = [b.important_words for b in bookmarks]
 
         sim_calculator = doc_cluster.CosineSimilarityCalculator(vectors)
         similarity_matrix = sim_calculator.similarity()
 
-        SIMILARITY_PERCENTAGE = 0.45
+        SIMILARITY_PERCENTAGE = 0.50
         cluster_maker = doc_cluster.ClusterMaker(
             bookmark_id, similarity_matrix, SIMILARITY_PERCENTAGE)
         flat_clusters = cluster_maker.clusters_flat()
