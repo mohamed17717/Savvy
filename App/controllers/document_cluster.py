@@ -62,9 +62,7 @@ class ClusterMaker:
         Returns:
             dict[str, list]: dict contain doc_id to its others similar to
                             others get as (doc_id, similarity)
-                            eg: {
-                                doc1: [(doc2, 0.4), (doc3, 0.8)]
-                            }
+                            eg: { doc1: [doc2, doc3] }
         """
         results = {}
         for doc_id, similarities in zip(self.documents, self.similarity_mx):
@@ -74,27 +72,34 @@ class ClusterMaker:
                     continue  # skip self
 
                 if similarity >= self.break_point:
-                    results[doc_id].append((other_id, similarity))
+                    #  { doc1: [(doc2, 0.4), (doc3, 0.8)] }
+                    # results[doc_id].append((other_id, similarity))
+                    results[doc_id].append(other_id)
 
         self._clusters = results
         return results
 
     def clusters_flat(self) -> list[list]:
+        # Merge Clusters Algorithm
         clusters = self.__get_clusters()
-        results = set()
-        for doc_id, similarities in clusters.items():
-            other_ids = [other_id for other_id, _ in similarities]
+        # { doc1: [doc2, doc3] }
 
-            # get_ids, sort, str, to remove repeated ones
-            flat_cluster = [doc_id]
-            flat_cluster.extend(other_ids)
-            flat_cluster = sorted(flat_cluster)
-            flat_cluster = map(str, flat_cluster)
-            flat_cluster = ','.join(flat_cluster)  # 'doc1,doc2,doc3'
+        results = []
+        visited = []
+        while clusters:
+            doc_id = list(clusters.keys())[0]
+            similarities = clusters.pop(doc_id)
 
-            results.add(flat_cluster)
+            cluster = {doc_id}
 
-        # unstring clusters
-        results = [cluster.split(',') for cluster in results]
+            # if x == y and y == z, then x == z
+            while similarities:
+                other_id = similarities.pop(0)
+                if other_id in visited:
+                    continue
+                cluster.add(other_id)
+                visited.append(other_id)
+                similarities.extend(clusters.pop(other_id, []))
 
+            results.append(cluster)
         return results
