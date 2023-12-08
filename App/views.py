@@ -1,4 +1,5 @@
 from django.db.models import Prefetch
+from django.db.models import Count
 
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import UpdateAPIView, GenericAPIView
@@ -28,7 +29,13 @@ class ClusterAPI(RLViewSet):
     def get_queryset(self):
         from App.models import Tag
         tags_prefetch = Prefetch('bookmarks__tags', queryset=Tag.objects.all().order_by('-weight'))
-        return self.request.user.clusters.all().prefetch_related('bookmarks', tags_prefetch)
+        
+        qs = self.request.user.clusters.all()
+        qs = qs.annotate(bookmarks_count=Count('bookmarks'))
+        qs = qs.order_by('-bookmarks_count')
+        qs = qs.prefetch_related('bookmarks', tags_prefetch)
+
+        return qs
 
 
 class BookmarkAPI(RLViewSet):
