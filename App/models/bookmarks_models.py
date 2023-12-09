@@ -158,7 +158,12 @@ class Bookmark(models.Model):
 
     @property
     def important_words(self) -> dict:
-        word_vector = self.word_vector
+        # word_vector = self.word_vector
+        # TODO use important flag in database and filter on it
+        word_vector = {
+            w['word']: w['weight'] 
+            for w in self.words_weights.all().values('word', 'weight')
+        }
 
         top_weights_ranks = 5
         weights = sorted(set(word_vector.values()))
