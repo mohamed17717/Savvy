@@ -1,4 +1,5 @@
 import scrapy
+from time import time
 
 from crawler.items import BookmarkItemLoader
 
@@ -17,6 +18,7 @@ class BookmarkSpider(scrapy.Spider):
         # for url in self.urls:
         for bookmark in self.bookmarks:
             payload = {'bookmark': bookmark}
+            print('Requesting: ', bookmark.url)
             yield scrapy.Request(
                 bookmark.url, callback=self.parse, cb_kwargs=payload, meta=payload
             )
@@ -33,6 +35,7 @@ class BookmarkSpider(scrapy.Spider):
         return headers_dict
 
     def parse(self, response, bookmark):
+        print('Parsing: ', response.url)
         bookmark_item_loader = BookmarkItemLoader(response=response)
 
         meta_tags = [meta.attrib for meta in response.xpath('//head/meta')]
@@ -49,4 +52,7 @@ class BookmarkSpider(scrapy.Spider):
         yield bookmark_item_loader.load_item()
 
     async def closed(self, reason):
+        print("Spider closed")
+        start = time()
         await self.dj_proxy.cluster_bookmarks(self.bookmarks)
+        print("Clustering time: ", time() - start)
