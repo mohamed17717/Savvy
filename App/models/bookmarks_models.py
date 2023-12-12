@@ -234,10 +234,9 @@ class Bookmark(models.Model):
         sim_calculator = doc_cluster.CosineSimilarityCalculator(vectors)
         similarity_matrix = sim_calculator.similarity()
 
-        SIMILARITY_PERCENTAGE = 0.50
-        cluster_maker = doc_cluster.ClusterMaker(
-            bookmark_id, similarity_matrix, SIMILARITY_PERCENTAGE)
-        flat_clusters = cluster_maker.clusters_flat()
+        # Clustering
+        clusters_maker = doc_cluster.ClusterMaker(bookmark_id, similarity_matrix)
+        flat_clusters = clusters_maker.make()
 
         clusters_qs = [bookmarks.filter(id__in=cluster)
                        for cluster in flat_clusters]
