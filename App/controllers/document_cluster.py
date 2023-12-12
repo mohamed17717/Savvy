@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Generator
 
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -38,68 +38,85 @@ class CosineSimilarityCalculator:
 
 
 class ClusterMaker:
-    def __init__(self, documents: list[str], similarity_mx: np.ndarray, break_point: float):
-        """generate the clusters for the docs based on similarity matrix and breakpoint
+    '''Algorithm for Clustering Documents
+    There is 2 algorithms i used for clustering
+    1. transitive similarity (x == y and y == z, then x == z)
+    2. Moving threshold similarity 
+    '''
 
-        Args:
-            documents (list[str]): list of documents ids
-            similarity_mx (np.ndarray): matrix of len(documents) tell similarity between them
-            break_point (float): point where we consider docs are similar or not
-        """
+    def __init__(self, documents: list[str], similarity_mx: np.ndarray,):
         self.documents = documents
         self.similarity_mx = similarity_mx
-        self.break_point = break_point
-        self._clusters = None
+        # threshold setup
+        self.threshold_step = 4
+        self.min_threshold = 30
+        self.max_threshold = 65
+        self.threshold = 65
 
-    # getters
-    def __get_clusters(self):
-        return self._clusters or self.clusters()
+        self.cluster_good_length = 8
 
-    # methods
-    def clusters(self) -> dict[str, list]:
-        """cluster docs
+    @property
+    def threshold_range(self) -> Generator[float, None, None]:
+        for i in range(self.max_threshold, self.min_threshold-self.threshold_step, -self.threshold_step):
+            yield i/100
 
-        Returns:
-            dict[str, list]: dict contain doc_id to its others similar to
-                            others get as (doc_id, similarity)
-                            eg: { doc1: [doc2, doc3] }
-        """
+    def similarity_dict(self, threshold) -> dict[str, list]:
         results = {}
         for doc_id, similarities in zip(self.documents, self.similarity_mx):
             results[doc_id] = []
             for other_id, similarity in zip(self.documents, similarities):
                 if doc_id == other_id:
                     continue  # skip self
-
-                if similarity >= self.break_point:
-                    #  { doc1: [(doc2, 0.4), (doc3, 0.8)] }
-                    # results[doc_id].append((other_id, similarity))
+                if similarity >= threshold:
                     results[doc_id].append(other_id)
 
-        self._clusters = results
         return results
 
-    def clusters_flat(self) -> list[list]:
-        # Merge Clusters Algorithm
-        clusters = self.__get_clusters()
-        # { doc1: [doc2, doc3] }
-
+    def transitive_similarity(self, similarity_dict) -> list[list]:
         results = []
-        visited = []
-        while clusters:
-            doc_id = list(clusters.keys())[0]
-            similarities = clusters.pop(doc_id)
+        while similarity_dict:
+            doc_id = list(similarity_dict.keys())[0]
+            similarities = similarity_dict.pop(doc_id)
+            visited = [doc_id]
 
             cluster = {doc_id}
 
-            # if x == y and y == z, then x == z
             while similarities:
                 other_id = similarities.pop(0)
                 if other_id in visited:
                     continue
                 cluster.add(other_id)
                 visited.append(other_id)
-                similarities.extend(clusters.pop(other_id, []))
+                similarities.extend(similarity_dict.pop(other_id, []))
 
             results.append(cluster)
         return results
+
+    def remove_doc(self, doc_id) -> None:
+        index = self.documents.index(doc_id)
+        self.documents.pop(index)
+        self.similarity_mx = np.delete(self.similarity_mx, index, axis=0)
+        self.similarity_mx = np.delete(self.similarity_mx, index, axis=1)
+
+    def make(self) -> list[list]:
+        clusters = []
+        for threshold in self.threshold_range:
+            similarity_dict = self.similarity_dict(threshold)
+            similar = self.transitive_similarity(similarity_dict)
+
+            last_loop = threshold*100 <= self.min_threshold
+            if last_loop:
+                similar = similar
+            else:
+                similar = [
+                    x for x in similar
+                    if len(x) > self.cluster_good_length]
+
+            if similar:
+                clusters.extend(similar)
+
+                for sublist in similar:
+                    for item in sublist:
+                        self.remove_doc(item)
+
+        return clusters
