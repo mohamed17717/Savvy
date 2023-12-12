@@ -223,10 +223,16 @@ class ClusterMakerTestCase(TestCase):
             [1, 0.76204993],
             [0.76204993, 1]
         ]
-        self.obj = ClusterMaker(rcs, similarity, 0.4)
+        self.obj = ClusterMaker(rcs, similarity)
 
-    def test_clusters_method(self):
-        self.obj.clusters()
+    def test_similarity_dict_method(self):
+        self.obj.similarity_dict(0.5)
 
-    def test_clusters_flat_method(self):
-        self.obj.clusters_flat()
+    def test_transitive_similarity_method(self):
+        self.obj.transitive_similarity(self.obj.similarity_dict(0.5))
+
+    def test_remove_doc_method(self):
+        self.obj.remove_doc('doc2')
+
+    def test_make_method(self):
+        self.obj.make()
