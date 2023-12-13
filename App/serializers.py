@@ -129,13 +129,20 @@ class DocumentClusterDetailsSerializer(serializers.ModelSerializer):
     bookmarks = serializers.SerializerMethodField()
 
     def get_tags(self, obj):
-        total_tags = []
-        ids = []
+        total_tags = dict()
         for bm in obj.bookmarks.all():
-            tags = bm.tags.all()
-            tags = list(filter(lambda t: t.id not in ids, tags))
-            total_tags.extend(TagSerializer(tags, many=True).data)
-            ids.extend([t.id for t in tags])
+            tags = bm.important_words
+            for tag, weight in tags.items():
+                total_tags.setdefault(tag, 0)
+                total_tags[tag] += weight
+
+        total_tags = sorted([
+            {
+                'name': name,
+                'weight': weight
+            }
+            for name, weight in total_tags.items()
+        ], key=lambda t: t['weight'], reverse=True)
         return total_tags
 
     def get_bookmarks(self, obj):
