@@ -5,6 +5,7 @@ from celery import Celery
 from datetime import timedelta
 from kombu import Queue
 
+# TODO check testing command and change the settings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dj.settings')
 
 app = Celery('dj')
@@ -16,6 +17,7 @@ app.conf.tasks_queues = (
     Queue('default', exchange='default', routing_key='default'),
     Queue('scrapy', exchange='scrapy', routing_key='scrapy'),
     Queue('email', exchange='email', routing_key='email'),
+    Queue('orm', exchange='orm', routing_key='orm'),
 )
 app.conf.update(
     worker_heartbeat=120,  # Send a heartbeat every 120 seconds
