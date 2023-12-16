@@ -1,4 +1,4 @@
-from time import time
+from App import tasks
 
 
 class SQLitePipeline:
@@ -16,12 +16,15 @@ class SQLitePipeline:
         bookmark = item.get('bookmark', [None])[0]
 
         # in case of succeeded crawled item
-        start = time()
-        await self.dj_proxy.webpage_write(bookmark, url, page_title, meta_tags, headers)
-        print('Writing webpage: ', url, ' in ', time() - start)
-
-        start = time()
-        await self.dj_proxy.store_bookmark_weights(bookmark)
-        print('Writing weights: ', url, ' in ', time() - start)
+        tasks.store_webpage_task.apply_async(kwargs={
+            'bookmark': bookmark,
+            'url': url,
+            'page_title': page_title,
+            'meta_tags': meta_tags,
+            'headers': headers
+        })
+        tasks.store_weights_task.apply_async(kwargs={
+            'bookmark': bookmark
+        })
 
         return item

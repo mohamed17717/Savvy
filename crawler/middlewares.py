@@ -1,6 +1,7 @@
-from time import time
 import scrapy
 from urllib.parse import urlencode
+
+from App import tasks
 
 
 class LogResponseMiddleware:
@@ -25,10 +26,8 @@ class LogResponseMiddleware:
         await self.dj_proxy.response_log_write(request, response, spider, error_msg)
 
         # in case of failed crawled item
-        start = time()
         bookmark = request.meta.get('bookmark')
-        await self.dj_proxy.store_bookmark_weights(bookmark)
-        print('Writing Failed weights: ', bookmark.url, ' in ', time() - start)
+        tasks.store_weights_task.apply_async(kwargs={'bookmark': bookmark})
 
         return response
 
