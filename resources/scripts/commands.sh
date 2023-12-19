@@ -15,3 +15,5 @@ python manage.py test --parallel auto --keepdb --settings=dj.settings.settings_t
 
 export DJANGO_SETTINGS_MODULE=dj.settings.settings_test && celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=2
 export DJANGO_SETTINGS_MODULE=dj.settings.settings_test && celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=2
+
+python manage.py test --parallel auto --settings=dj.settings.settings_test
