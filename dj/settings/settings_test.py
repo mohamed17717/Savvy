@@ -15,13 +15,14 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
 ]
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory'
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': ':memory'
+#     }
+# }
 
+CELERY_ALWAYS_EAGER = True
 CELERY_BROKER_URL = 'redis://localhost:6379/1'
 
 os.environ['DJANGO_TEST_MODE'] = 'True'
