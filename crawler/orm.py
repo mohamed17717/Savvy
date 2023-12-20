@@ -3,6 +3,11 @@ from asgiref.sync import sync_to_async
 from App import models
 
 
+@sync_to_async
+def django_wrapper(func, *args, **kwargs):
+    return func(*args, **kwargs)
+
+
 class DjangoProxy:
     @sync_to_async
     def response_log_url_exists(self, url):

@@ -51,5 +51,5 @@ class BookmarkSpider(scrapy.Spider):
         yield bookmark_item_loader.load_item()
 
     async def closed(self, reason):
-        tasks.cluster_bookmarks_task.apply_async(
-            kwargs={'bookmarks': self.bookmarks})
+        from crawler.orm import django_wrapper
+        await django_wrapper(tasks.cluster_bookmarks_task.apply_async, kwargs={'bookmarks': self.bookmarks})

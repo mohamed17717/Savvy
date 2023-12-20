@@ -2,6 +2,7 @@ import scrapy
 from urllib.parse import urlencode
 
 from App import tasks
+from .orm import django_wrapper
 
 
 class LogResponseMiddleware:
@@ -27,7 +28,7 @@ class LogResponseMiddleware:
 
         # in case of failed crawled item
         bookmark = request.meta.get('bookmark')
-        tasks.store_weights_task.apply_async(kwargs={'bookmark': bookmark})
+        await django_wrapper(tasks.store_weights_task.apply_async, kwargs={'bookmark': bookmark})
 
         return response
 

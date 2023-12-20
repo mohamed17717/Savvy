@@ -1,5 +1,5 @@
 from App import tasks
-
+from .orm import django_wrapper
 
 class SQLitePipeline:
     def __init__(self) -> None:
@@ -16,14 +16,14 @@ class SQLitePipeline:
         bookmark = item.get('bookmark', [None])[0]
 
         # in case of succeeded crawled item
-        tasks.store_webpage_task.apply_async(kwargs={
+        await django_wrapper(tasks.store_webpage_task.apply_async, kwargs={
             'bookmark': bookmark,
             'url': url,
             'page_title': page_title,
             'meta_tags': meta_tags,
             'headers': headers
         })
-        tasks.store_weights_task.apply_async(kwargs={
+        await django_wrapper(tasks.store_weights_task.apply_async, kwargs={
             'bookmark': bookmark
         })
 
