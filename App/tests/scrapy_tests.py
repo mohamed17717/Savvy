@@ -1,7 +1,8 @@
+import sys
+import unittest
 import json
 from unittest import TestCase
 
-from django.conf import settings
 from django.core.management import call_command
 from django.contrib.auth import get_user_model
 
@@ -9,6 +10,10 @@ from App import models
 from .models_tests import ObjFactory
 
 
+current_file_name = 'App.tests.' + __file__.split('/')[-1].replace('.py', '')
+should_skip = current_file_name not in sys.argv
+
+@unittest.skipIf(should_skip, "This test is skipped because the file is not called explicitly in sys.argv")
 class BookmarkSpiderTestCase(TestCase):
     def setUp(self) -> None:
         self.urls = [
@@ -27,7 +32,7 @@ class BookmarkSpiderTestCase(TestCase):
 
     def test_run_crawl_command(self):
         ids = [bm.id for bm in self.bookmarks]
-        # call_command('crawl_bookmarks', json.dumps(ids))
+        call_command('crawl_bookmarks', json.dumps(ids))
         
         # bookmark crawled status is changes
         # self.assertGreaterEqual(
