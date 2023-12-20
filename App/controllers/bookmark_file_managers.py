@@ -82,6 +82,7 @@ class BookmarkHTMLFileManager(BookmarkFileManager):
 
 class BookmarkJSONFileManager(BookmarkFileManager):
     def __init__(self, file_field: FieldFile):
+        # TODO validate is valid json format or not
         self.data = json.loads(file_field.read().decode('utf8'))
         self.is_valid = None
 
