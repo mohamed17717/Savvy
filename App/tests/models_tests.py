@@ -18,13 +18,25 @@ User = get_user_model()
 
 
 def disconnect_signals(model):
+    disconnected_receivers = []
+
+    # Identifying the signals to disconnect
     all_signals_names = filter(lambda i: i.startswith(
         'post') or i.startswith('pre'), dir(signals))
     all_signals = map(lambda name: getattr(signals, name), all_signals_names)
 
+    # Disconnecting the signals and storing the receivers
     for signal in all_signals:
         for receiver_func in Signal._live_receivers(signal, sender=model):
             signal.disconnect(receiver_func, sender=model)
+            disconnected_receivers.append((signal, receiver_func))
+
+    # Closure to reconnect the signals
+    def reconnect():
+        for signal, receiver_func in disconnected_receivers:
+            signal.connect(receiver_func, sender=model)
+
+    return reconnect
 
 
 class ObjFactory:
@@ -97,7 +109,7 @@ class BookmarkFileTestCase(TestCase):
     model = models.BookmarkFile
 
     def setUp(self) -> None:
-        disconnect_signals(self.model)
+        self.reconnect_signals = disconnect_signals(self.model)
 
         json_file = ObjFactory.create_file('json', 1)
         html_file = ObjFactory.create_file('html', 1)
@@ -109,6 +121,9 @@ class BookmarkFileTestCase(TestCase):
         self.json_obj = ObjFactory.create_bookmark_file(
             user=user, location=json_file)
         self.user = user
+
+    def tearDown(self) -> None:
+        self.reconnect_signals()
 
     def test_create_wrong_file(self):
         with self.assertRaises(ValidationError):
@@ -159,12 +174,16 @@ class BookmarkTestCase(TestCase):
     model = models.Bookmark
 
     def setUp(self) -> None:
-        disconnect_signals(self.model)
-        disconnect_signals(models.BookmarkFile)
+        self.reconnect_signals = disconnect_signals(self.model)
+        self.reconnect_signals_bm_file = disconnect_signals(models.BookmarkFile)
 
         self.url = 'https://quotes.toscrape.com/'
         self.user = ObjFactory.create_user()
         self.obj = ObjFactory.create_bookmark(user=self.user, url=self.url)
+
+    def tearDown(self) -> None:
+        self.reconnect_signals()
+        self.reconnect_signals_bm_file()
 
     def test_domain_property(self):
         self.assertEqual(self.obj.domain, 'quotes.toscrape.com')
@@ -251,13 +270,16 @@ class ScrapyResponseLogTestCase(TestCase):
     model = models.ScrapyResponseLog
 
     def setUp(self) -> None:
-        disconnect_signals(self.model)
+        self.reconnect_signals = disconnect_signals(self.model)
 
         self.url = 'https://quotes.toscrape.com/'
         self.obj = self.model.objects.create(
             url=self.url,
             status_code=200
         )
+
+    def tearDown(self) -> None:
+        self.reconnect_signals()
 
     def test_store_file_method(self):
         content = 'this is content'
@@ -281,8 +303,8 @@ class BookmarkWebpageTestCase(TestCase):
     model = models.BookmarkWebpage
 
     def setUp(self) -> None:
-        disconnect_signals(self.model)
-        disconnect_signals(models.Bookmark)
+        self.reconnect_signals = disconnect_signals(self.model)
+        self.reconnect_signals_bm = disconnect_signals(models.Bookmark)
 
         self.url = 'https://quotes.toscrape.com/'
         self.title = 'this is title'
@@ -294,12 +316,16 @@ class BookmarkWebpageTestCase(TestCase):
             bookmark=self.bookmark, url=self.url, title=self.title
         )
 
+    def tearDown(self) -> None:
+        self.reconnect_signals()
+        self.reconnect_signals_bm()
+
 
 class WebpageMetaTagTestCase(TestCase):
     model = models.WebpageMetaTag
 
     def setUp(self) -> None:
-        disconnect_signals(self.model)
+        self.reconnect_signals = disconnect_signals(self.model)
 
         wb = BookmarkWebpageTestCase()
         wb.setUp()
@@ -309,6 +335,10 @@ class WebpageMetaTagTestCase(TestCase):
         self.content = 'yes, this is meta_tag'
         self.obj = self.model.objects.create(
             webpage=wb.webpage, name=self.name, content=self.content)
+
+    def tearDown(self) -> None:
+        self.reconnect_signals()
+        self.wb.tearDown()
 
     def test_save_method(self):
         # is content cleaned
@@ -339,7 +369,7 @@ class WebpageHeaderTestCase(TestCase):
     model = models.WebpageHeader
 
     def setUp(self) -> None:
-        disconnect_signals(self.model)
+        self.reconnect_signals = disconnect_signals(self.model)
 
         wb = BookmarkWebpageTestCase()
         wb.setUp()
@@ -349,6 +379,10 @@ class WebpageHeaderTestCase(TestCase):
         self.level = 1
         self.obj = self.model.objects.create(
             webpage=wb.webpage, text=self.text, level=self.level)
+
+    def tearDown(self) -> None:
+        self.reconnect_signals()
+        self.wb.tearDown()
 
     def test_save_method(self):
         # is content cleaned

@@ -24,10 +24,13 @@ class BookmarkFileAPITestCase(APITestCase):
         user = ObjFactory.create_user(username='mhameho')
         knox_authorize(user, self)
 
-        disconnect_signals(self.model)
+        self.reconnect_signals = disconnect_signals(self.model)
 
         self.user = user
         self.file = ObjFactory.create_dummy_bookmark_file(user)
+
+    def tearDown(self) -> None:
+        self.reconnect_signals()
 
     def test_file_read(self):
         endpoint = reverse('app:file-detail', args=(self.file.pk,))
@@ -139,11 +142,14 @@ class BookmarkAPITestCase(APITestCase):
         user = ObjFactory.create_user(username='mhameho')
         knox_authorize(user, self)
 
-        disconnect_signals(self.model)
+        self.reconnect_signals = disconnect_signals(self.model)
 
         self.user = user
         self.bookmark = ObjFactory.create_bookmark(
             user, url='https://google.com')
+
+    def tearDown(self) -> None:
+        self.reconnect_signals()
 
     def test_bookmark_read(self):
         endpoint = reverse('app:bookmark-detail', args=(self.bookmark.pk,))
@@ -173,10 +179,13 @@ class ClusterAPITestCase(APITestCase):
         user = ObjFactory.create_user(username='mhameho')
         knox_authorize(user, self)
 
-        disconnect_signals(self.model)
+        self.reconnect_signals = disconnect_signals(self.model)
 
         self.user = user
         self.cluster = ObjFactory.create_cluster(user)
+
+    def tearDown(self) -> None:
+        self.reconnect_signals()
 
     def test_cluster_read(self):
         endpoint = reverse('app:cluster_read-detail', args=(self.cluster.pk,))
