@@ -28,12 +28,11 @@ def store_bookmarks_task(parent: 'models.BookmarkFile', bookmarks: list[dict]):
     Bookmark_Creator = partial(models.Bookmark.instance_by_parent, parent)
     bookmarks = map(Bookmark_Creator, bookmarks)
     bookmarks = list(bookmarks)
-    bookmarks_ids = [bm.id for bm in bookmarks]
 
     # TODO add batch size or batch the data in the task
     models.Bookmark.objects.bulk_create(bookmarks)
     task = crawl_bookmarks_task.apply_async(
-        kwargs={'bookmark_ids': bookmarks_ids})
+        kwargs={'bookmark_ids': [bm.id for bm in bookmarks]})
 
     parent.tasks.append(task.task_id)
     parent.save()
