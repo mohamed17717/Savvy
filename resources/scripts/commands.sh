@@ -17,3 +17,7 @@ export DJANGO_SETTINGS_MODULE=dj.settings.settings_test && celery -A dj worker -
 export DJANGO_SETTINGS_MODULE=dj.settings.settings_test && celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=2
 
 python manage.py test --parallel auto --settings=dj.settings.settings_test
+
+# Latest test commands run one by one
+DJANGO_SETTINGS_MODULE=dj.settings.settings_test python manage.py test 
+DJANGO_SETTINGS_MODULE=dj.settings.settings_test python manage.py test App.tests.scrapy_tests
