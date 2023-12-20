@@ -22,6 +22,9 @@ MIDDLEWARE = [
 #     }
 # }
 
+# Set Celery to eager mode
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
 CELERY_ALWAYS_EAGER = True
 CELERY_BROKER_URL = 'redis://localhost:6379/1'
 
