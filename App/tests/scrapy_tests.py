@@ -34,14 +34,13 @@ class BookmarkSpiderTestCase(TestCase):
         ids = [bm.id for bm in self.bookmarks]
         call_command('crawl_bookmarks', json.dumps(ids))
         
-        # bookmark crawled status is changes
-        # self.assertGreaterEqual(
-        #     bookmark_file.bookmarks.filter(crawled=True).count(), 1
-        # )
-
         # scrapy log created
         scrapes = models.ScrapyResponseLog.objects.filter(bookmark__in=self.bookmarks)
         self.assertGreaterEqual(scrapes.count(), len(self.urls))
+
+        # bookmark crawled status is changes
+        bookmarks = models.Bookmark.objects.filter(id__in=ids, crawled=True)
+        self.assertGreaterEqual(bookmarks.count(), 1)
 
         # bookmarks webpage header and meta created
         webpages = models.BookmarkWebpage.objects.filter(bookmark__in=self.bookmarks)
