@@ -130,19 +130,18 @@ class DocumentClusterDetailsSerializer(serializers.ModelSerializer):
 
     def get_tags(self, obj):
         total_tags = dict()
+        # all tags in one dict
         for bm in obj.bookmarks.all():
-            tags = bm.important_words
-            for tag, weight in tags.items():
-                total_tags.setdefault(tag, 0)
-                total_tags[tag] += weight
+            for tag in bm.words_weights.all():
+                total_tags.setdefault(tag.word, 0)
+                total_tags[tag.word] += tag.weight
+        # total_tags to list
+        to_list_item = lambda i: {'name': i[0], 'weight': i[1]}
+        total_tags = map(to_list_item, total_tags.items())
+        total_tags = list(total_tags)
+        # sort by weight
+        total_tags.sort(key=lambda x: x['weight'], reverse=True)
 
-        total_tags = sorted([
-            {
-                'name': name,
-                'weight': weight
-            }
-            for name, weight in total_tags.items()
-        ], key=lambda t: t['weight'], reverse=True)
         return total_tags
 
     def get_bookmarks(self, obj):
@@ -191,39 +190,39 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
 
     def __clean_text(self, text) -> str:
         cleaned = (controllers.TextCleaner(text)
-            .html_entities()
-            .html_tags()
-            .emails()
-            .usernames()
-            .links()
-            .hashtags()
-            .longer_than(length=20)
-            .repeating_chars()
-            .lines()
-            .not_letters()
-            .underscore()
-            .numbers()
-            # .uncamelcase()
-            .lowercase()
-            .stop_words()
-            .shorter_than(length=2)
-            .stemming(method='lem')
-            .double_spaces()
-        ).text
+                   .html_entities()
+                   .html_tags()
+                   .emails()
+                   .usernames()
+                   .links()
+                   .hashtags()
+                   .longer_than(length=20)
+                   .repeating_chars()
+                   .lines()
+                   .not_letters()
+                   .underscore()
+                   .numbers()
+                   # .uncamelcase()
+                   .lowercase()
+                   .stop_words()
+                   .shorter_than(length=2)
+                   .stemming(method='lem')
+                   .double_spaces()
+                   ).text
         return cleaned
 
     def __clean_url(self, url) -> str:
         path = urllib3.util.parse_url(url).path
         cleaned = (controllers.TextCleaner(path)
-            .not_letters()
-            .underscore()
-            .numbers()
-            .uncamelcase()
-            .stop_words()
-            .shorter_than(length=2)
-            .double_spaces()
-            .lowercase()
-        ).text
+                   .not_letters()
+                   .underscore()
+                   .numbers()
+                   .uncamelcase()
+                   .stop_words()
+                   .shorter_than(length=2)
+                   .double_spaces()
+                   .lowercase()
+                   ).text
         return cleaned
 
     def get_url(self, obj) -> Dict[str, int]:
