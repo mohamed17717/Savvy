@@ -31,34 +31,33 @@ def store_bookmarks_task(parent: 'models.BookmarkFile', bookmarks: list[dict]):
 
     # TODO add batch size or batch the data in the task
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
-    task = crawl_bookmarks_task.apply_async(
-        kwargs={'bookmark_ids': [bm.id for bm in bookmarks]})
 
-    parent.tasks.append(task.task_id)
-    parent.save()
-
-
-@shared_task(queue='scrapy')
-def crawl_bookmarks_task(bookmark_ids: list[int]):
-    def crawl(ids):
-        # make scrapy aware we inside a test env
-        is_test_mode = bool(os.getenv("DJANGO_TEST_MODE"))
-        testing_args = [
-            '--settings', 'dj.settings.settings_test'
-        ] if is_test_mode else []
-
-        command = [
-            'python', 'manage.py', 'crawl_bookmarks',
-            json.dumps(ids), *testing_args
-        ]
-        subprocess.run(command, capture_output=True, text=True, check=True)
-
-    # batch ids in batches of 10
+    # batch ids in batches of 30
+    bookmark_ids = [bm.id for bm in bookmarks]
     batch_size = 30
     steps = range(0, len(bookmark_ids), batch_size)
     sliced_ids = [bookmark_ids[i:i + batch_size] for i in steps]
     for ids in sliced_ids:
-        crawl(ids)
+        task = crawl_bookmarks_task.apply_async(
+            kwargs={'bookmark_ids': ids})
+
+        parent.tasks.append(task.task_id)
+        parent.save()
+
+
+@shared_task(queue='scrapy')
+def crawl_bookmarks_task(bookmark_ids: list[int]):
+    # make scrapy aware we inside a test env
+    testing_args = []
+    is_test_mode = bool(os.getenv("DJANGO_TEST_MODE"))
+    if is_test_mode:
+        testing_args = ['--settings', 'dj.settings.settings_test']
+
+    command = [
+        'python', 'manage.py', 'crawl_bookmarks',
+        json.dumps(bookmark_ids), *testing_args
+    ]
+    subprocess.run(command, capture_output=True, text=True, check=True)
 
     return True
 
