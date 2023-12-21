@@ -16,3 +16,13 @@ def on_create_bookmark_file_extract_urls(sender, instance, created, **kwargs):
 @receiver(pre_save, sender=models.BookmarkFile)
 def on_save_bookmark_file_validate_file_content(sender, instance, **kwargs):
     instance.file_obj.validate(raise_exception=True)
+
+
+@receiver(post_save, sender=models.ScrapyResponseLog)
+def on_create_scrapy_log_make_bookmark_crawled(sender, instance, created, **kwargs):
+    bm = instance.bookmark
+    status_succeed = instance.status_code == 200
+
+    if created and status_succeed and bm is not None:
+        bm.crawled = True
+        bm.save(update_fields=['crawled'])
