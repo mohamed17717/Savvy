@@ -30,7 +30,7 @@ def store_bookmarks_task(parent: 'models.BookmarkFile', bookmarks: list[dict]):
     bookmarks = list(bookmarks)
 
     # TODO add batch size or batch the data in the task
-    models.Bookmark.objects.bulk_create(bookmarks)
+    models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
     task = crawl_bookmarks_task.apply_async(
         kwargs={'bookmark_ids': [bm.id for bm in bookmarks]})
 
@@ -40,21 +40,25 @@ def store_bookmarks_task(parent: 'models.BookmarkFile', bookmarks: list[dict]):
 
 @shared_task(queue='scrapy')
 def crawl_bookmarks_task(bookmark_ids: list[int]):
-    command = ['python', 'manage.py',
-               'crawl_bookmarks', json.dumps(bookmark_ids)]
-
-    if os.getenv("DJANGO_TEST_MODE"):
+    def crawl(ids):
         # make scrapy aware we inside a test env
-        command.extend(['--settings', 'dj.settings.settings_test'])
+        is_test_mode = bool(os.getenv("DJANGO_TEST_MODE"))
+        testing_args = [
+            '--settings', 'dj.settings.settings_test'
+        ] if is_test_mode else []
 
-    try:
-        result = subprocess.run(
-            command, capture_output=True, text=True, check=True
-        )
-        # TODO log the prints
-        print("Command output:", result.stdout)
-    except subprocess.CalledProcessError as e:
-        print("Command failed with error:", e)
+        command = [
+            'python', 'manage.py', 'crawl_bookmarks',
+            json.dumps(ids), *testing_args
+        ]
+        subprocess.run(command, capture_output=True, text=True, check=True)
+
+    # batch ids in batches of 10
+    batch_size = 30
+    steps = range(0, len(bookmark_ids), batch_size)
+    sliced_ids = [bookmark_ids[i:i + batch_size] for i in steps]
+    for ids in sliced_ids:
+        crawl(ids)
 
     return True
 
