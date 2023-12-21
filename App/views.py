@@ -1,5 +1,4 @@
-from django.db.models import Prefetch
-from django.db.models import Count
+from django.db.models import Prefetch, Count, QuerySet
 
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import UpdateAPIView, GenericAPIView
@@ -25,8 +24,8 @@ class ClusterAPI(RLViewSet):
     serializer_class = serializers.DocumentClusterDetailsSerializer
     # TODO remove this line and leave the pagination
     pagination_class = None
-
-    def get_queryset(self):
+    
+    def _prefetch(self, qs: QuerySet) -> QuerySet:
         from App.models import DocumentWordWeight as WordWeight
 
         user = self.request.user
@@ -34,17 +33,18 @@ class ClusterAPI(RLViewSet):
         words_qs = (
             WordWeight.objects.filter(**words_query_kwargs).order_by('-weight')
         )
+        words_prefetch = Prefetch('bookmarks__words_weights', queryset=words_qs)
 
+        return qs.prefetch_related('bookmarks', words_prefetch)
+
+    def get_queryset(self):
         qs = (
             self.request.user.clusters.all()
                 .annotate(bookmarks_count=Count('bookmarks'))
                 .order_by('-bookmarks_count')
-                .prefetch_related(
-                    'bookmarks',
-                    Prefetch('bookmarks__words_weights', queryset=words_qs))
         )
 
-        return qs
+        return self._prefetch(qs)
 
 
 class BookmarkAPI(RLViewSet):
