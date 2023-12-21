@@ -182,12 +182,28 @@ class Bookmark(models.Model):
         from . import DocumentWordWeight
         # Delete the old data , store new ones
         self.words_weights.all().delete()
+        
+        word_vector = self.word_vector
+        
+        # TODO refactor this code
+        top_weights_ranks = 5
+        weights = sorted(set(word_vector.values()))
+        important_words = word_vector.copy()
+        if len(weights) > top_weights_ranks:
+            weight_break_point = weights[-top_weights_ranks:][0]
+            important_words = filter(
+                lambda item: item[1] >= weight_break_point, important_words.items())
+            important_words = {
+                k: v for k, v in important_words
+            }
+        important_words = set(important_words.keys())
+        
 
         words_weights = [
             DocumentWordWeight(
-                bookmark=self, word=word, weight=weight
+                bookmark=self, word=word, weight=weight, important=word in important_words
             )
-            for word, weight in self.word_vector.items()
+            for word, weight in word_vector.items()
         ]
 
         return DocumentWordWeight.objects.bulk_create(words_weights)
