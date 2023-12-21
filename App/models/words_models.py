@@ -18,6 +18,8 @@ class DocumentWordWeight(models.Model):
     word = models.CharField(max_length=2048)
     weight = models.PositiveSmallIntegerField()
 
+    important = models.BooleanField(default=False)
+
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
