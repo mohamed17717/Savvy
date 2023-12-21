@@ -27,14 +27,22 @@ class ClusterAPI(RLViewSet):
     pagination_class = None
 
     def get_queryset(self):
-        from App.models import Tag, DocumentWordWeight
-        tags_prefetch = Prefetch('bookmarks__tags', queryset=Tag.objects.all().order_by('-weight'))
-        words_prefetch = Prefetch('bookmarks__words_weights', queryset=DocumentWordWeight.objects.all().order_by('-weight'))
-        
-        qs = self.request.user.clusters.all()
-        qs = qs.annotate(bookmarks_count=Count('bookmarks'))
-        qs = qs.order_by('-bookmarks_count')
-        qs = qs.prefetch_related('bookmarks', tags_prefetch, words_prefetch)
+        from App.models import DocumentWordWeight as WordWeight
+
+        user = self.request.user
+        words_query_kwargs = {'important': True, 'bookmark__user': user}
+        words_qs = (
+            WordWeight.objects.filter(**words_query_kwargs).order_by('-weight')
+        )
+
+        qs = (
+            self.request.user.clusters.all()
+                .annotate(bookmarks_count=Count('bookmarks'))
+                .order_by('-bookmarks_count')
+                .prefetch_related(
+                    'bookmarks',
+                    Prefetch('bookmarks__words_weights', queryset=words_qs))
+        )
 
         return qs
 
