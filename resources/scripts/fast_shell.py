@@ -46,6 +46,7 @@ for bm in models.Bookmark.objects.all():
     bm.store_word_vector()
     
 models.Bookmark.objects.filter(words_weights__isnull=True)
+models.DocumentWordWeight.objects.filter(important=True)
 
 # cosine similarity
 from App import models, serializers
