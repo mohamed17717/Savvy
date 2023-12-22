@@ -21,8 +21,7 @@ def on_save_bookmark_file_validate_file_content(sender, instance, **kwargs):
 @receiver(post_save, sender=models.ScrapyResponseLog)
 def on_create_scrapy_log_make_bookmark_crawled(sender, instance, created, **kwargs):
     bm = instance.bookmark
-    status_succeed = instance.status_code == 200
 
-    if created and status_succeed and bm is not None:
-        bm.crawled = True
+    if created and bm is not None:
+        bm.crawled = instance.status_code in [200, 404]
         bm.save(update_fields=['crawled'])
