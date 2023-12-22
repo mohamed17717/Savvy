@@ -41,11 +41,15 @@ class ClusterMaker:
     '''Algorithm for Clustering Documents
     There is 2 algorithms i used for clustering
     1. transitive similarity (x == y and y == z, then x == z)
-    2. Moving threshold similarity 
+    2. Moving threshold similarity
+    3. add non-clustered documents to the nearest document 
+        cluster if similarity exceeded min threshold
     '''
 
     def __init__(self, documents: list[str], similarity_mx: np.ndarray,):
-        self.documents = documents
+        self._documents = documents # don't change
+        self._similarity_mx = similarity_mx # don't change
+        self.documents = documents.copy()
         self.similarity_mx = similarity_mx
         # threshold setup
         self.threshold_step = 4
@@ -54,6 +58,7 @@ class ClusterMaker:
         self.threshold = 65
 
         self.cluster_good_length = 8
+        self.document_cluster_map = {} # doc_id: cluster_index
 
     @property
     def threshold_range(self) -> Generator[float, None, None]:
@@ -79,13 +84,13 @@ class ClusterMaker:
             similarities = similarity_dict.pop(doc_id)
             visited = [doc_id]
 
-            cluster = {doc_id}
+            cluster = [doc_id]
 
             while similarities:
                 other_id = similarities.pop(0)
                 if other_id in visited:
                     continue
-                cluster.add(other_id)
+                cluster.append(other_id)
                 visited.append(other_id)
                 similarities.extend(similarity_dict.pop(other_id, []))
 
@@ -106,17 +111,42 @@ class ClusterMaker:
 
             last_loop = threshold*100 <= self.min_threshold
             if last_loop:
-                similar = similar
+                # extract clusters with only one elm
+                one_elm_cluster = []
+                pop_count = 0
+                for i, x in enumerate(similar.copy()):
+                    if len(x) <= 1:
+                        one_elm_cluster.append(*similar.pop(i-pop_count))
+                        pop_count += 1
+
             else:
                 similar = [
                     x for x in similar
                     if len(x) > self.cluster_good_length]
 
             if similar:
-                clusters.extend(similar)
-
                 for sublist in similar:
+                    cluster_index = len(clusters)
+                    clusters.append(sublist)
+
                     for item in sublist:
+                        self.document_cluster_map[item] = cluster_index
                         self.remove_doc(item)
+
+        for elm in one_elm_cluster:
+            elm_index = self._documents.index(elm)
+            elm_similarities = self._similarity_mx[elm_index]
+            nearest_elm, nearest_similarity = sorted(
+                zip(self._documents, elm_similarities), key=lambda x: x[1], reverse=True
+            )[1]
+            print(f'{nearest_similarity=}, {self.min_threshold=}')
+            if nearest_similarity*100 > self.min_threshold:
+                cluster_index = self.document_cluster_map[nearest_elm]
+                clusters[cluster_index].append(elm)
+                self.document_cluster_map[elm] = cluster_index
+            else:
+                cluster_index = len(clusters)
+                clusters.append([elm])
+                self.document_cluster_map[elm] = cluster_index
 
         return clusters
