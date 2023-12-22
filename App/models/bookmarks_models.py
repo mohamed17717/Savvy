@@ -119,6 +119,7 @@ class Bookmark(models.Model):
         related_name='bookmarks', blank=True, null=True
     )
 
+    # TODO depend on bookmark and remove url
     # TODO make url and title max length shorter
     # Required
     url = models.URLField(max_length=2048)
@@ -278,7 +279,7 @@ class ScrapyResponseLog(models.Model):
         blank=True, null=True
     )
     # Required
-    url = models.URLField()
+    url = models.URLField(max_length=2048)
     status_code = models.PositiveSmallIntegerField()
 
     # Optional
@@ -346,8 +347,9 @@ class BookmarkWebpage(models.Model):
         blank=True, null=True
     )
 
+    # TODO depend on bookmark and remove url
     # Required
-    url = models.URLField()
+    url = models.URLField(max_length=2048)
     title = models.CharField(max_length=512)
 
     # Timing
