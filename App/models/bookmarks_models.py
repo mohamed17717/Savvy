@@ -2,6 +2,7 @@ import os
 import urllib3
 import hashlib
 from datetime import date, timedelta
+import numpy as np
 
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -249,6 +250,7 @@ class Bookmark(models.Model):
 
         sim_calculator = doc_cluster.CosineSimilarityCalculator(vectors)
         similarity_matrix = sim_calculator.similarity()
+        similarity_matrix = np.ceil(similarity_matrix*100)/100
 
         # Clustering
         clusters_maker = doc_cluster.ClusterMaker(bookmark_id, similarity_matrix)
