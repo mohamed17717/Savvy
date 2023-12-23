@@ -36,6 +36,9 @@ class BookmarkSpider(scrapy.Spider):
 
     def parse(self, response, bookmark):
         bookmark_item_loader = BookmarkItemLoader(response=response)
+        
+        # remove all style tags because if there is a style tag inside body, will decrease accuracy
+        response.xpath('//style').drop()
 
         meta_tags = [meta.attrib for meta in response.xpath('//head/meta')]
         page_title = response.xpath('//head/title/text()').extract_first()
