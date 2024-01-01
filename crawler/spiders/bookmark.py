@@ -58,6 +58,13 @@ class BookmarkSpider(scrapy.Spider):
         bookmark_file = self.bookmarks[0].parent_file
         is_part_of_file = bookmark_file is not None
 
+        # TODO change checking using the tasks list and make a counter in the redis 
+        # that track how many spider running -> increased on open and decreased on close
+        # and check if the counter is 0 to run the clustering process
+        # because the current way will be corrupted when i run the spider
+        # process by popen instead of run because celery will be no longer aware of spider life
+        # and this will make receive spider command a lot faster and more spiders will run in parallel
+        # NOTE right now celery worker wait the spider to finish before running the next one
         if is_part_of_file:
             is_related_spiders_finished = bookmark_file.is_tasks_done
             if is_related_spiders_finished:
