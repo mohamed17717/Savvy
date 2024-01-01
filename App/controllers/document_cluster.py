@@ -139,7 +139,6 @@ class ClusterMaker:
             nearest_elm, nearest_similarity = sorted(
                 zip(self._documents, elm_similarities), key=lambda x: x[1], reverse=True
             )[1]
-            print(f'{nearest_similarity=}, {self.min_threshold=}')
             if nearest_similarity*100 > self.min_threshold:
                 cluster_index = self.document_cluster_map[nearest_elm]
                 clusters[cluster_index].append(elm)
