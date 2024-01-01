@@ -12,6 +12,9 @@ from django.core.files import File
 from django.db.models import QuerySet
 from django.utils import timezone
 
+from celery.states import READY_STATES as celery_ready_states
+from celery.result import AsyncResult
+
 from crawler import settings as scrapy_settings
 
 from common.utils.model_utils import FileSizeValidator
@@ -102,6 +105,25 @@ class BookmarkFile(models.Model):
         file_obj.validate(raise_exception=True)
         return file_obj.get_links()
 
+    @property
+    def is_tasks_done(self):
+        waiting_tasks = []
+        done_tasks = []
+
+        for task_id in self.tasks:
+            if AsyncResult(task_id).state in celery_ready_states:
+                done_tasks.append(task_id)
+            else:
+                waiting_tasks.append(task_id)
+
+        # TODO rename tasks to scrapy tasks
+        if done_tasks:
+            # update tasks and remove done ones
+            self.tasks = waiting_tasks
+            self.save(update_fields=['tasks'])
+
+        return len(self.tasks) == 0
+
 
 class Bookmark(models.Model):
     """Main bookmark that got clustered and the whole next flow depend on it
@@ -163,7 +185,7 @@ class Bookmark(models.Model):
         # word_vector = self.word_vector
         # TODO use important flag in database and filter on it
         word_vector = {
-            w['word']: w['weight'] 
+            w['word']: w['weight']
             for w in self.words_weights.all().values('word', 'weight')
         }
 
@@ -184,9 +206,9 @@ class Bookmark(models.Model):
         from . import DocumentWordWeight
         # Delete the old data , store new ones
         self.words_weights.all().delete()
-        
+
         word_vector = self.word_vector
-        
+
         # TODO refactor this code
         top_weights_ranks = 5
         weights = sorted(set(word_vector.values()))
@@ -199,7 +221,6 @@ class Bookmark(models.Model):
                 k: v for k, v in important_words
             }
         important_words = set(important_words.keys())
-        
 
         words_weights = [
             DocumentWordWeight(
@@ -254,7 +275,8 @@ class Bookmark(models.Model):
         similarity_matrix = np.ceil(similarity_matrix*100)/100
 
         # Clustering
-        clusters_maker = doc_cluster.ClusterMaker(bookmark_id, similarity_matrix)
+        clusters_maker = doc_cluster.ClusterMaker(
+            bookmark_id, similarity_matrix)
         flat_clusters = clusters_maker.make()
 
         clusters_qs = [bookmarks.filter(id__in=cluster)

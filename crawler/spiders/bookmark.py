@@ -1,6 +1,7 @@
 import scrapy
 
 from crawler.items import BookmarkItemLoader
+from crawler.orm import django_wrapper
 
 from App import tasks
 
@@ -36,7 +37,7 @@ class BookmarkSpider(scrapy.Spider):
 
     def parse(self, response, bookmark):
         bookmark_item_loader = BookmarkItemLoader(response=response)
-        
+
         # remove all style tags because if there is a style tag inside body, will decrease accuracy
         response.xpath('//style').drop()
 
@@ -54,5 +55,14 @@ class BookmarkSpider(scrapy.Spider):
         yield bookmark_item_loader.load_item()
 
     async def closed(self, reason):
-        from crawler.orm import django_wrapper
-        await django_wrapper(tasks.cluster_bookmarks_task.apply_async, kwargs={'bookmarks': self.bookmarks})
+        bookmark_file = self.bookmarks[0].parent_file
+        is_part_of_file = bookmark_file is not None
+
+        if is_part_of_file:
+            is_related_spiders_finished = bookmark_file.is_tasks_done
+            if is_related_spiders_finished:
+                bookmarks = bookmark_file.bookmarks.all()
+                await django_wrapper(tasks.cluster_bookmarks_task.apply_async, kwargs={'bookmarks': bookmarks})
+
+        else:
+            await django_wrapper(tasks.cluster_bookmarks_task.apply_async, kwargs={'bookmarks': self.bookmarks})
