@@ -29,22 +29,24 @@ def store_bookmarks_task(parent: 'models.BookmarkFile', bookmarks: list[dict]):
     bookmarks = map(Bookmark_Creator, bookmarks)
     bookmarks = list(bookmarks)
 
-    # TODO add batch size or batch the data in the task
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
+    batch_bookmarks_to_crawl_task.apply_async(
+        kwargs={'parent': parent, 'bookmark_ids': [bm.id for bm in bookmarks]})
 
-    # batch ids in batches of 30
-    bookmark_ids = [bm.id for bm in bookmarks]
+
+@shared_task(queue='orm')
+def batch_bookmarks_to_crawl_task(parent: 'models.BookmarkFile', bookmark_ids: list[int]):
     batch_size = 30
     steps = range(0, len(bookmark_ids), batch_size)
     sliced_ids = [bookmark_ids[i:i + batch_size] for i in steps]
     for ids in sliced_ids:
-        task = crawl_bookmarks_task.apply_async(
-            kwargs={'bookmark_ids': ids})
+        task = crawl_bookmarks_task.apply_async(kwargs={'bookmark_ids': ids})
 
         parent.tasks.append(task.task_id)
         parent.save()
 
 
+# DONE
 @shared_task(queue='scrapy')
 def crawl_bookmarks_task(bookmark_ids: list[int]):
     # make scrapy aware we inside a test env
@@ -62,6 +64,7 @@ def crawl_bookmarks_task(bookmark_ids: list[int]):
     return True
 
 
+# DONE
 @shared_task(queue='orm')
 def store_webpage_task(bookmark, url, page_title, meta_tags, headers):
     with transaction.atomic():
@@ -77,6 +80,8 @@ def store_webpage_task(bookmark, url, page_title, meta_tags, headers):
 def store_weights_task(bookmark):
     bookmark.store_word_vector()
     bookmark.store_tags()
+
+# DONE
 
 
 @shared_task(queue='orm')
