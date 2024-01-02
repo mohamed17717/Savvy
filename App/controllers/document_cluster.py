@@ -34,7 +34,10 @@ class CosineSimilarityCalculator:
         return weight_matrix
 
     def similarity(self) -> np.ndarray:
-        return cosine_similarity(self._doc_to_word_weight_matrix)
+        matrix = self._doc_to_word_weight_matrix
+        if matrix.shape[1] == 0:
+            return np.array([[1]])
+        return cosine_similarity(matrix)
 
 
 class ClusterMaker:
