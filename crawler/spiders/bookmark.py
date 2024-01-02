@@ -55,7 +55,7 @@ class BookmarkSpider(scrapy.Spider):
         yield bookmark_item_loader.load_item()
 
     async def closed(self, reason):
-        bookmark_file = self.bookmarks[0].parent_file
+        bookmark_file = await self.dj_proxy.bookmark_parent(self.bookmarks)
         is_part_of_file = bookmark_file is not None
 
         # TODO change checking using the tasks list and make a counter in the redis 
@@ -68,7 +68,8 @@ class BookmarkSpider(scrapy.Spider):
         if is_part_of_file:
             is_related_spiders_finished = bookmark_file.is_tasks_done
             if is_related_spiders_finished:
-                bookmarks = bookmark_file.bookmarks.all()
+                # avoid failed and not found bookmarks
+                bookmarks = bookmark_file.bookmarks.filter(scrapes__status_code=200).distinct()
                 await django_wrapper(tasks.cluster_bookmarks_task.apply_async, kwargs={'bookmarks': bookmarks})
 
         else:

@@ -14,6 +14,10 @@ class DjangoProxy:
         return models.ScrapyResponseLog.is_url_exists(url)
 
     @sync_to_async
+    def bookmark_parent(self, bookmarks):
+        return bookmarks[0].parent_file
+
+    @sync_to_async
     def response_log_write(self, request, response, spider, error_message=None):
         log = models.ScrapyResponseLog.objects.create(
             bookmark=request.meta.get('bookmark'),
