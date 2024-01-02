@@ -1,15 +1,16 @@
 import os
 import urllib3
 import hashlib
-from datetime import date, timedelta
+from datetime import timedelta
 import numpy as np
 
-from django.db import models
+from django.db import models, transaction
+from django.db.models import QuerySet
+from django.db.utils import IntegrityError
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
 from django.core.files import File
-from django.db.models import QuerySet
 from django.utils import timezone
 
 from celery.states import READY_STATES as celery_ready_states
@@ -28,6 +29,19 @@ from App.controllers import document_cluster as doc_cluster
 
 
 User = get_user_model()
+
+
+def custom_get_or_create(model, **kwargs):
+    # because of normal get_or_create cause issues in concurrency
+    # so i updated the flow to make sure its doing things right
+    try:
+        with transaction.atomic():
+            obj, created = model.objects.get_or_create(**kwargs)
+            return obj, created
+    except IntegrityError:
+        # Handle the exception if a duplicate is trying to be created
+        obj = model.objects.get(**kwargs)
+        return obj, False
 
 
 class BookmarkFile(models.Model):
@@ -229,7 +243,7 @@ class Bookmark(models.Model):
             for word, weight in word_vector.items()
         ]
 
-        return DocumentWordWeight.objects.bulk_create(words_weights)
+        return DocumentWordWeight.objects.bulk_create(words_weights, batch_size=250)
 
     def store_tags(self):
         # TODO make this more efficient
@@ -237,14 +251,11 @@ class Bookmark(models.Model):
 
         tags = []
         for word, weight in self.important_words.items():
-            tag, _ = Tag.objects.get_or_create(
-                user=self.user,
-                name=word
-            )
+            tag, _ = custom_get_or_create(Tag, user=self.user, name=word)
 
             tag.bookmarks.add(self)
             tag.weight += weight
-            tag.save()
+            tag.save(update_fields=['weight'])
 
             tags.append(tag)
 
@@ -372,7 +383,7 @@ class BookmarkWebpage(models.Model):
     # TODO depend on bookmark and remove url
     # Required
     url = models.URLField(max_length=2048)
-    title = models.CharField(max_length=512)
+    title = models.CharField(max_length=2048)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
