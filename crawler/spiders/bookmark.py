@@ -1,5 +1,6 @@
 import scrapy
 
+from django.db.models import Count
 from crawler.items import BookmarkItemLoader
 from crawler.orm import django_wrapper
 
@@ -65,12 +66,21 @@ class BookmarkSpider(scrapy.Spider):
         # process by popen instead of run because celery will be no longer aware of spider life
         # and this will make receive spider command a lot faster and more spiders will run in parallel
         # NOTE right now celery worker wait the spider to finish before running the next one
+        
+        # TODO when you change the task track and make it depend on redis also 
+        # make sure to make success rate of crawling is 100%
+        # as you store in redis how many time this bookmark tried to crawl
+        
         if is_part_of_file:
-            is_related_spiders_finished = bookmark_file.is_tasks_done
+            is_related_spiders_finished = await django_wrapper(lambda: bookmark_file.is_tasks_done)
             if is_related_spiders_finished:
                 # avoid failed and not found bookmarks
-                bookmarks = bookmark_file.bookmarks.filter(scrapes__status_code=200).distinct()
+                bookmarks = await django_wrapper(lambda: bookmark_file.bookmarks.filter(scrapes__status_code=200).distinct())
                 await django_wrapper(tasks.cluster_bookmarks_task.apply_async, kwargs={'bookmarks': bookmarks})
+            else:
+                # crawl failed bookmarks to make sure success rate is the high as you can
+                failed_crawling = await django_wrapper(lambda: bookmark_file.bookmarks.annotate(count=Count('scrapes')).filter(crawled=False, count__gt=0, count__lt=5))
+                await django_wrapper(tasks.batch_bookmarks_to_crawl_task.apply_async, kwargs={'parent': bookmark_file, 'bookmark_ids': [bm.id for bm in failed_crawling]})
 
         else:
             await django_wrapper(tasks.cluster_bookmarks_task.apply_async, kwargs={'bookmarks': self.bookmarks})
