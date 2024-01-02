@@ -46,7 +46,6 @@ def batch_bookmarks_to_crawl_task(parent: 'models.BookmarkFile', bookmark_ids: l
         parent.save()
 
 
-# DONE
 @shared_task(queue='scrapy')
 def crawl_bookmarks_task(bookmark_ids: list[int]):
     # make scrapy aware we inside a test env
@@ -64,7 +63,6 @@ def crawl_bookmarks_task(bookmark_ids: list[int]):
     return True
 
 
-# DONE
 @shared_task(queue='orm')
 def store_webpage_task(bookmark, url, page_title, meta_tags, headers):
     with transaction.atomic():
@@ -80,8 +78,6 @@ def store_webpage_task(bookmark, url, page_title, meta_tags, headers):
 def store_weights_task(bookmark):
     bookmark.store_word_vector()
     bookmark.store_tags()
-
-# DONE
 
 
 @shared_task(queue='orm')
