@@ -102,11 +102,7 @@ class TextCleaner:
         }.get(lang, lambda: [])()
 
         words = set(words)
-        words = '|'.join(words)
-
-        # r'\b(and|of|en|us)\b'
-        pattern = r'\b(%s)\b' % words
-        self.text = re.sub(pattern, '', self.text).strip()
+        self.text = ' '.join(set(self.text.split(' ')).difference(words))
         return self
 
     def double_spaces(self) -> 'TextCleaner':
