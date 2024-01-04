@@ -61,9 +61,10 @@ class ClusterMaker:
         # threshold setup
         self.threshold_step = 4
         self.min_threshold = 30
-        self.max_threshold = 65
+        self.max_threshold = 95
 
-        self.cluster_good_length = max(math.ceil(len(documents)*0.015), 10)
+        # self.cluster_good_length = max(math.ceil(len(documents)*0.015), 10)
+        self.cluster_good_length = 8
 
     @property
     def threshold_range(self) -> Generator[float, None, None]:
