@@ -1,7 +1,11 @@
+import math
 from typing import Dict, Generator
 
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+
+from App.choices import CusterAlgorithmChoices
+from App.types.cluster_types import ClustersHolderType
 
 
 class CosineSimilarityCalculator:
@@ -58,10 +62,8 @@ class ClusterMaker:
         self.threshold_step = 4
         self.min_threshold = 30
         self.max_threshold = 65
-        self.threshold = 65
 
-        self.cluster_good_length = 8
-        self.document_cluster_map = {} # doc_id: cluster_index
+        self.cluster_good_length = max(math.ceil(len(documents)*0.015), 10)
 
     @property
     def threshold_range(self) -> Generator[float, None, None]:
@@ -106,8 +108,23 @@ class ClusterMaker:
         self.similarity_mx = np.delete(self.similarity_mx, index, axis=0)
         self.similarity_mx = np.delete(self.similarity_mx, index, axis=1)
 
+    def merge_one_elm_cluster_to_nearest(self, clusters, one_elm_clusters) -> None:
+        """Update clusters don't return anything"""
+        for elm in one_elm_clusters:
+            elm_index = self._documents.index(elm)
+            elm_similarities = self._similarity_mx[elm_index]
+            nearest_elm, nearest_similarity = sorted(
+                zip(self._documents, elm_similarities), key=lambda x: x[1], reverse=True
+            )[1]
+            if nearest_similarity*100 > self.min_threshold:
+                cluster_index = clusters.items_map[nearest_elm]
+                clusters[cluster_index].append(elm, algorithm=CusterAlgorithmChoices.NEAREST_DOC_CLUSTER.value)
+            else:
+                clusters.append([elm], algorithm=CusterAlgorithmChoices.NEAREST_DOC_CLUSTER.value)
+
     def make(self) -> list[list]:
-        clusters = []
+        clusters = ClustersHolderType()
+
         for threshold in self.threshold_range:
             similarity_dict = self.similarity_dict(threshold)
             similar = self.transitive_similarity(similarity_dict)
@@ -129,26 +146,9 @@ class ClusterMaker:
 
             if similar:
                 for sublist in similar:
-                    cluster_index = len(clusters)
-                    clusters.append(sublist)
-
+                    clusters.append(sublist, algorithm=CusterAlgorithmChoices.TRANSITIVE_SIMILARITY.value)
                     for item in sublist:
-                        self.document_cluster_map[item] = cluster_index
                         self.remove_doc(item)
 
-        for elm in one_elm_cluster:
-            elm_index = self._documents.index(elm)
-            elm_similarities = self._similarity_mx[elm_index]
-            nearest_elm, nearest_similarity = sorted(
-                zip(self._documents, elm_similarities), key=lambda x: x[1], reverse=True
-            )[1]
-            if nearest_similarity*100 > self.min_threshold:
-                cluster_index = self.document_cluster_map[nearest_elm]
-                clusters[cluster_index].append(elm)
-                self.document_cluster_map[elm] = cluster_index
-            else:
-                cluster_index = len(clusters)
-                clusters.append([elm])
-                self.document_cluster_map[elm] = cluster_index
-
-        return clusters
+        self.merge_one_elm_cluster_to_nearest(clusters, one_elm_cluster)
+        return clusters.value
