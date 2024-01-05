@@ -4,7 +4,7 @@ from typing import Dict, Generator
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-from App.choices import CusterAlgorithmChoices
+from App.choices import CusterAlgorithmChoices as algo
 from App.types.cluster_types import ClustersHolderType
 
 
@@ -54,10 +54,11 @@ class ClusterMaker:
     '''
 
     def __init__(self, documents: list[str], similarity_mx: np.ndarray,):
-        self._documents = documents # don't change
-        self._similarity_mx = similarity_mx # don't change
+        self._documents = documents  # don't change
+        self._similarity_mx = similarity_mx  # don't change
+
         self.documents = documents.copy()
-        self.similarity_mx = similarity_mx
+        self.similarity_mx = np.copy(similarity_mx)
         # threshold setup
         self.threshold_step = 4
         self.min_threshold = 30
@@ -119,9 +120,11 @@ class ClusterMaker:
             )[1]
             if nearest_similarity*100 > self.min_threshold:
                 cluster_index = clusters.items_map[nearest_elm]
-                clusters[cluster_index].append(elm, algorithm=CusterAlgorithmChoices.NEAREST_DOC_CLUSTER.value)
+                clusters[cluster_index].append(
+                    elm, correlation=nearest_similarity, algorithm=algo.NEAREST_DOC_CLUSTER.value)
             else:
-                clusters.append([elm], algorithm=CusterAlgorithmChoices.NEAREST_DOC_CLUSTER.value)
+                clusters.append(
+                    [elm], correlation=1, algorithm=algo.NEAREST_DOC_CLUSTER.value)
 
     def make(self) -> list[list]:
         clusters = ClustersHolderType()
@@ -147,7 +150,8 @@ class ClusterMaker:
 
             if similar:
                 for sublist in similar:
-                    clusters.append(sublist, algorithm=CusterAlgorithmChoices.TRANSITIVE_SIMILARITY.value)
+                    clusters.append(
+                        sublist, correlation=threshold, algorithm=algo.TRANSITIVE_SIMILARITY.value)
                     for item in sublist:
                         self.remove_doc(item)
 
