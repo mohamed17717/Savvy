@@ -60,7 +60,7 @@ class ClusterMaker:
         self.documents = documents.copy()
         self.similarity_mx = np.copy(similarity_mx)
         # threshold setup
-        self.threshold_step = 4
+        self.threshold_step = 5
         self.min_threshold = 30
         self.max_threshold = 95
 
@@ -104,11 +104,27 @@ class ClusterMaker:
             results.append(cluster)
         return results
 
+    def flat_similarity_algorithm(self, similarity_dict) -> list[list]:
+        results = []
+        visited = []
+        for doc_id, similarities in similarity_dict.items():
+            if not similarities:
+                continue
+
+            cluster = [doc_id, *similarities]
+            cluster = [item for item in cluster if item not in visited]
+            visited.extend(cluster)
+            results.append(cluster)
+        return results
+
     def remove_doc(self, doc_id) -> None:
-        index = self.documents.index(doc_id)
-        self.documents.pop(index)
-        self.similarity_mx = np.delete(self.similarity_mx, index, axis=0)
-        self.similarity_mx = np.delete(self.similarity_mx, index, axis=1)
+        try:
+            index = self.documents.index(doc_id)
+            self.documents.pop(index)
+            self.similarity_mx = np.delete(self.similarity_mx, index, axis=0)
+            self.similarity_mx = np.delete(self.similarity_mx, index, axis=1)
+        except:
+            pass
 
     def merge_one_elm_cluster_to_nearest(self, clusters, one_elm_clusters) -> None:
         """Update clusters don't return anything"""
@@ -126,12 +142,13 @@ class ClusterMaker:
                 clusters.append(
                     [elm], correlation=1, algorithm=algo.NEAREST_DOC_CLUSTER.value)
 
-    def make(self) -> list[list]:
+    def make(self) -> ClustersHolderType:
         clusters = ClustersHolderType()
 
         for threshold in self.threshold_range:
             similarity_dict = self.similarity_dict(threshold)
-            similar = self.transitive_similarity(similarity_dict)
+            # similar = self.transitive_similarity(similarity_dict)
+            similar = self.flat_similarity_algorithm(similarity_dict)
 
             last_loop = threshold*100 <= self.min_threshold
             if last_loop:
@@ -140,7 +157,9 @@ class ClusterMaker:
                 pop_count = 0
                 for i, x in enumerate(similar.copy()):
                     if len(x) <= 1:
-                        one_elm_cluster.append(*similar.pop(i-pop_count))
+                        value = similar.pop(i-pop_count)
+                        if value:
+                            one_elm_cluster.append(*value)
                         pop_count += 1
 
             else:
@@ -155,5 +174,5 @@ class ClusterMaker:
                     for item in sublist:
                         self.remove_doc(item)
 
-        self.merge_one_elm_cluster_to_nearest(clusters, one_elm_cluster)
-        return clusters.value
+        # self.merge_one_elm_cluster_to_nearest(clusters, one_elm_cluster)
+        return clusters
