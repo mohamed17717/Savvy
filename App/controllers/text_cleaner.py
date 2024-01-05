@@ -93,7 +93,9 @@ class TextCleaner:
                 + ['use', 'home', 'being', 'repo', 'php', 'let',
                    'day', 'month', 'week', 'year', 'second', 'minute',
                    'non', 'please', 'id', 'key', 'click', 'data', 'create',
-                   'co', 'find', 'full', 'oct']
+                   'co', 'find', 'full', 'oct', 'unsupported', 'browser', 'width',
+                   'sign', 'login', 'without'
+                   ]
             ),
             'arabic': lambda: (
                 nltk.corpus.stopwords.words("arabic")
