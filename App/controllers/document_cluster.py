@@ -7,6 +7,9 @@ from sklearn.metrics.pairwise import cosine_similarity
 from App.choices import CusterAlgorithmChoices as algo
 from App.types.cluster_types import ClustersHolderType
 
+from common.utils.functions import single_to_plural
+from common.utils.matrixes import mx_maximum_length, mx_minimum_length, mx_length_between, mx_flat
+
 
 class CosineSimilarityCalculator:
     def __init__(self, documents: list[Dict[str, int]]) -> None:
@@ -53,9 +56,16 @@ class ClusterMaker:
         cluster if similarity exceeded min threshold
     '''
 
-    def __init__(self, documents: list[str], similarity_mx: np.ndarray,):
-        self._documents = documents  # don't change
-        self._similarity_mx = similarity_mx  # don't change
+    def __init__(self, documents: list[str], similarity_mx: np.ndarray):
+        # immutable -> doc to sorted similarities
+        # {doc_id: [(doc_id, similarity), ...]}
+        similarity_mx_injected_by_documents = [
+            sorted(zip(documents, i), key=lambda x: x[1], reverse=True)
+            for i in similarity_mx
+        ]
+        self.similarity_dict = dict(zip(documents, similarity_mx_injected_by_documents))
+        # self._documents = documents  # don't change
+        # self._similarity_mx = similarity_mx  # don't change
         self.documents = documents.copy()
         self.similarity_mx = np.copy(similarity_mx)
 
@@ -64,8 +74,9 @@ class ClusterMaker:
         self.min_threshold = 30
         self.max_threshold = 95
         self.min_threshold_for_nearest_cluster = 50
-        
-        self.high_correlated_overlap = 0.65 # it generate min overlap to 30% which is accepted
+
+        # it generate min overlap to 30% which is accepted
+        self.high_correlated_overlap = 0.65
 
         # self.cluster_good_length = max(math.ceil(len(documents)*0.015), 10)
         self.cluster_good_length = 8
@@ -93,6 +104,18 @@ class ClusterMaker:
             for doc_id, similarities in zip(self.documents, self.similarity_mx)
         }
         return results
+    
+    @property
+    def similars_generator(self):
+        algorithm = algo.EXCEL_THRESHOLD.value
+        for threshold in self.threshold_range:
+            similarity_dict = self.similarity_matrix_to_dict(threshold)
+            if threshold >= self.high_correlated_overlap:
+                similar = self.transitive_similarity(similarity_dict)
+            else:
+                similar = self.flat_similarity_algorithm(similarity_dict)
+
+            yield threshold, similar, algorithm
 
     ### Helper Functions ###
     def remove_doc(self, doc_id) -> None:
@@ -106,6 +129,11 @@ class ClusterMaker:
 
     ### ALGORITHMS ###
     def transitive_similarity(self, similarity_dict) -> list[list]:
+        """it depned on similarity overlap between high correlated documents
+        for example x is similar to y by 0.7 and y is similar to z by 0.7
+        then x simialr to z by 0.4 or more
+        which is accepted correlation
+        """
         results = []
         while similarity_dict:
             doc_id = list(similarity_dict.keys())[0]
@@ -138,71 +166,41 @@ class ClusterMaker:
             results.append(cluster)
         return results
 
-
     def to_most_relative_cluster_algorithm(self, one_elm_clusters) -> None:
         """
         This algorithm aim to add the not clustered docs to nearest doc's cluster
         so the number of not clustered reduced as possible
         """
         for elm in one_elm_clusters:
-            elm_index = self._documents.index(elm)
-            elm_similarities = self._similarity_mx[elm_index]
-            nearest_elm, nearest_similarity = sorted(
-                zip(self._documents, elm_similarities), key=lambda x: x[1], reverse=True
-            )[1]
-            if nearest_similarity*100 > self.min_threshold:
-                cluster_index = self.clusters.items_map[nearest_elm][-1] # get cluster with least correlation
-                cluster = self.clusters[cluster_index]
-                cluster.append(
-                    elm, correlation=nearest_similarity, algorithm=algo.NEAREST_DOC_CLUSTER.value
+            nearest_elm, correlation = self.similarity_dict[elm][1]
+            if correlation*100 > self.min_threshold_for_nearest_cluster:
+                # TODO get cluster with least correlation
+                cluster_index = self.clusters.items_map[nearest_elm][-1]
+                self.clusters[cluster_index].append(
+                    elm, correlation=correlation, algorithm=algo.NEAREST_DOC_CLUSTER.value
                 )
             else:
-                self.clusters.append([elm], correlation=1,
-                                     algorithm=algo.NOTHING.value)
-
-    def high_correlated_overlap_algorithm(self, similarity_dict) -> None:
-        """it depned on similarity overlap between high correlated documents
-        for example x is similar to y by 0.7 and y is similar to z by 0.7
-        then x simialr to z by 0.4 or more
-        which is accepted correlation
-        """
-        similar = self.transitive_similarity(similarity_dict)
-        return similar
-
-    def low_correlated_algorithm(self, similarity_dict) -> None:
-        similar = self.flat_similarity_algorithm(similarity_dict)
-        return similar
+                self.clusters.append([elm], correlation=1, algorithm=algo.NOTHING.value)
 
     ### CLUSTERING ###
     def make(self) -> ClustersHolderType:
-        for threshold in self.threshold_range:
-            similarity_dict = self.similarity_matrix_to_dict(threshold)
-            if threshold >= self.high_correlated_overlap:
-                similar = self.high_correlated_overlap_algorithm(similarity_dict)
-            else:
-                similar = self.low_correlated_algorithm(similarity_dict)
+        remove_docs = single_to_plural(self.remove_doc)
 
-            for sublist in similar:
-                if len(sublist) > self.cluster_good_length:
-                    self.clusters.append(
-                        sublist, correlation=threshold, algorithm=algo.TRANSITIVE_SIMILARITY.value)
-                    for item in sublist:
-                        self.remove_doc(item)
+        for correlation, similars, algorithm in self.similars_generator:
+            good_length_similars = mx_minimum_length(similars, self.cluster_good_length, eq=True)
+
+            for sublist in good_length_similars:
+                self.clusters.append(sublist, correlation, algorithm)
+                remove_docs(sublist)
         else:  # last loop
-            one_elm_cluster = []
-            for sublist in similar:
-                if len(sublist) > self.cluster_good_length or not sublist:
-                    continue
-                elif len(sublist) > 1:  # short cluster
-                    self.clusters.append(
-                        sublist, correlation=0, algorithm=algo.TRANSITIVE_SIMILARITY.value)
-                else:  # one elm
-                    one_elm_cluster.append(*sublist)
-                
-                for item in sublist:
-                    self.remove_doc(item)
+            one_length_similars = mx_flat(mx_maximum_length(similars, 1, eq=True))
+            bad_length_similars = mx_length_between(similars, self.cluster_good_length, 1)
 
-            self.to_most_relative_cluster_algorithm(one_elm_cluster)
+            for sublist in bad_length_similars:
+                self.clusters.append(sublist, correlation, algorithm)
+                remove_docs(sublist)
 
-        self.clusters.merge_repeated_clusters()
+            self.to_most_relative_cluster_algorithm(one_length_similars)
+            self.clusters.merge_repeated_clusters()
+
         return self.clusters
