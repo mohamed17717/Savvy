@@ -293,12 +293,14 @@ class Bookmark(models.Model):
         clusters_qs = [bookmarks.filter(id__in=cluster)
                        for cluster in flat_clusters.value]
         clusters_objects = []
+        index = 0
         for cluster, correlation in zip(clusters_qs, flat_clusters.correlation.values()):
             user = cluster[0].user
-            cluster_object = DocumentCluster.objects.create(
-                user=user, name=f'threshold-{correlation}-{random_string(4)}')
+            cluster_name = f'{index}-threshold-{correlation}-{random_string(4)}'
+            cluster_object = DocumentCluster.objects.create(user=user, name=cluster_name)
             cluster_object.bookmarks.set(cluster)
             clusters_objects.append(cluster_object)
+            index += 1
 
         return clusters_objects
 
