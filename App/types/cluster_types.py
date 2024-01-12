@@ -139,7 +139,7 @@ class ClustersHolderType:
                     self[couple] += 1
 
         def __name_couple(self, couple):
-            return ','.join(couple)
+            return ','.join(map(str, couple))
 
         def __unname_couple(self, name):
             return tuple(map(int, name.split(',')))
@@ -152,7 +152,8 @@ class ClustersHolderType:
 
         def cluster_compare(self, couple_name):
             index1, index2 = self.__unname_couple(couple_name)
-            length1, length2 = len(self.value[index1]), len(self.value[index2])
+            length1, length2 = len(self.clusters.value[index1]), len(
+                self.clusters.value[index2])
 
             short_index, long_index, short_length, long_length = index1, index2, length1, length2
             if length1 > length2:
