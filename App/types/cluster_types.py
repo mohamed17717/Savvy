@@ -42,7 +42,7 @@ class ClustersHolderType:
 
             # calculate the root
             root = cluster_couples.graph_root(cluster_merge_map, long_index)
-            root_changed = root is not long_index
+            root_changed = root != long_index
 
             # if root changed the new root should have relation to this short_index
             if root_changed and not cluster_couples.check_couple_has_relation(short_index, root):
