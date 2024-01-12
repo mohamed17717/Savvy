@@ -37,7 +37,8 @@ class TextCleaner:
         return self
 
     def links(self) -> 'TextCleaner':
-        self.text = re.sub(r'(http|https|ftp)?:?\/\/\S*', '', self.text).strip()
+        self.text = re.sub(r'(http|https|ftp)?:?\/\/\S*',
+                           '', self.text).strip()
         return self
 
     def lowercase(self) -> 'TextCleaner':

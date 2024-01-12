@@ -24,7 +24,7 @@ class ClusterAPI(RLViewSet):
     serializer_class = serializers.DocumentClusterDetailsSerializer
     # TODO remove this line and leave the pagination
     pagination_class = None
-    
+
     def _prefetch(self, qs: QuerySet) -> QuerySet:
         from App.models import DocumentWordWeight as WordWeight
 
@@ -33,7 +33,8 @@ class ClusterAPI(RLViewSet):
         words_qs = (
             WordWeight.objects.filter(**words_query_kwargs).order_by('-weight')
         )
-        words_prefetch = Prefetch('bookmarks__words_weights', queryset=words_qs)
+        words_prefetch = Prefetch(
+            'bookmarks__words_weights', queryset=words_qs)
 
         return qs.prefetch_related('bookmarks', words_prefetch)
 

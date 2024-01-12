@@ -10,7 +10,8 @@ class SignalsCustomManager(models.Manager):
     '''
 
     def _trigger(self, objs):
-        if not objs: return
+        if not objs:
+            return
 
         if not isinstance(objs, list):
             objs = [objs]

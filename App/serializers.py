@@ -136,7 +136,10 @@ class DocumentClusterDetailsSerializer(serializers.ModelSerializer):
                 total_tags.setdefault(tag.word, 0)
                 total_tags[tag.word] += tag.weight
         # total_tags to list
-        to_list_item = lambda i: {'name': i[0], 'weight': i[1]}
+
+        def to_list_item(i):
+            return {'name': i[0], 'weight': i[1]}
+
         total_tags = map(to_list_item, total_tags.items())
         total_tags = list(total_tags)
         # sort by weight

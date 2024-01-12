@@ -63,7 +63,8 @@ class ClusterMaker:
             sorted(zip(documents, i), key=lambda x: x[1], reverse=True)
             for i in similarity_mx
         ]
-        self.similarity_dict = dict(zip(documents, similarity_mx_injected_by_documents))
+        self.similarity_dict = dict(
+            zip(documents, similarity_mx_injected_by_documents))
         # self._documents = documents  # don't change
         # self._similarity_mx = similarity_mx  # don't change
         self.documents = documents.copy()
@@ -104,7 +105,7 @@ class ClusterMaker:
             for doc_id, similarities in zip(self.documents, self.similarity_mx)
         }
         return results
-    
+
     @property
     def similars_generator(self):
         algorithm = algo.EXCEL_THRESHOLD.value
@@ -180,21 +181,25 @@ class ClusterMaker:
                     elm, correlation=correlation, algorithm=algo.NEAREST_DOC_CLUSTER.value
                 )
             else:
-                self.clusters.append([elm], correlation=1, algorithm=algo.NOTHING.value)
+                self.clusters.append(
+                    [elm], correlation=1, algorithm=algo.NOTHING.value)
 
     ### CLUSTERING ###
     def make(self) -> ClustersHolderType:
         remove_docs = single_to_plural(self.remove_doc)
 
         for correlation, similars, algorithm in self.similars_generator:
-            good_length_similars = mx_minimum_length(similars, self.cluster_good_length, eq=True)
+            good_length_similars = mx_minimum_length(
+                similars, self.cluster_good_length, eq=True)
 
             for sublist in good_length_similars:
                 self.clusters.append(sublist, correlation, algorithm)
                 remove_docs(sublist)
         else:  # last loop
-            one_length_similars = mx_flat(mx_maximum_length(similars, 1, eq=True))
-            bad_length_similars = mx_length_between(similars, self.cluster_good_length, 1)
+            one_length_similars = mx_flat(
+                mx_maximum_length(similars, 1, eq=True))
+            bad_length_similars = mx_length_between(
+                similars, self.cluster_good_length, 1)
 
             for sublist in bad_length_similars:
                 self.clusters.append(sublist, correlation, algorithm)
