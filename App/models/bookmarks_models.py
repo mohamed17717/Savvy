@@ -136,7 +136,9 @@ class BookmarkFile(models.Model):
             self.tasks = waiting_tasks
             self.save(update_fields=['tasks'])
 
-        return len(self.tasks) == 0
+        # make it to 1 not 0 because it will be checked from inside a task
+        # which is currently running
+        return len(self.tasks) <= 1
 
 
 class Bookmark(models.Model):
