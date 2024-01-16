@@ -20,6 +20,7 @@ from crawler import settings as scrapy_settings
 
 from common.utils.model_utils import FileSizeValidator
 from common.utils.string_utils import random_string
+from common.utils.file_utils import hash_file
 
 from App.controllers import (
     BookmarkFileManager, BookmarkHTMLFileManager, BookmarkJSONFileManager,
@@ -66,6 +67,8 @@ class BookmarkFile(models.Model):
         ]
     )
 
+    file_hash = models.CharField(max_length=64, blank=True, null=True)
+
     # Holder
     tasks = models.JSONField(default=list, blank=True)
 
@@ -73,8 +76,15 @@ class BookmarkFile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = ('user', 'file_hash')
+
     def save(self, *args, **kwargs):
         self.full_clean()  # To make sure field validators run
+        
+        if self.pk is None:
+            self.file_hash = hash_file(self.location)
+
         return super().save(*args, **kwargs)
 
     # Computed
