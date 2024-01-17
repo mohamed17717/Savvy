@@ -7,6 +7,7 @@ from django.db import transaction
 
 from celery import shared_task, current_app, chord
 from celery.signals import after_task_publish
+from celery.result import allow_join_result
 
 from App import models
 
@@ -33,18 +34,17 @@ def store_bookmarks_task(parent: 'models.BookmarkFile', bookmarks: list[dict]):
         kwargs={'parent': parent, 'bookmark_ids': [bm.id for bm in bookmarks]})
 
 
-@shared_task(queue='orm')
+@shared_task(queue='orm', ignore_result=True)
 def batch_bookmarks_to_crawl_task(parent: 'models.BookmarkFile', bookmark_ids: list[int]):
     batch_size = 30
     steps = range(0, len(bookmark_ids), batch_size)
     sliced_ids = [bookmark_ids[i:i + batch_size] for i in steps]
 
-    tasks = [crawl_bookmarks_task.s(ids) for ids in sliced_ids]
-    job = chord(tasks)(cluster_checker_task.s(bookmark_ids))
-    result = job.get()  # TODO change it to apply async
-
-    # parent.tasks.append(task.task_id)
-    # parent.save()
+    tasks = (crawl_bookmarks_task.s(ids) for ids in sliced_ids)
+    callback = cluster_checker_task.s(bookmark_ids=bookmark_ids, iteration=0)
+    job = chord(tasks)(callback)
+    with allow_join_result():
+        job.get()
 
 
 @shared_task(queue='scrapy')
@@ -87,24 +87,20 @@ def cluster_bookmarks_task(bookmarks):
 
 
 @shared_task(queue='orm')
-def cluster_checker_task(bookmark_ids, iteration=0):
+def cluster_checker_task(callback_result=[], bookmark_ids=[], iteration=0):
     max_time = 15*60  # 15 min
     wait_time = 10  # 10 sec
     max_iteration = max_time // wait_time
 
+    bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
+    uncompleted_bookmarks = bookmarks.filter(
+        crawled=True, words_weights__isnull=True).exists()
     accepted = any([
-        # maximum iterations
         iteration >= max_iteration,
-
-        # make sure this case don't happened
-        # crawled succeeded without word stored
-        bookmarks.filter(
-            crawled=True, words_weights__isnull=True
-        ).exists() is False
+        uncompleted_bookmarks is False
     ])
 
     if accepted:
-        bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
         cluster_bookmarks_task.apply_async(kwargs={'bookmarks': bookmarks})
     else:
         cluster_checker_task.apply_async(
