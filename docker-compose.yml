@@ -11,22 +11,24 @@ services:
     networks:
       - djangonetwork
 
-
   redis:
     image: "redis:alpine"
 
   django:
     build: .
+    # command: pipenv run python manage.py runserver 0.0.0.0:8080"
     command: sh -c "
-      pipenv run python manage.py migrate &&
+      pipenv run python manage.py migrate --noinput &&
       pipenv run python manage.py collectstatic --noinput &&
-      pipenv run python manage.py runserver 0.0.0.0:8000"
+      pipenv run gunicorn dj.wsgi:application --bind 0.0.0.0:8080"
+    expose:
+      - 8080
     env_file:
       - .env
     volumes:
       - .:/usr/src/app
     ports:
-      - "8000:8000"
+      - "8080:8080"
     depends_on:
       - db
       - redis
