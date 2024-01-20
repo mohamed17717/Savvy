@@ -114,7 +114,7 @@ cython_debug/
 !.vscode/extensions.json 
 .history
 
-*.lock
+# *.lock
 
 # scrapy crawler
 crawler/**/*.db
