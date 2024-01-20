@@ -40,6 +40,7 @@ tblib = "*"
 django-prometheus = "*"
 django-silk = "*"
 django-cors-headers = "*"
+gunicorn = "*"
 
 [dev-packages]
 
