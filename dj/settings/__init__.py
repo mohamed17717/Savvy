@@ -16,6 +16,7 @@ DEBUG = os.getenv('DEBUG', '1') == '1'
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
+    'django',
 ]
 
 INSTALLED_APPS = [
@@ -148,9 +149,11 @@ REST_KNOX = {
     'AUTO_REFRESH': False,
 }
 
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = os.getenv('REDIS_PORT', '6379')
 # Celery SETTINGS
-CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'
+CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'
 CELERY_TASK_SERIALIZER = 'pickle'
 CELERY_RESULT_SERIALIZER = 'pickle'
 CELERY_TIMEZONE = 'UTC'
@@ -164,7 +167,7 @@ CACHES = {
     "default": {
         # "BACKEND": "django_redis.cache.RedisCache",
         "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient"
         },
@@ -232,7 +235,7 @@ SWAGGER_SETTINGS = {
     'JSON_EDITOR': True,
 }
 
-INTERNAL_IPS = ['127.0.0.1']
+INTERNAL_IPS = ['127.0.0.1', 'django']
 
 PROMETHEUS_EXPORT_MIGRATIONS = True
 

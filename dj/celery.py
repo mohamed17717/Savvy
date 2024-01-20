@@ -6,6 +6,7 @@ from datetime import timedelta
 from kombu import Queue
 
 # TODO check testing command and change the settings
+os.environ.setdefault('C_FORCE_ROOT', 'true')
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'dj.settings')
 
 app = Celery('dj')
