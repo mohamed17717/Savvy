@@ -1,25 +1,20 @@
+def filter_row_length_in_matrix(mx, gt=None, lt=None, gte=None, lte=None, eq=None):
+    conditions = (
+        (gt, lambda row: len(row) > gt),
+        (lt, lambda row: len(row) < lt),
+        (gte, lambda row: len(row) >= gte),
+        (lte, lambda row: len(row) <= lte),
+        (eq, lambda row: len(row) == eq),
+    )
+    conditions = [func for k, func in conditions if k is not None]
 
-def mx_minimum_length(mx, length, eq=False):
-    def condition(row): return len(row) > length
-    if eq:
-        def condition(row): return len(row) >= length
+    def check(row):
+        return all(func(row) for func in conditions)
 
-    return (row for row in mx if condition(row))
-
-
-def mx_maximum_length(mx, length, eq=False):
-    def condition(row): return len(row) < length
-    if eq:
-        def condition(row): return len(row) <= length
-
-    return (row for row in mx if condition(row))
-
-
-def mx_length_between(mx, top, bottom):
-    return (row for row in mx if top > len(row) > bottom)
+    return filter(check, mx)
 
 
-def mx_flat(mx):
+def flat_matrix(mx):
     flat = []
     for row in mx:
         flat.extend(row)

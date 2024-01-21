@@ -8,7 +8,7 @@ from App.choices import CusterAlgorithmChoices as algo
 from App.types.cluster_types import ClustersHolderType
 
 from common.utils.functions import single_to_plural
-from common.utils.matrixes import mx_maximum_length, mx_minimum_length, mx_length_between, mx_flat
+from common.utils.matrixes import flat_matrix, filter_row_length_in_matrix
 
 
 class CosineSimilarityCalculator:
@@ -189,17 +189,20 @@ class ClusterMaker:
         remove_docs = single_to_plural(self.remove_doc)
 
         for correlation, similars, algorithm in self.similars_generator:
-            good_length_similars = mx_minimum_length(
-                similars, self.cluster_good_length, eq=True)
+            good_length_similars = filter_row_length_in_matrix(
+                similars, gte=self.cluster_good_length
+            )
 
             for sublist in good_length_similars:
                 self.clusters.append(sublist, correlation, algorithm)
                 remove_docs(sublist)
         else:  # last loop
-            one_length_similars = mx_flat(
-                mx_maximum_length(similars, 1, eq=True))
-            bad_length_similars = mx_length_between(
-                similars, self.cluster_good_length, 1)
+            one_length_similars = flat_matrix(
+                filter_row_length_in_matrix(similars, eq=1)
+            )
+            bad_length_similars = filter_row_length_in_matrix(
+                similars, gt=1, lt=self.cluster_good_length
+            )
 
             for sublist in bad_length_similars:
                 self.clusters.append(sublist, correlation, algorithm)
