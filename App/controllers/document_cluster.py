@@ -7,8 +7,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 from App.choices import CusterAlgorithmChoices as algo
 from App.types.cluster_types import ClustersHolderType
 
-from common.utils.functions import single_to_plural
-from common.utils.matrixes import flat_matrix, filter_row_length_in_matrix
+from common.utils.function_utils import single_to_plural
+from common.utils.matrix_utils import flat_matrix, filter_row_length_in_matrix
 
 
 class CosineSimilarityCalculator:

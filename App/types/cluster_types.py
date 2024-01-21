@@ -1,7 +1,8 @@
 from collections import namedtuple
 
-from common.utils.array import window_list
+from common.utils.array_utils import window_list
 from common.utils.math_utils import balanced_avg
+
 
 class ClustersHolderType:
     """This class type is basic 2D list with custom features
@@ -60,7 +61,8 @@ class ClustersHolderType:
         for point, root in sorted(cluster_merge_map.items(), key=lambda i: -i[0]):
             root_cluster = self.value[root]
             point_cluster = self.value[point]
-            self.correlation[root] = balanced_avg(len(root_cluster), self.correlation[root], len(point_cluster), self.correlation[point])
+            self.correlation[root] = balanced_avg(len(
+                root_cluster), self.correlation[root], len(point_cluster), self.correlation[point])
             self.value[root].extend(self.value.pop(point))
 
     def append(self, cluster, correlation=0, algorithm=None) -> None:
@@ -101,7 +103,7 @@ class ClustersHolderType:
 
         def __avg_correlation(self, new_correlation):
             correlation = self.parent.correlation.get(self.index, 1)
-            avg = balanced_avg(len(self),correlation, 1, new_correlation)
+            avg = balanced_avg(len(self), correlation, 1, new_correlation)
             return avg
 
         def append(self, obj, correlation=0, algorithm=None):
@@ -152,8 +154,9 @@ class ClustersHolderType:
 
         def couple_details(self, couple_name):
             index1, index2 = self.__unname_couple(couple_name)
-            length1, length2 = len(self.clusters[index1]), len(self.clusters[index2])
-            
+            length1, length2 = len(self.clusters[index1]), len(
+                self.clusters[index2])
+
             Item = namedtuple('Item', ['index', 'length'])
 
             result = [Item(index1, length1), Item(index2, length2)]
