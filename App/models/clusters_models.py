@@ -16,6 +16,7 @@ class DocumentCluster(models.Model):
     # Required , can be null and user can set it
     # if it null then it will be calculated using the highest tag
     name = models.CharField(max_length=128)
+    correlation = models.FloatField(default=0.0)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)

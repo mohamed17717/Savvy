@@ -310,7 +310,7 @@ class Bookmark(models.Model):
             user = cluster[0].user
             cluster_name = f'{index}-threshold-{correlation}-{random_string(4)}'
             cluster_object = DocumentCluster.objects.create(
-                user=user, name=cluster_name)
+                user=user, name=cluster_name, correlation=correlation)
             cluster_object.bookmarks.set(cluster)
             clusters_objects.append(cluster_object)
             index += 1
