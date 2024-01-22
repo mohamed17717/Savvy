@@ -9,6 +9,7 @@ from App.types.cluster_types import ClustersHolderType
 
 from common.utils.function_utils import single_to_plural
 from common.utils.matrix_utils import flat_matrix, filter_row_length_in_matrix
+from common.utils.math_utils import balanced_avg
 
 
 class CosineSimilarityCalculator:
@@ -65,8 +66,7 @@ class ClusterMaker:
         ]
         self.similarity_dict = dict(
             zip(documents, similarity_mx_injected_by_documents))
-        # self._documents = documents  # don't change
-        # self._similarity_mx = similarity_mx  # don't change
+
         self.documents = documents.copy()
         self.similarity_mx = np.copy(similarity_mx)
 
@@ -97,7 +97,7 @@ class ClusterMaker:
     def similarity_matrix_to_dict(self, threshold) -> dict[str, list]:
         results = {
             doc_id: [
-                other_id
+                (other_id, similarity)
                 for other_id, similarity in zip(self.documents, similarities)
                 if similarity >= threshold and other_id != doc_id
             ]
@@ -112,11 +112,13 @@ class ClusterMaker:
         for threshold in self.threshold_range:
             similarity_dict = self.similarity_matrix_to_dict(threshold)
             if threshold >= self.high_correlated_overlap:
-                similar = self.transitive_similarity(similarity_dict)
+                similar, correlations = self.transitive_similarity(
+                    similarity_dict)
             else:
-                similar = self.flat_similarity_algorithm(similarity_dict)
+                similar, correlations = self.flat_similarity_algorithm(
+                    similarity_dict)
 
-            yield threshold, similar, algorithm
+            yield threshold, similar, algorithm, correlations
 
     ### Helper Functions ###
     def remove_doc(self, doc_id) -> None:
@@ -135,37 +137,49 @@ class ClusterMaker:
         then x simialr to z by 0.4 or more
         which is accepted correlation
         """
+        correlations = []
         results = []
         while similarity_dict:
             doc_id = list(similarity_dict.keys())[0]
             similarities = similarity_dict.pop(doc_id)
             visited = [doc_id]
 
+            correlation = 0
             cluster = [doc_id]
 
             while similarities:
-                other_id = similarities.pop(0)
+                other_id, other_similarity = similarities.pop(0)
                 if other_id in visited:
                     continue
                 cluster.append(other_id)
                 visited.append(other_id)
+                correlation = balanced_avg(
+                    len(cluster), correlation, 1, other_similarity)
                 similarities.extend(similarity_dict.pop(other_id, []))
 
             results.append(cluster)
-        return results
+            correlations.append(correlation)
+        return results, correlations
 
     def flat_similarity_algorithm(self, similarity_dict) -> list[list]:
         results = []
         visited = []
+        correlations = []
         for doc_id, similarities in similarity_dict.items():
             if not similarities or doc_id in visited:
                 continue
 
-            cluster = [doc_id, *similarities]
+            correlation = 0
+            cluster = [doc_id]
+            for other_id, other_similarity in similarities:
+                cluster.append(other_id)
+                correlation = balanced_avg(
+                    len(cluster), correlation, 1, other_similarity)
 
             visited.extend(cluster)
             results.append(cluster)
-        return results
+            correlations.append(correlation)
+        return results, correlations
 
     def to_most_relative_cluster_algorithm(self, one_elm_clusters) -> None:
         """
@@ -182,30 +196,32 @@ class ClusterMaker:
                 )
             else:
                 self.clusters.append(
-                    [elm], correlation=1, algorithm=algo.NOTHING.value)
+                    [elm], correlation=0, algorithm=algo.NOTHING.value)
 
     ### CLUSTERING ###
     def make(self) -> ClustersHolderType:
         remove_docs = single_to_plural(self.remove_doc)
 
-        for correlation, similars, algorithm in self.similars_generator:
-            good_length_similars = filter_row_length_in_matrix(
-                similars, gte=self.cluster_good_length
+        for threshold, similars, algorithm, correlations in self.similars_generator:
+            good_length_similars = filter(
+                lambda x: len(x[0]) >= self.cluster_good_length,
+                zip(similars, correlations)
             )
 
-            for sublist in good_length_similars:
-                self.clusters.append(sublist, correlation, algorithm)
+            for sublist, corr in good_length_similars:
+                self.clusters.append(sublist, corr, algorithm)
                 remove_docs(sublist)
         else:  # last loop
             one_length_similars = flat_matrix(
                 filter_row_length_in_matrix(similars, eq=1)
             )
-            bad_length_similars = filter_row_length_in_matrix(
-                similars, gt=1, lt=self.cluster_good_length
+            bad_length_similars = filter(
+                lambda x: self.cluster_good_length > len(x[0]) > 1,
+                zip(similars, correlations)
             )
 
-            for sublist in bad_length_similars:
-                self.clusters.append(sublist, correlation, algorithm)
+            for sublist, corr in bad_length_similars:
+                self.clusters.append(sublist, corr, algorithm)
                 remove_docs(sublist)
 
             self.to_most_relative_cluster_algorithm(one_length_similars)
