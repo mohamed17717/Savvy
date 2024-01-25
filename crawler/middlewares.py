@@ -28,7 +28,7 @@ class LogResponseMiddleware:
 
         # in case of failed crawled item
         bookmark = request.meta.get('bookmark')
-        await django_wrapper(tasks.store_weights_task.apply_async, kwargs={'bookmark': bookmark})
+        await django_wrapper(tasks.store_weights_task.apply_async, kwargs={'bookmark_id': bookmark.id})
 
         return response
 
