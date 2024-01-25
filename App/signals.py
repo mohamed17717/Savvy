@@ -6,11 +6,10 @@ from App import models, tasks
 
 @receiver(post_save, sender=models.BookmarkFile)
 def on_create_bookmark_file_extract_urls(sender, instance, created, **kwargs):
-    # TODO make location is not editable
-    if created:
-        tasks.store_bookmarks_task.apply_async(kwargs={
-            'parent': instance, 'bookmarks': instance.bookmarks_links
-        })
+    if not created:
+        return
+
+    tasks.store_bookmarks_task.delay(instance.id, instance.bookmarks_links)
 
 
 @receiver(pre_save, sender=models.BookmarkFile)
