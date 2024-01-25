@@ -38,9 +38,9 @@ RUN pipenv install spacy && pipenv run python -m spacy download en_core_web_sm
 # Copy the rest of your application's code
 COPY . .
 
-# Make port 8080 available to the world outside this container
-EXPOSE 8080
+# Make port 8000 available to the world outside this container
+EXPOSE 8000
 
 # Run your app using Pipenv's virtual environment
-# CMD ["pipenv", "run", "python", "manage.py", "runserver", "0.0.0.0:8080"]
-CMD ["pipenv", "run", "gunicorn", "dj.wsgi:application", "--bind", "0.0.0.0:8080"]
+# CMD ["pipenv", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["pipenv", "run", "gunicorn", "dj.wsgi:application", "--bind", "0.0.0.0:8000"]
