@@ -13,9 +13,6 @@ from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.utils import timezone
 
-from celery.states import READY_STATES as celery_ready_states
-from celery.result import AsyncResult
-
 from crawler import settings as scrapy_settings
 
 from common.utils.model_utils import FileSizeValidator
@@ -24,9 +21,8 @@ from common.utils.file_utils import hash_file
 
 from App.controllers import (
     BookmarkFileManager, BookmarkHTMLFileManager, BookmarkJSONFileManager,
-    TextCleaner
+    TextCleaner, ClusterMaker, CosineSimilarityCalculator
 )
-from App.controllers import document_cluster as doc_cluster
 
 
 User = get_user_model()
@@ -61,16 +57,14 @@ class BookmarkFile(models.Model):
 
     # Required
     location = models.FileField(
-        upload_to='users/bookmarks/',
+        upload_to='users/bookmarks/', editable=False,
         validators=[
             FileExtensionValidator(['html', 'json']), FileSizeValidator(5)
         ]
     )
 
-    file_hash = models.CharField(max_length=64, blank=True, null=True)
-
-    # Holder
-    tasks = models.JSONField(default=list, blank=True)
+    file_hash = models.CharField(
+        max_length=64, blank=True, null=True, editable=False)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
@@ -81,7 +75,7 @@ class BookmarkFile(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_clean()  # To make sure field validators run
-        
+
         if self.pk is None:
             self.file_hash = hash_file(self.location)
 
@@ -129,26 +123,15 @@ class BookmarkFile(models.Model):
         file_obj.validate(raise_exception=True)
         return file_obj.get_links()
 
-    @property
-    def is_tasks_done(self):
-        waiting_tasks = []
-        done_tasks = []
+    def init_bookmark(self, data):
+        url = data.pop('url')
+        title = data.pop('title', None)
+        data = data or None
 
-        for task_id in self.tasks:
-            if AsyncResult(task_id).state in celery_ready_states:
-                done_tasks.append(task_id)
-            else:
-                waiting_tasks.append(task_id)
-
-        # TODO rename tasks to scrapy tasks
-        if done_tasks:
-            # update tasks and remove done ones
-            self.tasks = waiting_tasks
-            self.save(update_fields=['tasks'])
-
-        # make it to 1 not 0 because it will be checked from inside a task
-        # which is currently running
-        return len(self.tasks) <= 1
+        return Bookmark(
+            user=self.user, parent_file=self,
+            url=url, title=title, more_data=data
+        )
 
 
 class Bookmark(models.Model):
@@ -275,16 +258,6 @@ class Bookmark(models.Model):
 
     # shortcuts
     @classmethod
-    def instance_by_parent(cls, parent, data):
-        return cls(
-            user=parent.user,
-            parent_file=parent,
-            url=data.pop('url'),
-            title=data.pop('title', None),
-            more_data=data or None
-        )
-
-    @classmethod
     def cluster_bookmarks(cls, bookmarks: QuerySet['Bookmark']):
         from . import DocumentCluster
 
@@ -293,13 +266,12 @@ class Bookmark(models.Model):
         # vectors = [b.word_vector for b in bookmarks]
         vectors = [b.important_words for b in bookmarks]
 
-        sim_calculator = doc_cluster.CosineSimilarityCalculator(vectors)
+        sim_calculator = CosineSimilarityCalculator(vectors)
         similarity_matrix = sim_calculator.similarity()
         similarity_matrix = np.ceil(similarity_matrix*100)/100
 
         # Clustering
-        clusters_maker = doc_cluster.ClusterMaker(
-            bookmark_id, similarity_matrix)
+        clusters_maker = ClusterMaker(bookmark_id, similarity_matrix)
         flat_clusters = clusters_maker.make()
 
         clusters_qs = [bookmarks.filter(id__in=cluster)
@@ -475,7 +447,7 @@ class WebpageMetaTag(models.Model):
 
         }
 
-        return factors_map.get(self.name, 1)
+        return factors_map.get(name, 1)
 
     @classmethod
     def bulk_create(cls, webpage: BookmarkWebpage, tags: list[dict]):
