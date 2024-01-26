@@ -1,8 +1,8 @@
-import os
 import urllib3
-import hashlib
-from datetime import timedelta
+import requests
 import numpy as np
+
+from datetime import timedelta
 
 from django.db import models, transaction
 from django.db.models import QuerySet
@@ -12,12 +12,14 @@ from django.core.validators import MinValueValidator, MaxValueValidator, FileExt
 from django.core.exceptions import ValidationError
 from django.core.files import File
 from django.utils import timezone
+from django.core.files.base import ContentFile
 
 from crawler import settings as scrapy_settings
 
 from common.utils.model_utils import FileSizeValidator
 from common.utils.string_utils import random_string
-from common.utils.file_utils import hash_file
+from common.utils.file_utils import hash_file, random_filename
+from common.utils.image_utils import compress_image, resize_image
 
 from App.controllers import (
     BookmarkFileManager, BookmarkHTMLFileManager, BookmarkJSONFileManager,
@@ -158,6 +160,8 @@ class Bookmark(models.Model):
     # Optionals
     title = models.CharField(max_length=2048, blank=True, null=True)
     more_data = models.JSONField(blank=True, null=True)
+    image = models.ImageField(
+        upload_to='bookmarks/images/', blank=True, null=True)
 
     # Defaults
     crawled = models.BooleanField(default=False)
@@ -256,6 +260,18 @@ class Bookmark(models.Model):
 
         return tags
 
+    def set_image_from_url(self, url, new_width=300):
+        response = requests.get(url)
+        response.raise_for_status()
+
+        image = resize_image(response.content, new_width)
+        image = compress_image(image)
+
+        file_name = url.split('/')[-1].split('#')[0] + '.jpeg'
+        self.image.save(file_name, ContentFile(image), save=True)
+
+        return self.image
+
     # shortcuts
     @classmethod
     def cluster_bookmarks(cls, bookmarks: QuerySet['Bookmark']):
@@ -326,25 +342,16 @@ class ScrapyResponseLog(models.Model):
         return f'{self.id} - [{self.status_code}] {self.url} -> ({self.bookmark.id})'
 
     def store_file(self, content):
-        # Create a unique file name based on the URL hash
-        url_hash = hashlib.md5(self.url.encode()).hexdigest()
-        file_name = f"{url_hash}.html"
-        file_path = os.path.join(scrapy_settings.STORAGE_PATH, file_name)
-        i = 0
-        while os.path.exists(file_path):
-            i += 1
-            file_name = f"{url_hash}({i}).html"
-            file_path = os.path.join(scrapy_settings.STORAGE_PATH, file_name)
-
+        file_path = random_filename(scrapy_settings.STORAGE_PATH)
         with open(file_path, 'wb+') as f:
-            dj_file = File(f)
-
             if type(content) is str:
                 content = content.encode('utf8')
 
+            dj_file = File(f)
             dj_file.write(content)
+
             self.html_file = dj_file
-            self.save()
+            self.save(update_fields=['html_file'])
 
         return file_path
 
