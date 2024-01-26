@@ -9,6 +9,7 @@ from celery.result import allow_join_result
 
 from App import models
 from common.utils.array_utils import window_list
+from common.utils.html_utils import extract_image_from_meta
 
 
 @after_task_publish.connect
@@ -60,8 +61,17 @@ def store_webpage_task(bookmark_id, url, page_title, meta_tags, headers):
             bookmark=bookmark, url=url, title=page_title[:2048]
         )
 
+        store_bookmark_image_task.delay(bookmark_id, meta_tags)
         models.WebpageMetaTag.bulk_create(webpage, meta_tags)
         models.WebpageHeader.bulk_create(webpage, headers)
+
+
+@shared_task(queue='orm')
+def store_bookmark_image_task(bookmark_id, meta_tags):
+    bookmark = models.Bookmark.objects.get(id=bookmark_id)
+    image_url = extract_image_from_meta(meta_tags)
+    if image_url:
+        bookmark.set_image_from_url(image_url)
 
 
 @shared_task(queue='orm')
