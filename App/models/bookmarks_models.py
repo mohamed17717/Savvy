@@ -1,5 +1,6 @@
 import urllib3
 import requests
+import secrets
 import numpy as np
 
 from datetime import timedelta
@@ -266,9 +267,10 @@ class Bookmark(models.Model):
 
         image = resize_image(response.content, new_width)
         image = compress_image(image)
+        image = ContentFile(image)
 
-        file_name = url.split('/')[-1].split('#')[0] + '.jpeg'
-        self.image.save(file_name, ContentFile(image), save=True)
+        file_name = f'{secrets.token_hex(12)}.jpeg'
+        self.image.save(file_name, image, save=True)
 
         return self.image
 
@@ -342,7 +344,7 @@ class ScrapyResponseLog(models.Model):
         return f'{self.id} - [{self.status_code}] {self.url} -> ({self.bookmark.id})'
 
     def store_file(self, content):
-        file_path = random_filename(scrapy_settings.STORAGE_PATH)
+        file_path = random_filename(scrapy_settings.STORAGE_PATH, 'html')
         with open(file_path, 'wb+') as f:
             if type(content) is str:
                 content = content.encode('utf8')
