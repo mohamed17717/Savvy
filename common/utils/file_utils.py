@@ -11,9 +11,9 @@ def hash_file(file_field: models.FileField) -> str:
     return hasher.hexdigest()
 
 
-def random_filename(path):
+def random_filename(path, ext='html'):
     def generate():
-        new_name = f"{secrets.token_hex(12)}.html"
+        new_name = f"{secrets.token_hex(12)}.{ext}"
         return os.path.join(path, new_name)
 
     file_path = generate()
