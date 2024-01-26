@@ -41,6 +41,8 @@ django-prometheus = "*"
 django-silk = "*"
 django-cors-headers = "*"
 gunicorn = "*"
+pillow = "*"
+meta-tags-parser = "*"
 
 [dev-packages]
 
