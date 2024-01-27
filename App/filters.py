@@ -22,7 +22,6 @@ class ClusterFilter(filters.FilterSet):
         fields = ['name', 'correlation']
 
 
-
 class BookmarkFilter(filters.FilterSet):
     class Meta:
         model = models.Bookmark
