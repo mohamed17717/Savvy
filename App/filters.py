@@ -20,3 +20,10 @@ class ClusterFilter(filters.FilterSet):
     class Meta:
         model = models.Cluster
         fields = ['name', 'correlation']
+
+
+
+class BookmarkFilter(filters.FilterSet):
+    class Meta:
+        model = models.Bookmark
+        fields = []
