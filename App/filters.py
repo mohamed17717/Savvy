@@ -23,6 +23,11 @@ class ClusterFilter(filters.FilterSet):
 
 
 class BookmarkFilter(filters.FilterSet):
+    tag = filters.NumberFilter('tags__id')
+    tag_name = filters.CharFilter('tags__name', lookup_expr='icontains')
+
+    cluster = filters.NumberFilter('clusters__id')
+
     class Meta:
         model = models.Bookmark
-        fields = []
+        fields = ['tags', 'clusters']
