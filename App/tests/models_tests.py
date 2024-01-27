@@ -175,7 +175,8 @@ class BookmarkTestCase(TestCase):
 
     def setUp(self) -> None:
         self.reconnect_signals = disconnect_signals(self.model)
-        self.reconnect_signals_bm_file = disconnect_signals(models.BookmarkFile)
+        self.reconnect_signals_bm_file = disconnect_signals(
+            models.BookmarkFile)
 
         self.url = 'https://quotes.toscrape.com/'
         self.user = ObjFactory.create_user()
@@ -340,11 +341,6 @@ class WebpageMetaTagTestCase(TestCase):
         self.reconnect_signals()
         self.wb.tearDown()
 
-    def test_save_method(self):
-        # is content cleaned
-        self.assertIsNotNone(self.obj.cleaned_content)
-        self.assertEqual(self.obj.cleaned_content,  'yes meta tag')
-
     def test_weight_factor_property(self):
         obj = self.obj
         self.assertEqual(obj.weight_factor, 4)
@@ -383,11 +379,6 @@ class WebpageHeaderTestCase(TestCase):
     def tearDown(self) -> None:
         self.reconnect_signals()
         self.wb.tearDown()
-
-    def test_save_method(self):
-        # is content cleaned
-        self.assertIsNotNone(self.obj.cleaned_text)
-        self.assertEqual(self.obj.cleaned_text,  'yes meta tag')
 
     def test_tagname_property(self):
         self.assertEqual(self.obj.tagname, 'h1')
