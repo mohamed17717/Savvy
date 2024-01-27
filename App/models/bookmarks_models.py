@@ -11,9 +11,9 @@ from django.db.utils import IntegrityError
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 from django.core.files import File
 from django.utils import timezone
-from django.core.files.base import ContentFile
 
 from crawler import settings as scrapy_settings
 
@@ -22,10 +22,7 @@ from common.utils.string_utils import random_string
 from common.utils.file_utils import hash_file, random_filename
 from common.utils.image_utils import compress_image, resize_image
 
-from App.controllers import (
-    BookmarkFileManager, BookmarkHTMLFileManager, BookmarkJSONFileManager,
-    TextCleaner, ClusterMaker, CosineSimilarityCalculator
-)
+from App import choices, controllers
 
 
 User = get_user_model()
@@ -102,12 +99,12 @@ class BookmarkFile(models.Model):
         return self.path.endswith('.json')
 
     @property
-    def file_manager(self) -> BookmarkFileManager:
+    def file_manager(self) -> controllers.BookmarkFileManager:
         manager = None
         if self.is_html:
-            manager = BookmarkHTMLFileManager
+            manager = controllers.BookmarkHTMLFileManager
         elif self.is_json:
-            manager = BookmarkJSONFileManager
+            manager = controllers.BookmarkJSONFileManager
 
         if manager is None:
             raise ValidationError('Can\'t get the file manager')
@@ -115,7 +112,7 @@ class BookmarkFile(models.Model):
         return manager
 
     @property
-    def file_obj(self) -> BookmarkFileManager:
+    def file_obj(self) -> controllers.BookmarkFileManager:
         self.location.seek(0)
         obj = self.file_manager(self.location)
         return obj
@@ -164,6 +161,9 @@ class Bookmark(models.Model):
     image = models.ImageField(
         upload_to='bookmarks/images/', blank=True, null=True)
 
+    status = models.PositiveSmallIntegerField(
+        default=choices.BookmarkStatusChoices.PENDING.value,
+        choices=choices.BookmarkStatusChoices.choices)
     # Defaults
     crawled = models.BooleanField(default=False)
 
@@ -284,12 +284,12 @@ class Bookmark(models.Model):
         # vectors = [b.word_vector for b in bookmarks]
         vectors = [b.important_words for b in bookmarks]
 
-        sim_calculator = CosineSimilarityCalculator(vectors)
+        sim_calculator = controllers.CosineSimilarityCalculator(vectors)
         similarity_matrix = sim_calculator.similarity()
         similarity_matrix = np.ceil(similarity_matrix*100)/100
 
         # Clustering
-        clusters_maker = ClusterMaker(bookmark_id, similarity_matrix)
+        clusters_maker = controllers.ClusterMaker(bookmark_id, similarity_matrix)
         flat_clusters = clusters_maker.make()
 
         clusters_qs = [bookmarks.filter(id__in=cluster)
@@ -396,7 +396,6 @@ class WebpageMetaTag(models.Model):
     # TODO make it 64 when cleaner work fine
     name = models.CharField(max_length=2048, default='undefined')
     content = models.TextField(blank=True, null=True)
-    cleaned_content = models.TextField(blank=True, null=True)
 
     # Optional
     attrs = models.JSONField(blank=True, null=True)
@@ -404,12 +403,6 @@ class WebpageMetaTag(models.Model):
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def save(self, *args, **kwargs) -> None:
-        if self.content:
-            self.cleaned_content = TextCleaner(self.content).full_clean().text
-
-        return super().save(*args, **kwargs)
 
     @property
     def weight_factor(self) -> int:
@@ -479,18 +472,10 @@ class WebpageHeader(models.Model):
     level = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(6)]
     )
-    cleaned_text = models.TextField(blank=True, null=True)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def save(self, *args, **kwargs) -> None:
-        cleaner = TextCleaner(self.text)
-        cleaner.full_clean()
-        self.cleaned_text = cleaner.text
-
-        return super().save(*args, **kwargs)
 
     @property
     def tagname(self) -> str:
