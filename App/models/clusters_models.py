@@ -40,7 +40,7 @@ class DocumentCluster(models.Model):
         return general_vector
 
     def get_absolute_url(self):
-        return reverse("app:cluster_read-detail", kwargs={"pk": self.pk})
+        return reverse("app:cluster-detail", kwargs={"pk": self.pk})
 
 
 class Tag(models.Model):
