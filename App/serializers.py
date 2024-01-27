@@ -14,12 +14,6 @@ class BookmarkFileSerializer(serializers.ModelSerializer):
         }
 
 
-class BookmarkSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Bookmark
-        fields = '__all__'
-
-
 class ScrapyResponseLogSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ScrapyResponseLog
@@ -58,29 +52,6 @@ class BookmarkWebpageDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.BookmarkWebpage
-        fields = '__all__'
-
-
-class BookmarkDetailsSerializer(serializers.ModelSerializer):
-    # parent_file = BookmarkFileSerializer(read_only=True)
-
-    # scrapes = ScrapyResponseLogSerializer(read_only=True, many=True)
-    # words_weights = DocumentWordWeightSerializer(read_only=True, many=True)
-
-    # webpages = BookmarkWebpageDetailsSerializer(read_only=True, many=True)
-    # clusters = ClusterWithTagsSerializer(read_only=True, many=True)
-
-    # title = serializers.SerializerMethodField()
-
-    def get_title(self, obj):
-        return (
-            obj.title
-            or (obj.webpage and obj.webpage.title)
-            or obj.url
-        )
-
-    class Meta:
-        model = models.Bookmark
         fields = '__all__'
 
 
@@ -250,7 +221,10 @@ class TagSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     class Details(serializers.ModelSerializer):
-        bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
+        bookmarks = serializers.SerializerMethodField()
+
+        def get_bookmarks(self, obj):
+            return BookmarkSerializer.Details(obj.bookmarks.all(), many=True).data
 
         class Meta:
             model = models.Tag
@@ -311,7 +285,7 @@ class ClusterSerializer(serializers.ModelSerializer):
             return total_tags
 
         def get_bookmarks(self, obj):
-            return BookmarkDetailsSerializer(obj.bookmarks.all(), many=True).data
+            return BookmarkSerializer.Details(obj.bookmarks.all(), many=True).data
 
         class Meta:
             model = models.Cluster
@@ -321,3 +295,31 @@ class ClusterSerializer(serializers.ModelSerializer):
         class Meta:
             model = models.Cluster
             fields = ['name']
+
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Bookmark
+        fields = '__all__'
+
+    class Details(serializers.ModelSerializer):
+        # parent_file = BookmarkFileSerializer(read_only=True)
+
+        # scrapes = ScrapyResponseLogSerializer(read_only=True, many=True)
+        # words_weights = DocumentWordWeightSerializer(read_only=True, many=True)
+
+        # webpages = BookmarkWebpageDetailsSerializer(read_only=True, many=True)
+        # clusters = ClusterWithTagsSerializer(read_only=True, many=True)
+
+        title = serializers.SerializerMethodField()
+
+        def get_title(self, obj):
+            return (
+                obj.title
+                or (obj.webpage and obj.webpage.title)
+                or obj.url
+            )
+
+        class Meta:
+            model = models.Bookmark
+            fields = '__all__'
