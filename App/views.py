@@ -1,6 +1,6 @@
 import math
 
-from django.db.models import Prefetch, Count, QuerySet
+from django.db.models import Prefetch, QuerySet
 
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
@@ -9,6 +9,7 @@ from App import serializers, filters
 
 from common.utils.drf.viewsets import CRDLViewSet, RLViewSet, RULViewSet
 from common.utils.math_utils import dynamic_number_boundaries
+
 
 class BookmarkFileAPI(CRDLViewSet):
     parser_classes = (MultiPartParser, FormParser)
@@ -66,14 +67,27 @@ class ClusterAPI(RULViewSet):
 
 
 class BookmarkAPI(RLViewSet):
-    serializer_class = serializers.BookmarkSerializer
+    filterset_class = filters.BookmarkFilter
+
+    def get_serializer_class(self):
+        serializer_class = serializers.BookmarkSerializer
+
+        if self.action == 'list':
+            pass
+        elif self.action == 'retrieve':
+            serializer_class = serializers.BookmarkSerializer.Details
+
+        return serializer_class
 
     def get_queryset(self):
-        return self.request.user.bookmarks.all()
+        qs = self.request.user.bookmarks.all()
 
-    def retrieve(self, request, *args, **kwargs):
-        self.serializer_class = serializers.BookmarkDetailsSerializer
-        return super().retrieve(request, *args, **kwargs)
+        if self.action == 'list':
+            pass
+        elif self.action == 'retrieve':
+            pass
+
+        return qs
 
 
 class TagAPI(RULViewSet):
@@ -89,7 +103,7 @@ class TagAPI(RULViewSet):
         elif self.action == 'retrieve':
             # TODO paginate RCs in the Tag
             serializer_class = serializers.TagSerializer.Details
-        
+
         return serializer_class
 
     def get_queryset(self):
@@ -113,4 +127,3 @@ class TagListAPI(ListAPIView):
 
     def get_queryset(self):
         return self.request.user.tags.all().order_by('-weight')
-
