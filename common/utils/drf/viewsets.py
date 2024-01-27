@@ -29,3 +29,10 @@ class RDLViewSet(mixins.RetrieveModelMixin,
                  mixins.ListModelMixin,
                  viewsets.GenericViewSet):
     pass
+
+
+class RULViewSet(mixins.RetrieveModelMixin,
+                 mixins.UpdateModelMixin,
+                 mixins.ListModelMixin,
+                 viewsets.GenericViewSet):
+    pass
