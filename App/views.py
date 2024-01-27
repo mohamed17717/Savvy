@@ -21,10 +21,22 @@ class BookmarkFileAPI(CRDLViewSet):
         serializer.save(user=self.request.user)
 
 
-class ClusterAPI(RLViewSet):
-    serializer_class = serializers.DocumentClusterDetailsSerializer
+class ClusterAPI(RULViewSet):
     # TODO remove this line and leave the pagination
     pagination_class = None
+    filterset_class = filters.ClusterFilter
+
+    def get_serializer_class(self):
+        serializer_class = serializers.ClusterSerializer
+
+        if self.action == 'update':
+            serializer_class = serializers.ClusterSerializer.Update
+        elif self.action == 'list':
+            serializer_class = serializers.ClusterSerializer.Details
+        elif self.action == 'retrieve':
+            serializer_class = serializers.ClusterSerializer.Details
+
+        return serializer_class
 
     def _prefetch(self, qs: QuerySet) -> QuerySet:
         from App.models import DocumentWordWeight as WordWeight
@@ -40,13 +52,17 @@ class ClusterAPI(RLViewSet):
         return qs.prefetch_related('bookmarks', words_prefetch)
 
     def get_queryset(self):
-        qs = (
-            self.request.user.clusters.all()
-                .annotate(bookmarks_count=Count('bookmarks'))
-                .order_by('-bookmarks_count')
-        )
+        qs = self.request.user.clusters.all()
 
-        return self._prefetch(qs)
+        if self.action == 'update':
+            pass
+        elif self.action == 'list':
+            qs = qs.order_by('-correlation')
+            qs = self._prefetch(qs)
+        elif self.action == 'retrieve':
+            qs = self._prefetch(qs)
+
+        return qs
 
 
 class BookmarkAPI(RLViewSet):
