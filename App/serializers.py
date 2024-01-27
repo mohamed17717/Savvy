@@ -56,38 +56,7 @@ class DocumentClusterSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class TagSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-
-    def get_name(self, obj):
-        return obj.alias_name or obj.name
-
-    class Meta:
-        model = models.Tag
-        fields = ['id', 'name', 'weight']
-        extra_kwargs = {
-            'user': {'read_only': True}
-        }
-
-
-class TagUpdateAliasNameSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Tag
-        fields = ['alias_name']
-        extra_kwargs = {
-            'alias_name': {'allow_null': True}
-        }
-
-
 # ------------------------ Details Serializers ------------------------ #
-
-class DocumentClusterWithTagsSerializer(serializers.ModelSerializer):
-    tags = TagSerializer(read_only=True, many=True)
-
-    class Meta:
-        model = models.DocumentCluster
-        fields = '__all__'
-
 
 class BookmarkWebpageDetailsSerializer(serializers.ModelSerializer):
     meta_tags = WebpageMetaTagSerializer(read_only=True, many=True)
@@ -152,14 +121,6 @@ class DocumentClusterDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.DocumentCluster
-        fields = '__all__'
-
-
-class TagDetailsSerializer(serializers.ModelSerializer):
-    bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
-
-    class Meta:
-        model = models.Tag
         fields = '__all__'
 
 
@@ -321,3 +282,46 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
             'webpage_headers',
             'webpage_meta_data',
         ]
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Tag
+        fields = '__all__'
+
+    class Details(serializers.ModelSerializer):
+        bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
+
+        class Meta:
+            model = models.Tag
+            fields = '__all__'
+
+    class Update(serializers.ModelSerializer):
+        class Meta:
+            model = models.Tag
+            fields = ['alias_name']
+            extra_kwargs = {
+                'alias_name': {'allow_null': True}
+            }
+
+    class List(serializers.ModelSerializer):
+        name = serializers.SerializerMethodField()
+        url = serializers.CharField(source='get_absolute_url', read_only=True)
+
+        def get_name(self, obj):
+            return obj.alias_name or obj.name
+
+        class Meta:
+            model = models.Tag
+            fields = ['id', 'name', 'weight', 'url']
+            extra_kwargs = {
+                'user': {'read_only': True}
+            }
+
+
+class DocumentClusterWithTagsSerializer(serializers.ModelSerializer):
+    tags = TagSerializer.List(read_only=True, many=True)
+
+    class Meta:
+        model = models.DocumentCluster
+        fields = '__all__'
