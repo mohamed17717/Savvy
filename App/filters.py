@@ -6,6 +6,7 @@ from App import models
 
 class TagFilter(filters.FilterSet):
     name = filters.CharFilter('name', lookup_expr='icontains')
+    bookmark = filters.NumberFilter('bookmarks__id')
 
     class Meta:
         model = models.Tag
@@ -16,6 +17,7 @@ class ClusterFilter(filters.FilterSet):
     name = filters.CharFilter('name', lookup_expr='icontains')
     correlation_min = filters.NumberFilter('correlation', lookup_expr='gte')
     correlation_max = filters.NumberFilter('correlation', lookup_expr='lte')
+    bookmark = filters.NumberFilter('bookmarks__id')
 
     class Meta:
         model = models.Cluster
