@@ -66,13 +66,15 @@ class ClusterAPI(RULViewSet):
         return qs
 
 
-class BookmarkAPI(RLViewSet):
+class BookmarkAPI(RULViewSet):
     filterset_class = filters.BookmarkFilter
 
     def get_serializer_class(self):
         serializer_class = serializers.BookmarkSerializer
 
-        if self.action == 'list':
+        if self.action == 'update':
+            serializer_class = serializers.BookmarkSerializer.Update
+        elif self.action == 'list':
             pass
         elif self.action == 'retrieve':
             serializer_class = serializers.BookmarkSerializer.Details
@@ -82,7 +84,9 @@ class BookmarkAPI(RLViewSet):
     def get_queryset(self):
         qs = self.request.user.bookmarks.all()
 
-        if self.action == 'list':
+        if self.action == 'update':
+            pass
+        elif self.action == 'list':
             pass
         elif self.action == 'retrieve':
             pass

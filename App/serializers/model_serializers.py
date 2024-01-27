@@ -157,3 +157,8 @@ class BookmarkSerializer(serializers.ModelSerializer):
         class Meta:
             model = models.Bookmark
             fields = '__all__'
+
+    class Update(serializers.ModelSerializer):
+        class Meta:
+            model = models.Bookmark
+            fields = ['status']
