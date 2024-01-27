@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.shortcuts import reverse
 
 
 class DocumentCluster(models.Model):
@@ -38,6 +39,9 @@ class DocumentCluster(models.Model):
 
         return general_vector
 
+    def get_absolute_url(self):
+        return reverse("app:cluster_read-detail", kwargs={"pk": self.pk})
+
 
 class Tag(models.Model):
     '''Tag is a stored operation for words table
@@ -71,3 +75,6 @@ class Tag(models.Model):
 
     def __str__(self):
         return f'{self.pk} - {self.name} = {self.weight}'
+
+    def get_absolute_url(self):
+        return reverse("app:tag-detail", kwargs={"pk": self.pk})
