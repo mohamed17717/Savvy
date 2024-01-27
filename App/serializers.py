@@ -50,12 +50,6 @@ class DocumentWordWeightSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class DocumentClusterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.DocumentCluster
-        fields = '__all__'
-
-
 # ------------------------ Details Serializers ------------------------ #
 
 class BookmarkWebpageDetailsSerializer(serializers.ModelSerializer):
@@ -87,40 +81,6 @@ class BookmarkDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Bookmark
-        fields = '__all__'
-
-
-class DocumentClusterDetailsSerializer(serializers.ModelSerializer):
-    # tags = TagSerializer(read_only=True, many=True)
-    # bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
-
-    tags = serializers.SerializerMethodField()
-    bookmarks = serializers.SerializerMethodField()
-
-    def get_tags(self, obj):
-        total_tags = dict()
-        # all tags in one dict
-        for bm in obj.bookmarks.all():
-            for tag in bm.words_weights.all():
-                total_tags.setdefault(tag.word, 0)
-                total_tags[tag.word] += tag.weight
-        # total_tags to list
-
-        def to_list_item(i):
-            return {'name': i[0], 'weight': i[1]}
-
-        total_tags = map(to_list_item, total_tags.items())
-        total_tags = list(total_tags)
-        # sort by weight
-        total_tags.sort(key=lambda x: x['weight'], reverse=True)
-
-        return total_tags
-
-    def get_bookmarks(self, obj):
-        return BookmarkDetailsSerializer(obj.bookmarks.all(), many=True).data
-
-    class Meta:
-        model = models.DocumentCluster
         fields = '__all__'
 
 
@@ -319,9 +279,45 @@ class TagSerializer(serializers.ModelSerializer):
             }
 
 
-class DocumentClusterWithTagsSerializer(serializers.ModelSerializer):
-    tags = TagSerializer.List(read_only=True, many=True)
-
+class ClusterSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.DocumentCluster
         fields = '__all__'
+
+    class Details(serializers.ModelSerializer):
+        # tags = TagSerializer(read_only=True, many=True)
+        # bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
+        tags = serializers.SerializerMethodField()
+        bookmarks = serializers.SerializerMethodField()
+        url = serializers.CharField(source='get_absolute_url', read_only=True)
+
+        def get_tags(self, obj):
+            total_tags = dict()
+            # all tags in one dict
+            for bm in obj.bookmarks.all():
+                for tag in bm.words_weights.all():
+                    total_tags.setdefault(tag.word, 0)
+                    total_tags[tag.word] += tag.weight
+            # total_tags to list
+
+            def to_list_item(i):
+                return {'name': i[0], 'weight': i[1]}
+
+            total_tags = map(to_list_item, total_tags.items())
+            total_tags = list(total_tags)
+            # sort by weight
+            total_tags.sort(key=lambda x: x['weight'], reverse=True)
+
+            return total_tags
+
+        def get_bookmarks(self, obj):
+            return BookmarkDetailsSerializer(obj.bookmarks.all(), many=True).data
+
+        class Meta:
+            model = models.DocumentCluster
+            fields = '__all__'
+
+    class Update(serializers.ModelSerializer):
+        class Meta:
+            model = models.DocumentCluster
+            fields = ['name']
