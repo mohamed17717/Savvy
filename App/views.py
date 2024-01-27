@@ -1,13 +1,14 @@
+import math
+
 from django.db.models import Prefetch, Count, QuerySet
 
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.generics import UpdateAPIView, GenericAPIView
-from rest_framework.response import Response
+from rest_framework.generics import ListAPIView
 
-from App import serializers
+from App import serializers, filters
 
-from common.utils.drf.viewsets import CRDLViewSet, RLViewSet
-
+from common.utils.drf.viewsets import CRDLViewSet, RLViewSet, RULViewSet
+from common.utils.math_utils import dynamic_number_boundaries
 
 class BookmarkFileAPI(CRDLViewSet):
     parser_classes = (MultiPartParser, FormParser)
@@ -59,31 +60,41 @@ class BookmarkAPI(RLViewSet):
         return super().retrieve(request, *args, **kwargs)
 
 
-class TagAPI(RLViewSet):
-    serializer_class = serializers.TagDetailsSerializer
+class TagAPI(RULViewSet):
+    pagination_class = None
+
+    def get_serializer_class(self):
+        serializer_class = serializers.TagSerializer
+
+        if self.action == 'update':
+            serializer_class = serializers.TagSerializer.Update
+        elif self.action == 'list':
+            serializer_class = serializers.TagSerializer.List
+        elif self.action == 'retrieve':
+            # TODO paginate RCs in the Tag
+            serializer_class = serializers.TagSerializer.Details
+        
+        return serializer_class
 
     def get_queryset(self):
-        return self.request.user.tags.all().prefetch_related('bookmarks')
+        qs = self.request.user.tags.all()
+
+        if self.action == 'update':
+            pass
+        elif self.action == 'list':
+            limit = math.ceil(qs.count() * 0.1)
+            limit = dynamic_number_boundaries(limit, 10, 50)
+            qs = qs.order_by('-weight')[:limit]
+        elif self.action == 'retrieve':
+            qs = qs.prefetch_related('bookmarks')
+
+        return qs
 
 
-class TagUpdateAliasNameAPI(UpdateAPIView):
-    serializer_class = serializers.TagUpdateAliasNameSerializer
+class TagListAPI(ListAPIView):
+    serializer_class = serializers.TagSerializer.List
+    filterset_class = filters.TagFilter
 
     def get_queryset(self):
-        user = self.request.user
-        return user.tags.all()
+        return self.request.user.tags.all().order_by('-weight')
 
-
-class TagMostWeightedListAPI(GenericAPIView):
-    # TODO move this endpoint to TagAPI list method instead
-    serializer_class = serializers.TagSerializer
-    TAGS_COUNT = 50
-
-    def get_queryset(self):
-        user = self.request.user
-        return user.tags.all().order_by('-weight')[:self.TAGS_COUNT]
-
-    def get(self, request):
-        qs = self.get_queryset()
-        serializer = self.serializer_class(qs, many=True)
-        return Response(serializer.data)
