@@ -16,3 +16,12 @@ class CusterAlgorithmChoices(models.IntegerChoices):
 
     __empty__ = None
     __default__ = TRANSITIVE_SIMILARITY
+
+
+class BookmarkStatusChoices(models.IntegerChoices):
+    PENDING = 1, _('waiting for any status change')
+    DONE = 2, _('no need to show anymore')
+    ACHIEVED = 3, _('hide for now')
+
+    __empty__ = None
+    __default__ = PENDING
