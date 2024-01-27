@@ -277,7 +277,7 @@ class Bookmark(models.Model):
     # shortcuts
     @classmethod
     def cluster_bookmarks(cls, bookmarks: QuerySet['Bookmark']):
-        from . import DocumentCluster
+        from . import Cluster
 
         bookmark_id = [b.id for b in bookmarks]
         bookmarks = cls.objects.filter(id__in=bookmark_id)
@@ -299,7 +299,7 @@ class Bookmark(models.Model):
         for cluster, correlation in zip(clusters_qs, flat_clusters.correlation.values()):
             user = cluster[0].user
             cluster_name = f'{index}-threshold-{correlation}-{random_string(4)}'
-            cluster_object = DocumentCluster.objects.create(
+            cluster_object = Cluster.objects.create(
                 user=user, name=cluster_name, correlation=correlation)
             cluster_object.bookmarks.set(cluster)
             clusters_objects.append(cluster_object)

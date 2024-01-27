@@ -24,13 +24,13 @@ for bm in models.Bookmark.objects.all():
 
 # get bm in clusters and has no webpage
 clusters_ids = models.Bookmark.objects.filter(webpages__isnull=True, clusters__isnull=False).values_list('clusters', flat=True)
-list(models.DocumentCluster.objects.filter(id__in=clusters_ids).annotate(bookmarks_count=Count('bookmarks')).values_list('bookmarks_count', flat=True))
+list(models.Cluster.objects.filter(id__in=clusters_ids).annotate(bookmarks_count=Count('bookmarks')).values_list('bookmarks_count', flat=True))
 
 
 # delete and cluster again
 from App import models
 
-models.DocumentCluster.objects.all().delete()
+models.Cluster.objects.all().delete()
 bookmarks = models.Bookmark.objects.all()
 models.Bookmark.cluster_bookmarks(bookmarks)
 

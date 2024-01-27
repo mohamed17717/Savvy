@@ -57,7 +57,7 @@ class BookmarkSpiderTestCase(TestCase):
         self.assertGreaterEqual(words.count(), len(self.urls))
 
         # bookmarks got clustered
-        clusters = models.DocumentCluster.objects.filter(bookmarks__in=self.bookmarks)
+        clusters = models.Cluster.objects.filter(bookmarks__in=self.bookmarks)
         self.assertGreaterEqual(clusters.count(), 1)
 
     def tearDown(self) -> None:

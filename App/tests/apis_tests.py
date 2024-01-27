@@ -174,7 +174,7 @@ class BookmarkAPITestCase(APITestCase):
 
 
 class ClusterAPITestCase(APITestCase):
-    model = models.DocumentCluster
+    model = models.Cluster
 
     def setUp(self) -> None:
         user = ObjFactory.create_user(username='mhameho')

@@ -100,7 +100,7 @@ class ObjFactory:
 
     @staticmethod
     def create_cluster(user):
-        return models.DocumentCluster.objects.create(
+        return models.Cluster.objects.create(
             user=user, name=''.join(random.choices(string.ascii_letters, k=8))
         )
 

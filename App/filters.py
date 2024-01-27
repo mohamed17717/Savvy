@@ -18,5 +18,5 @@ class ClusterFilter(filters.FilterSet):
     correlation_max = filters.NumberFilter('correlation', lookup_expr='lte')
 
     class Meta:
-        model = models.DocumentCluster
+        model = models.Cluster
         fields = ['name', 'correlation']
