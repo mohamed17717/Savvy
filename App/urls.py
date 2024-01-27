@@ -7,8 +7,9 @@ from common.utils.drf.routers import CustomSuffixRouter
 router = CustomSuffixRouter()
 
 router.register(r'file', views.BookmarkFileAPI, basename='file')
-router.register(r'cluster', views.ClusterAPI, basename='cluster_read')
 router.register(r'bookmark', views.BookmarkAPI, basename='bookmark')
+
+router.register(r'cluster', views.ClusterAPI, basename='cluster')
 router.register(r'tag', views.TagAPI, basename='tag')
 
 app_name = 'app'
