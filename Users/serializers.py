@@ -43,7 +43,9 @@ class UserSerializer(serializers.ModelSerializer):
         class Meta:
             model = User
             exclude = [
-                'email_verified', 'is_staff', 'is_active', 'is_superuser']
+                'username', 'email', 'email_verified',
+                'is_staff', 'is_active', 'is_superuser',
+            ]
 
     class Login(serializers.Serializer):
         email = serializers.CharField(required=True)
