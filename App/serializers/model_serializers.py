@@ -54,17 +54,17 @@ class TagSerializer(serializers.ModelSerializer):
         model = models.Tag
         fields = '__all__'
 
-    class Details(serializers.ModelSerializer):
+    class TagDetails(serializers.ModelSerializer):
         bookmarks = serializers.SerializerMethodField()
 
         def get_bookmarks(self, obj):
-            return BookmarkSerializer.Details(obj.bookmarks.all(), many=True).data
+            return BookmarkSerializer.BookmarkDetails(obj.bookmarks.all(), many=True).data
 
         class Meta:
             model = models.Tag
             fields = '__all__'
 
-    class Update(serializers.ModelSerializer):
+    class TagUpdate(serializers.ModelSerializer):
         class Meta:
             model = models.Tag
             fields = ['alias_name']
@@ -72,7 +72,7 @@ class TagSerializer(serializers.ModelSerializer):
                 'alias_name': {'allow_null': True}
             }
 
-    class List(serializers.ModelSerializer):
+    class TagList(serializers.ModelSerializer):
         name = serializers.SerializerMethodField()
         url = serializers.CharField(source='get_absolute_url', read_only=True)
 
@@ -92,7 +92,7 @@ class ClusterSerializer(serializers.ModelSerializer):
         model = models.Cluster
         fields = '__all__'
 
-    class Details(serializers.ModelSerializer):
+    class ClusterDetails(serializers.ModelSerializer):
         # tags = TagSerializer(read_only=True, many=True)
         # bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
         tags = serializers.SerializerMethodField()
@@ -119,13 +119,13 @@ class ClusterSerializer(serializers.ModelSerializer):
             return total_tags
 
         def get_bookmarks(self, obj):
-            return BookmarkSerializer.Details(obj.bookmarks.all(), many=True).data
+            return BookmarkSerializer.BookmarkDetails(obj.bookmarks.all(), many=True).data
 
         class Meta:
             model = models.Cluster
             fields = '__all__'
 
-    class Update(serializers.ModelSerializer):
+    class ClusterUpdate(serializers.ModelSerializer):
         class Meta:
             model = models.Cluster
             fields = ['name']
@@ -136,7 +136,7 @@ class BookmarkSerializer(serializers.ModelSerializer):
         model = models.Bookmark
         fields = '__all__'
 
-    class Details(serializers.ModelSerializer):
+    class BookmarkDetails(serializers.ModelSerializer):
         # parent_file = BookmarkFileSerializer(read_only=True)
 
         # scrapes = ScrapyResponseLogSerializer(read_only=True, many=True)
@@ -158,7 +158,7 @@ class BookmarkSerializer(serializers.ModelSerializer):
             model = models.Bookmark
             fields = '__all__'
 
-    class Update(serializers.ModelSerializer):
+    class BookmarkUpdate(serializers.ModelSerializer):
         class Meta:
             model = models.Bookmark
             fields = ['status']

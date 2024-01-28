@@ -7,7 +7,7 @@ from rest_framework.generics import ListAPIView
 
 from App import serializers, filters
 
-from common.utils.drf.viewsets import CRDLViewSet, RLViewSet, RULViewSet
+from common.utils.drf.viewsets import CRDLViewSet, RULViewSet
 from common.utils.math_utils import dynamic_number_boundaries
 
 
@@ -31,11 +31,11 @@ class ClusterAPI(RULViewSet):
         serializer_class = serializers.ClusterSerializer
 
         if self.action == 'update':
-            serializer_class = serializers.ClusterSerializer.Update
+            serializer_class = serializers.ClusterSerializer.ClusterUpdate
         elif self.action == 'list':
-            serializer_class = serializers.ClusterSerializer.Details
+            serializer_class = serializers.ClusterSerializer.ClusterDetails
         elif self.action == 'retrieve':
-            serializer_class = serializers.ClusterSerializer.Details
+            serializer_class = serializers.ClusterSerializer.ClusterDetails
 
         return serializer_class
 
@@ -73,11 +73,11 @@ class BookmarkAPI(RULViewSet):
         serializer_class = serializers.BookmarkSerializer
 
         if self.action == 'update':
-            serializer_class = serializers.BookmarkSerializer.Update
+            serializer_class = serializers.BookmarkSerializer.BookmarkUpdate
         elif self.action == 'list':
             pass
         elif self.action == 'retrieve':
-            serializer_class = serializers.BookmarkSerializer.Details
+            serializer_class = serializers.BookmarkSerializer.BookmarkDetails
 
         return serializer_class
 
@@ -101,12 +101,12 @@ class TagAPI(RULViewSet):
         serializer_class = serializers.TagSerializer
 
         if self.action == 'update':
-            serializer_class = serializers.TagSerializer.Update
+            serializer_class = serializers.TagSerializer.TagUpdate
         elif self.action == 'list':
-            serializer_class = serializers.TagSerializer.List
+            serializer_class = serializers.TagSerializer.TagList
         elif self.action == 'retrieve':
             # TODO paginate RCs in the Tag
-            serializer_class = serializers.TagSerializer.Details
+            serializer_class = serializers.TagSerializer.TagDetails
 
         return serializer_class
 
@@ -126,7 +126,7 @@ class TagAPI(RULViewSet):
 
 
 class TagListAPI(ListAPIView):
-    serializer_class = serializers.TagSerializer.List
+    serializer_class = serializers.TagSerializer.TagList
     filterset_class = filters.TagFilter
 
     def get_queryset(self):
