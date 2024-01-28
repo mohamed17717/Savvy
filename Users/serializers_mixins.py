@@ -7,7 +7,7 @@ from rest_framework import serializers
 User = get_user_model()
 
 
-class ValidatePasswordMixin(object):
+class ValidatePasswordMixin(serializers.Serializer):
     password = serializers.CharField(
         write_only=True, required=True, validators=[validate_password]
     )
@@ -20,7 +20,7 @@ class ValidatePasswordMixin(object):
         return attrs
 
 
-class GetUserByEmailMixin(object):
+class GetUserByEmailMixin(serializers.Serializer):
     email = serializers.CharField(required=True)
 
     def get_user(self, email):
