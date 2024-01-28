@@ -39,6 +39,6 @@ class RULViewSet(mixins.RetrieveModelMixin,
 
 
 class RUViewSet(mixins.RetrieveModelMixin,
-                   mixins.UpdateModelMixin,
-                   viewsets.GenericViewSet):
+                mixins.UpdateModelMixin,
+                viewsets.GenericViewSet):
     pass
