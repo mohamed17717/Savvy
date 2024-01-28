@@ -5,7 +5,7 @@ from django.db.models import Prefetch, QuerySet
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
 
-from App import serializers, filters
+from App import serializers, filters, models
 
 from common.utils.drf.viewsets import CRDLViewSet, RULViewSet
 from common.utils.math_utils import dynamic_number_boundaries
@@ -16,6 +16,9 @@ class BookmarkFileAPI(CRDLViewSet):
     serializer_class = serializers.BookmarkFileSerializer
 
     def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return models.BookmarkFile.objects.none()
+
         return self.request.user.bookmark_files.all()
 
     def perform_create(self, serializer):
@@ -26,9 +29,10 @@ class ClusterAPI(RULViewSet):
     # TODO remove this line and leave the pagination
     pagination_class = None
     filterset_class = filters.ClusterFilter
+    serializer_class = serializers.ClusterSerializer
 
     def get_serializer_class(self):
-        serializer_class = serializers.ClusterSerializer
+        serializer_class = self.serializer_class
 
         if self.action == 'update':
             serializer_class = serializers.ClusterSerializer.ClusterUpdate
@@ -53,6 +57,9 @@ class ClusterAPI(RULViewSet):
         return qs.prefetch_related('bookmarks', words_prefetch)
 
     def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return models.Cluster.objects.none()
+
         qs = self.request.user.clusters.all()
 
         if self.action == 'update':
@@ -68,9 +75,10 @@ class ClusterAPI(RULViewSet):
 
 class BookmarkAPI(RULViewSet):
     filterset_class = filters.BookmarkFilter
+    serializer_class = serializers.BookmarkSerializer
 
     def get_serializer_class(self):
-        serializer_class = serializers.BookmarkSerializer
+        serializer_class = self.serializer_class
 
         if self.action == 'update':
             serializer_class = serializers.BookmarkSerializer.BookmarkUpdate
@@ -82,6 +90,9 @@ class BookmarkAPI(RULViewSet):
         return serializer_class
 
     def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return models.Bookmark.objects.none()
+
         qs = self.request.user.bookmarks.all()
 
         if self.action == 'update':
@@ -96,9 +107,10 @@ class BookmarkAPI(RULViewSet):
 
 class TagAPI(RULViewSet):
     pagination_class = None
+    serializer_class = serializers.TagSerializer
 
     def get_serializer_class(self):
-        serializer_class = serializers.TagSerializer
+        serializer_class = self.serializer_class
 
         if self.action == 'update':
             serializer_class = serializers.TagSerializer.TagUpdate
@@ -111,6 +123,9 @@ class TagAPI(RULViewSet):
         return serializer_class
 
     def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return models.Tag.objects.none()
+
         qs = self.request.user.tags.all()
 
         if self.action == 'update':
@@ -130,4 +145,6 @@ class TagListAPI(ListAPIView):
     filterset_class = filters.TagFilter
 
     def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return models.Tag.objects.none()
         return self.request.user.tags.all().order_by('-weight')
