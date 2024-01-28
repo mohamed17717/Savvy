@@ -15,6 +15,6 @@ urlpatterns = [
 
     path('reset-password/', views.ResetPasswordAPI.as_view(), name='reset_password'),
     path('otp-ask/', views.AskForOTPCodeAPI.as_view(), name='otp_ask'),
-    path('profile/', views.UserProfileAPI.as_view(), name='profile'),
-    path('profile/update/', views.UpdateUserProfileAPI.as_view(), name='profile_update'),
+
+    path('profile/', views.UserProfileAPI.as_view({'get': 'retrieve', 'put': 'update', 'patch': 'partial_update'}), name='profile'),
 ]
