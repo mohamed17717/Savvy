@@ -8,6 +8,7 @@ from rest_framework.status import HTTP_204_NO_CONTENT
 
 from knox.views import LoginView as KnoxLoginView
 
+from common.utils.drf.viewsets import RUViewSet
 from Users import serializers, controllers
 
 
@@ -22,7 +23,7 @@ def setup_serializer(view, request, **kwargs):
 class LoginAPI(KnoxLoginView):
     authentication_classes = []
     permission_classes = [AllowAny]
-    request_serializer = serializers.UserSerializer.Login
+    serializer_class = serializers.UserSerializer.Login
 
     def post(self, request):
         serializer = setup_serializer(self, request)
@@ -75,18 +76,16 @@ class RegisterAPI(GenericAPIView):
         return Response(serializers.UserSerializer(user).data)
 
 
-class UserProfileAPI(GenericAPIView):
-    serializer_class = serializers.UserSerializer
+class UserProfileAPI(RUViewSet):
+    def get_serializer_class(self):
+        serializer_class = serializers.UserSerializer
 
-    def get(self, request):
-        user = request.user
-        return Response(serializers.UserSerializer(user).data)
+        if self.action == 'update':
+            serializer_class = serializers.UserSerializer.Update
+        elif self.action == 'retrieve':
+            pass
 
+        return serializer_class
 
-class UpdateUserProfileAPI(GenericAPIView):
-    serializer_class = serializers.UserSerializer.Update
-
-    def post(self, request):
-        serializer = setup_serializer(self, request, instance=request.user)
-        user = serializer.save()
-        return Response(serializers.UserSerializer(user).data)
+    def get_object(self):
+        return self.request.user
