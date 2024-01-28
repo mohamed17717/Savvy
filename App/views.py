@@ -34,7 +34,7 @@ class ClusterAPI(RULViewSet):
     def get_serializer_class(self):
         serializer_class = self.serializer_class
 
-        if self.action == 'update':
+        if self.action == 'update' or self.action == 'partial_update':
             serializer_class = serializers.ClusterSerializer.ClusterUpdate
         elif self.action == 'list':
             serializer_class = serializers.ClusterSerializer.ClusterDetails
@@ -62,7 +62,7 @@ class ClusterAPI(RULViewSet):
 
         qs = self.request.user.clusters.all()
 
-        if self.action == 'update':
+        if self.action == 'update' or self.action == 'partial_update':
             pass
         elif self.action == 'list':
             qs = qs.order_by('-correlation')
@@ -80,7 +80,7 @@ class BookmarkAPI(RULViewSet):
     def get_serializer_class(self):
         serializer_class = self.serializer_class
 
-        if self.action == 'update':
+        if self.action == 'update' or self.action == 'partial_update':
             serializer_class = serializers.BookmarkSerializer.BookmarkUpdate
         elif self.action == 'list':
             pass
@@ -95,7 +95,7 @@ class BookmarkAPI(RULViewSet):
 
         qs = self.request.user.bookmarks.all()
 
-        if self.action == 'update':
+        if self.action == 'update' or self.action == 'partial_update':
             pass
         elif self.action == 'list':
             pass
@@ -112,7 +112,7 @@ class TagAPI(RULViewSet):
     def get_serializer_class(self):
         serializer_class = self.serializer_class
 
-        if self.action == 'update':
+        if self.action == 'update' or self.action == 'partial_update':
             serializer_class = serializers.TagSerializer.TagUpdate
         elif self.action == 'list':
             serializer_class = serializers.TagSerializer.TagList
@@ -128,7 +128,7 @@ class TagAPI(RULViewSet):
 
         qs = self.request.user.tags.all()
 
-        if self.action == 'update':
+        if self.action == 'update' or self.action == 'partial_update':
             pass
         elif self.action == 'list':
             limit = math.ceil(qs.count() * 0.1)
