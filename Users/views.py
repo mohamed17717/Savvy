@@ -11,39 +11,39 @@ from knox.views import LoginView as KnoxLoginView
 from Users import serializers, controllers
 
 
-class LoginView(KnoxLoginView):
+def setup_serializer(view, request, **kwargs):
+    serializer = view.serializer_class(
+        data=request.data, context={'request': request}, **kwargs
+    )
+    serializer.is_valid(raise_exception=True)
+    return serializer
+
+
+class LoginAPI(KnoxLoginView):
     authentication_classes = []
     permission_classes = [AllowAny]
-    request_serializer = serializers.LoginAuthSerializer
-
-    def post(self, request, format=None):
-        serializer = self.request_serializer(
-            data=request.data, context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-
-        login(request, user)
-        return super(LoginView, self).post(request, format=None)
-
-
-class ResetPasswordView(GenericAPIView):
-    permission_classes = []
-    serializer_class = serializers.ResetPasswordSerializer
+    request_serializer = serializers.UserSerializer.Login
 
     def post(self, request):
-        serializer = self.serializer_class(
-            data=request.data, context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
+        serializer = setup_serializer(self, request)
+        user = serializer.validated_data['user']
+        login(request, user)
+        return super(LoginAPI, self).post(request, format=None)
+
+
+class ResetPasswordAPI(GenericAPIView):
+    permission_classes = []
+    serializer_class = serializers.UserSerializer.ResetPassword
+
+    def post(self, request):
+        serializer = setup_serializer(self, request)
 
         user = serializer.validated_data['user']
         password = serializer.validated_data['password']
-
         user.set_password(password)
         user.save()
 
-        return Response({'message': 'OK'}, status=HTTP_204_NO_CONTENT)
+        return Response(status=HTTP_204_NO_CONTENT)
 
 
 class AskForOTPCodeAPI(GenericAPIView):
@@ -51,12 +51,10 @@ class AskForOTPCodeAPI(GenericAPIView):
     serializer_class = serializers.AskForOTPCodeSerializer
 
     def post(self, request):
-        s = self.serializer_class(
-            data=request.data, context={'request': request})
-        s.is_valid(raise_exception=True)
+        serializer = setup_serializer(self, request)
 
-        user = s.validated_data['user']
-        otp_type = s.validated_data['otp_type']
+        user = serializer.validated_data['user']
+        otp_type = serializer.validated_data['otp_type']
 
         otp_code = controllers.OTPManager(user).send(otp_type)
         if settings.DEBUG:
@@ -65,14 +63,30 @@ class AskForOTPCodeAPI(GenericAPIView):
         return Response(status=HTTP_204_NO_CONTENT)
 
 
-class RegisterView(GenericAPIView):
+class RegisterAPI(GenericAPIView):
     permission_classes = []
     authentication_classes = []
-    serializer_class = serializers.UserRegisterSerializer
+    serializer_class = serializers.UserSerializer.Register
 
     def post(self, request):
-        user_serializer = self.serializer_class(data=request.data)
-        user_serializer.is_valid(raise_exception=True)
-        user = user_serializer.save()
+        serializer = setup_serializer(self, request)
+        user = serializer.save()
 
+        return Response(serializers.UserSerializer(user).data)
+
+
+class UserProfileAPI(GenericAPIView):
+    serializer_class = serializers.UserSerializer
+
+    def get(self, request):
+        user = request.user
+        return Response(serializers.UserSerializer(user).data)
+
+
+class UpdateUserProfileAPI(GenericAPIView):
+    serializer_class = serializers.UserSerializer.Update
+
+    def post(self, request):
+        serializer = setup_serializer(self, request, instance=request.user)
+        user = serializer.save()
         return Response(serializers.UserSerializer(user).data)
