@@ -160,6 +160,7 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_ACCEPT_CONTENT = ['pickle']
 CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 12 * 60 * 60}
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_IGNORE_RESULT = True
 
 
 # Caches
@@ -196,11 +197,22 @@ LOGGING = {
             'filename': 'logs/info.log',
             'formatter': 'main_formatter',
         },
+        'celery_file': {
+            'class': 'logging.FileHandler',
+            'filename': 'logs/celery.log',
+            'formatter': 'main_formatter',
+        },
     },
 
     'loggers': {
         'main': {
             'handlers': ['file', 'console'] if DEBUG else ['file'],
+            'propagate': True,
+            'level': 'INFO'
+        },
+        
+        'celery': {
+            'handlers': ['celery_file', 'console'],
             'propagate': True,
             'level': 'INFO'
         }
