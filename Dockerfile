@@ -31,9 +31,11 @@ RUN pip install pipenv
 COPY Pipfile Pipfile.lock ./
 
 # Install dependencies in a virtual environment
-RUN pipenv install --deploy --ignore-pipfile
-
-RUN pipenv install spacy && pipenv run python -m spacy download en_core_web_sm
+RUN pipenv install --deploy --ignore-pipfile \
+    && pipenv install spacy \
+    && pipenv run python -m spacy download en_core_web_sm \
+    && pipenv run python -m nltk.downloader stopwords \
+    && pipenv run python -m nltk.downloader wordnet
 
 # Copy the rest of your application's code
 COPY . .
