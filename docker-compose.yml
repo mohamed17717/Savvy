@@ -13,10 +13,10 @@ services:
 
   redis:
     image: "redis:alpine"
-
+    networks:
+      - djangonetwork
   django:
     build: .
-    # command: pipenv run python manage.py runserver 0.0.0.0:8000"
     command: sh -c "
       pipenv run python manage.py migrate --noinput &&
       pipenv run python manage.py collectstatic --noinput &&
@@ -34,18 +34,51 @@ services:
       - redis
     links:
       - db:db
+      - redis:redis
     networks:
       - djangonetwork
 
-  celery:
+  celery_scrapy_worker:
     build: .
-    # user: "1000:1000"
-    command: pipenv run celery -A dj worker --loglevel=info
+    command: pipenv run celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=10
     env_file:
       - .env
     depends_on:
       - db
       - redis
+    links:
+      - db:db
+      - redis:redis
+    networks:
+      - djangonetwork
+
+  celery_orm_worker:
+    build: .
+    command: pipenv run celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=10
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    links:
+      - db:db
+      - redis:redis
+    networks:
+      - djangonetwork
+
+  celery_email_worker:
+    build: .
+    command: pipenv run celery -A dj worker -l INFO -n email_worker -Q email -E --concurrency=4
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis
+    links:
+      - db:db
+      - redis:redis
+    networks:
+      - djangonetwork
 
   celerybeat:
     build: .
@@ -55,6 +88,11 @@ services:
     depends_on:
       - db
       - redis
+    links:
+      - db:db
+      - redis:redis
+    networks:
+      - djangonetwork
 
   # flower:
   #   image: mher/flower
