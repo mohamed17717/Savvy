@@ -27,20 +27,26 @@ def update_sent_state(sender=None, headers=None, **kwargs):
 def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
     parent = models.BookmarkFile.objects.get(id=parent_id)
 
-    bookmarks = [parent.init_bookmark(item) for item in bookmarks_data]
-    del bookmarks_data
+    bookmarks = tuple(map(parent.init_bookmark, bookmarks_data))
 
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
-    batch_bookmarks_to_crawl_task.delay([bm.id for bm in bookmarks])
+    batch_bookmarks_to_crawl_task.delay([bookmark.id for bookmark in bookmarks])
 
 
-@shared_task(queue='orm', ignore_result=True)
+@shared_task(queue='orm')
 def batch_bookmarks_to_crawl_task(bookmark_ids: list[int]):
     batch_size = 30
     id_groups = window_list(bookmark_ids, batch_size, batch_size)
 
-    tasks = (crawl_bookmarks_task.s(group) for group in id_groups)
-    callback = cluster_checker_task.s(bookmark_ids=bookmark_ids, iteration=0)
+    tasks = [
+        crawl_bookmarks_task.s(group).set(queue='scrapy')
+        for group in id_groups
+    ]
+    callback = (
+        cluster_checker_task
+        .s(bookmark_ids=bookmark_ids, iteration=0)
+        .set(queue='orm')
+    )
     job = chord(tasks)(callback)
     with allow_join_result():
         job.get()
