@@ -5,7 +5,7 @@ from App import models
 class BookmarkFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.BookmarkFile
-        exclude = ['file_hash']
+        fields = '__all__'
         extra_kwargs = {
             'user': {'read_only': True}
         }
