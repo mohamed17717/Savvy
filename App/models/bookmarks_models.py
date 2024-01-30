@@ -57,7 +57,7 @@ class BookmarkFile(models.Model):
 
     # Required
     location = models.FileField(
-        upload_to='users/bookmarks/', editable=False,
+        upload_to='users/bookmarks/',
         validators=[
             FileExtensionValidator(['html', 'json']), FileSizeValidator(5)
         ]
