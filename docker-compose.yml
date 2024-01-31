@@ -43,6 +43,8 @@ services:
     command: pipenv run celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=10
     env_file:
       - .env
+    volumes:
+      - .:/usr/src/app
     depends_on:
       - db
       - redis
@@ -57,6 +59,8 @@ services:
     command: pipenv run celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=10
     env_file:
       - .env
+    volumes:
+      - .:/usr/src/app
     depends_on:
       - db
       - redis
@@ -71,6 +75,8 @@ services:
     command: pipenv run celery -A dj worker -l INFO -n email_worker -Q email -E --concurrency=4
     env_file:
       - .env
+    volumes:
+      - .:/usr/src/app
     depends_on:
       - db
       - redis
@@ -85,6 +91,8 @@ services:
     command: pipenv run celery -A dj beat --loglevel=info
     env_file:
       - .env
+    volumes:
+      - .:/usr/src/app
     depends_on:
       - db
       - redis
