@@ -262,7 +262,7 @@ class Bookmark(models.Model):
 
         return tags
 
-    def set_image_from_url(self, url: str, new_width: int=300):
+    def set_image_from_url(self, url: str, new_width: int = 300):
         if url.startswith('data:image'):
             content = base64.b64decode(url.split(',')[-1])
         else:
@@ -271,9 +271,10 @@ class Bookmark(models.Model):
             if not url.startswith('http') and not url.startswith('/'):
                 url = '/' + url
             if url.startswith('/'):
-                url  = f'https://{self.domain}' + url
-            
-            headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+                url = f'https://{self.domain}' + url
+
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             content = response.content
@@ -302,7 +303,8 @@ class Bookmark(models.Model):
         similarity_matrix = np.ceil(similarity_matrix*100)/100
 
         # Clustering
-        clusters_maker = controllers.ClusterMaker(bookmark_id, similarity_matrix)
+        clusters_maker = controllers.ClusterMaker(
+            bookmark_id, similarity_matrix)
         flat_clusters = clusters_maker.make()
 
         clusters_qs = [bookmarks.filter(id__in=cluster)
