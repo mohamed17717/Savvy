@@ -34,7 +34,8 @@ def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
     bookmarks = tuple(map(parent.init_bookmark, bookmarks_data))
 
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
-    batch_bookmarks_to_crawl_task.delay([bookmark.id for bookmark in bookmarks])
+    batch_bookmarks_to_crawl_task.delay(
+        [bookmark.id for bookmark in bookmarks])
 
 
 @shared_task(queue='orm')
@@ -47,9 +48,7 @@ def batch_bookmarks_to_crawl_task(bookmark_ids: list[int]):
         for group in id_groups
     ]
     callback = (
-        cluster_checker_task
-        .s(bookmark_ids=bookmark_ids, iteration=0)
-        .set(queue='orm')
+        on_finish_crawling_task.s(bookmark_ids=bookmark_ids).set(queue='orm')
     )
     job = chord(tasks)(callback)
     with allow_join_result():
@@ -84,7 +83,8 @@ def store_bookmark_image_task(bookmark_id, meta_tags):
         try:
             bookmark.set_image_from_url(image_url)
         except Exception as e:
-            logger.error('store_bookmark_image_task(%s, %s)' % (bookmark_id, image_url), e)
+            logger.error(
+                'store_bookmark_image_task(%s, %s)' % (bookmark_id, image_url), e)
             raise e
 
 
@@ -102,7 +102,29 @@ def cluster_bookmarks_task(bookmark_ids):
 
 
 @shared_task(queue='orm')
-def cluster_checker_task(callback_result=[], bookmark_ids=[], iteration=0):
+def store_bookmark_file_analytics_task(parent_id):
+    parent = models.BookmarkFile.objects.get(id=parent_id)
+
+    parent.total_links_count = parent.bookmarks.count()
+    parent.succeeded_links_count = parent.bookmarks.filter(
+        scrapes__status_code=200).distinct().count()
+    parent.failed_links_count = parent.total_links_count - parent.succeeded_links_count
+    parent.save()
+
+
+@shared_task(queue='orm')
+def on_finish_crawling_task(callback_result=[], bookmark_ids=[]):
+    if not bookmark_ids:
+        return
+
+    parent = models.Bookmark.objects.get(id=bookmark_ids[0]).parent_file
+
+    store_bookmark_file_analytics_task.delay(parent.id)
+    cluster_checker_task.delay(bookmark_ids, 0)
+
+
+@shared_task(queue='orm')
+def cluster_checker_task(bookmark_ids=[], iteration=0):
     max_time = 15*60  # 15 min
     wait_time = 10  # 10 sec
     max_iteration = max_time // wait_time
