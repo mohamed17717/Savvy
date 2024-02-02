@@ -26,6 +26,8 @@ class ClusterFilter(filters.FilterSet):
 
 class BookmarkFilter(filters.FilterSet):
     status = filters.NumberFilter('status')
+    
+    file = filters.NumberFilter('parent_file_id')
 
     tag = filters.NumberFilter('tags__id')
     tag_name = filters.CharFilter('tags__name', lookup_expr='icontains')
@@ -34,4 +36,4 @@ class BookmarkFilter(filters.FilterSet):
 
     class Meta:
         model = models.Bookmark
-        fields = ['status', 'tags', 'clusters']
+        fields = ['status', 'tags', 'clusters', 'parent_file']
