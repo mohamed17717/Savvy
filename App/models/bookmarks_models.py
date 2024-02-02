@@ -67,6 +67,11 @@ class BookmarkFile(models.Model):
     file_hash = models.CharField(
         max_length=64, blank=True, null=True, editable=False)
 
+    # Analytics
+    total_links_count = models.PositiveIntegerField(blank=True, null=True)
+    succeeded_links_count = models.PositiveIntegerField(blank=True, null=True)
+    failed_links_count = models.PositiveIntegerField(blank=True, null=True)
+
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
