@@ -1,6 +1,7 @@
 import urllib3
 import requests
 import secrets
+import base64
 import numpy as np
 
 from datetime import timedelta
@@ -261,11 +262,23 @@ class Bookmark(models.Model):
 
         return tags
 
-    def set_image_from_url(self, url, new_width=300):
-        response = requests.get(url)
-        response.raise_for_status()
+    def set_image_from_url(self, url: str, new_width: int=300):
+        if url.startswith('data:image'):
+            content = base64.b64decode(url.split(',')[-1])
+        else:
+            if url.startswith('://'):
+                url = 'https' + url
+            if not url.startswith('http') and not url.startswith('/'):
+                url = '/' + url
+            if url.startswith('/'):
+                url  = f'https://{self.domain}' + url
+            
+            headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            content = response.content
 
-        image = resize_image(response.content, new_width)
+        image = resize_image(content, new_width)
         image = compress_image(image)
         image = ContentFile(image)
 
