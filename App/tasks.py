@@ -1,5 +1,6 @@
 import json
 import subprocess
+import logging
 
 from django.db import transaction
 
@@ -10,6 +11,9 @@ from celery.result import allow_join_result
 from App import models
 from common.utils.array_utils import window_list
 from common.utils.html_utils import extract_image_from_meta
+
+
+logger = logging.getLogger(__name__)
 
 
 @after_task_publish.connect
@@ -77,7 +81,11 @@ def store_bookmark_image_task(bookmark_id, meta_tags):
     bookmark = models.Bookmark.objects.get(id=bookmark_id)
     image_url = extract_image_from_meta(meta_tags)
     if image_url:
-        bookmark.set_image_from_url(image_url)
+        try:
+            bookmark.set_image_from_url(image_url)
+        except Exception as e:
+            logger.error('store_bookmark_image_task(%s, %s)' % (bookmark_id, image_url), e)
+            raise e
 
 
 @shared_task(queue='orm')
