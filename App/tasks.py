@@ -106,8 +106,7 @@ def store_bookmark_file_analytics_task(parent_id):
     parent = models.BookmarkFile.objects.get(id=parent_id)
 
     parent.total_links_count = parent.bookmarks.count()
-    parent.succeeded_links_count = parent.bookmarks.filter(
-        scrapes__status_code=200).distinct().count()
+    parent.succeeded_links_count = parent.bookmarks.filter(crawled=True).count()
     parent.failed_links_count = parent.total_links_count - parent.succeeded_links_count
     parent.save()
 
