@@ -166,6 +166,7 @@ class Bookmark(models.Model):
     more_data = models.JSONField(blank=True, null=True)
     image = models.ImageField(
         upload_to='bookmarks/images/', blank=True, null=True)
+    image_url = models.URLField(max_length=2048, blank=True, null=True)
 
     status = models.PositiveSmallIntegerField(
         default=choices.BookmarkStatusChoices.PENDING.value,
@@ -273,7 +274,10 @@ class Bookmark(models.Model):
         image = ContentFile(image)
 
         file_name = f'{secrets.token_hex(12)}.jpeg'
+
+        self.image_url = url
         self.image.save(file_name, image, save=True)
+        self.save(update_fields=['image_url'])
 
         return self.image
 
