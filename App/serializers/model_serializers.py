@@ -58,7 +58,9 @@ class TagSerializer(serializers.ModelSerializer):
         bookmarks = serializers.SerializerMethodField()
 
         def get_bookmarks(self, obj):
-            return BookmarkSerializer.BookmarkDetails(obj.bookmarks.all(), many=True).data
+            serializer_class = BookmarkSerializer.BookmarkDetails
+            qs = obj.bookmarks.all()[:10]
+            return serializer_class(qs, many=True).data
 
         class Meta:
             model = models.Tag
@@ -93,33 +95,22 @@ class ClusterSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     class ClusterDetails(serializers.ModelSerializer):
-        # tags = TagSerializer(read_only=True, many=True)
-        # bookmarks = BookmarkDetailsSerializer(read_only=True, many=True)
         tags = serializers.SerializerMethodField()
         bookmarks = serializers.SerializerMethodField()
         url = serializers.CharField(source='get_absolute_url', read_only=True)
 
         def get_tags(self, obj):
-            total_tags = dict()
-            # all tags in one dict
-            for bm in obj.bookmarks.all():
-                for tag in bm.words_weights.all():
-                    total_tags.setdefault(tag.word, 0)
-                    total_tags[tag.word] += tag.weight
-            # total_tags to list
+            tags = []
+            for bm in obj.bookmarks.all()[:10]:
+                tags.extend(TagSerializer.TagList(bm.tags.all()[:3], many=True).data)
 
-            def to_list_item(i):
-                return {'name': i[0], 'weight': i[1]}
-
-            total_tags = map(to_list_item, total_tags.items())
-            total_tags = list(total_tags)
-            # sort by weight
-            total_tags.sort(key=lambda x: x['weight'], reverse=True)
-
-            return total_tags
+            tags.sort(key=lambda x: x['weight'], reverse=True)
+            return tags[:5]
 
         def get_bookmarks(self, obj):
-            return BookmarkSerializer.BookmarkDetails(obj.bookmarks.all(), many=True).data
+            serializer_class = BookmarkSerializer.BookmarkDetails
+            qs = obj.bookmarks.all()[:10]
+            return serializer_class(qs, many=True).data
 
         class Meta:
             model = models.Cluster
@@ -137,14 +128,6 @@ class BookmarkSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     class BookmarkDetails(serializers.ModelSerializer):
-        # parent_file = BookmarkFileSerializer(read_only=True)
-
-        # scrapes = ScrapyResponseLogSerializer(read_only=True, many=True)
-        # words_weights = DocumentWordWeightSerializer(read_only=True, many=True)
-
-        # webpages = BookmarkWebpageDetailsSerializer(read_only=True, many=True)
-        # clusters = ClusterWithTagsSerializer(read_only=True, many=True)
-
         title = serializers.SerializerMethodField()
 
         def get_title(self, obj):

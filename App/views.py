@@ -26,8 +26,6 @@ class BookmarkFileAPI(CRDLViewSet):
 
 
 class ClusterAPI(RULViewSet):
-    # TODO remove this line and leave the pagination
-    pagination_class = None
     filterset_class = filters.ClusterFilter
     serializer_class = serializers.ClusterSerializer
 
@@ -44,17 +42,10 @@ class ClusterAPI(RULViewSet):
         return serializer_class
 
     def _prefetch(self, qs: QuerySet) -> QuerySet:
-        from App.models import DocumentWordWeight as WordWeight
+        tags_qs = self.request.user.tags.all().order_by('-weight')
+        tags_prefetch = Prefetch('bookmarks__tags', queryset=tags_qs)
 
-        user = self.request.user
-        words_query_kwargs = {'important': True, 'bookmark__user': user}
-        words_qs = (
-            WordWeight.objects.filter(**words_query_kwargs).order_by('-weight')
-        )
-        words_prefetch = Prefetch(
-            'bookmarks__words_weights', queryset=words_qs)
-
-        return qs.prefetch_related('bookmarks', words_prefetch)
+        return qs.prefetch_related('bookmarks', tags_prefetch)
 
     def get_queryset(self):
         if self.request.user.is_anonymous:
@@ -117,7 +108,6 @@ class TagAPI(RULViewSet):
         elif self.action == 'list':
             serializer_class = serializers.TagSerializer.TagList
         elif self.action == 'retrieve':
-            # TODO paginate RCs in the Tag
             serializer_class = serializers.TagSerializer.TagDetails
 
         return serializer_class
