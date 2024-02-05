@@ -38,7 +38,7 @@ def custom_get_or_create(model, **kwargs):
             return obj, created
     except IntegrityError:
         # Handle the exception if a duplicate is trying to be created
-        obj = model.objects.get(**kwargs)
+        obj = model.objects.select_for_update().get(**kwargs)
         return obj, False
 
 
@@ -202,23 +202,20 @@ class Bookmark(models.Model):
 
     @property
     def important_words(self) -> dict:
-        # word_vector = self.word_vector
-        # TODO use important flag in database and filter on it
-        word_vector = {
-            w['word']: w['weight']
-            for w in self.words_weights.all().values('word', 'weight')
-        }
+        qs = self.word_weights.filter(important=True)
+        return dict(qs.values_list('word', 'weight'))
+
+    def calculate_important_words(self) -> dict:
+        word_vector = self.word_vector
 
         top_weights_ranks = 5
-        weights = sorted(set(word_vector.values()))
-        if len(weights) > top_weights_ranks:
-            weight_break_point = weights[-top_weights_ranks:][0]
-            word_vector = filter(
-                lambda item: item[1] >= weight_break_point, word_vector.items())
-            word_vector = {
-                k: v for k, v in word_vector
-            }
+        weights = sorted(set(word_vector.values()), reverse=True)
 
+        if len(weights) > top_weights_ranks:
+            break_point = weights[top_weights_ranks-1]
+            word_vector = {
+                k: v for k, v in word_vector.items() if v >= break_point
+            }
         return word_vector
 
     # methods
@@ -228,23 +225,12 @@ class Bookmark(models.Model):
         self.words_weights.all().delete()
 
         word_vector = self.word_vector
-
-        # TODO refactor this code
-        top_weights_ranks = 5
-        weights = sorted(set(word_vector.values()))
-        important_words = word_vector.copy()
-        if len(weights) > top_weights_ranks:
-            weight_break_point = weights[-top_weights_ranks:][0]
-            important_words = filter(
-                lambda item: item[1] >= weight_break_point, important_words.items())
-            important_words = {
-                k: v for k, v in important_words
-            }
-        important_words = set(important_words.keys())
+        important_words = set(self.calculate_important_words().keys())
 
         words_weights = [
             DocumentWordWeight(
-                bookmark=self, word=word, weight=weight, important=word in important_words
+                bookmark=self, word=word, weight=weight,
+                important=word in important_words
             )
             for word, weight in word_vector.items()
         ]
@@ -253,11 +239,9 @@ class Bookmark(models.Model):
 
     def store_tags(self):
         # TODO make this more efficient
-        from . import Tag
-
         tags = []
         for word, weight in self.important_words.items():
-            tag, _ = custom_get_or_create(Tag, user=self.user, name=word)
+            tag, _ = custom_get_or_create(self.user.tags.all(), name=word)
 
             tag.bookmarks.add(self)
             tag.weight += weight
