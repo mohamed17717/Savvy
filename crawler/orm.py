@@ -21,7 +21,6 @@ class DjangoProxy:
     def response_log_write(self, request, response, spider, error_message=None):
         log = models.ScrapyResponseLog.objects.create(
             bookmark=request.meta.get('bookmark'),
-            url=request.url,
             status_code=response.status if response else 500,
             error=error_message,
         )

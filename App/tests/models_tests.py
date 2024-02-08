@@ -87,9 +87,9 @@ class ObjFactory:
         return bm
 
     @staticmethod
-    def create_bookmark_webpage(bookmark, url, title, **kwargs):
+    def create_bookmark_webpage(bookmark, title, **kwargs):
         return models.BookmarkWebpage.objects.create(
-            bookmark=bookmark, url=url, title=title
+            bookmark=bookmark, title=title
         )
 
     @staticmethod
@@ -274,10 +274,7 @@ class ScrapyResponseLogTestCase(TestCase):
         self.reconnect_signals = disconnect_signals(self.model)
 
         self.url = 'https://quotes.toscrape.com/'
-        self.obj = self.model.objects.create(
-            url=self.url,
-            status_code=200
-        )
+        self.obj = self.model.objects.create(status_code=200)
 
     def tearDown(self) -> None:
         self.reconnect_signals()
@@ -314,7 +311,7 @@ class BookmarkWebpageTestCase(TestCase):
             user=self.user, url=self.url)
 
         self.webpage = ObjFactory.create_bookmark_webpage(
-            bookmark=self.bookmark, url=self.url, title=self.title
+            bookmark=self.bookmark, title=self.title
         )
 
     def tearDown(self) -> None:

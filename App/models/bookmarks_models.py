@@ -319,13 +319,9 @@ class Bookmark(models.Model):
 class ScrapyResponseLog(models.Model):
     # Relations
     bookmark = models.ForeignKey(
-        'App.Bookmark', on_delete=models.CASCADE,
-        related_name='scrapes',
-        # TODO remove this
-        blank=True, null=True
+        'App.Bookmark', on_delete=models.CASCADE, related_name='scrapes'
     )
     # Required
-    url = models.URLField(max_length=2048)
     status_code = models.PositiveSmallIntegerField()
 
     # Optional
@@ -349,7 +345,7 @@ class ScrapyResponseLog(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.id} - [{self.status_code}] {self.url} -> ({self.bookmark.id})'
+        return f'{self.id} - [{self.status_code}] -> ({self.bookmark.url})'
 
     def store_file(self, content):
         file_path = random_filename(scrapy_settings.STORAGE_PATH, 'html')
@@ -372,21 +368,17 @@ class ScrapyResponseLog(models.Model):
 
         white_date = timezone.now() - life_long
         return cls.objects.filter(
-            url=url, error__isnull=True, created_at__gte=white_date
+            bookmark__url=url, error__isnull=True, created_at__gte=white_date
         ).exists()
 
 
 class BookmarkWebpage(models.Model):
     # Relations
     bookmark = models.ForeignKey(
-        'App.Bookmark', on_delete=models.CASCADE, related_name='webpages',
-        # TODO remove this
-        blank=True, null=True
+        'App.Bookmark', on_delete=models.CASCADE, related_name='webpages'
     )
 
-    # TODO depend on bookmark and remove url
     # Required
-    url = models.URLField(max_length=2048)
     title = models.CharField(max_length=2048)
 
     # Timing

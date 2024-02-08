@@ -67,7 +67,7 @@ def store_webpage_task(bookmark_id, url, page_title, meta_tags, headers):
     with transaction.atomic():
         bookmark = models.Bookmark.objects.get(id=bookmark_id)
         webpage = models.BookmarkWebpage.objects.create(
-            bookmark=bookmark, url=url, title=page_title[:2048]
+            bookmark=bookmark, title=page_title[:2048]
         )
 
         store_bookmark_image_task.delay(bookmark_id, meta_tags)
