@@ -178,13 +178,6 @@ class Bookmark(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def save(self, *args, **kwargs):
-       if self.pk is None:
-            # remove hash from url
-           self.url = self.url.split('#')[0]
-
-       super(Bookmark, self).save(*args, **kwargs) # Call the real save() method
-
     def __str__(self) -> str:
         return f'{self.id} - {self.url}'
 
