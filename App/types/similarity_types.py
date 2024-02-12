@@ -30,6 +30,7 @@ class SimilarityMatrixType:
         self.document_ids = document_ids
         self._unique_words = unique_words
         self._similarity_matrix = similarity_matrix
+        self._weigh_matrix = None
 
     @property
     def unique_words(self) -> set:
@@ -39,20 +40,31 @@ class SimilarityMatrixType:
                 words.update(v.keys())
             return words
 
-        return self._unique_words or calculate()
+        self._unique_words = self._unique_words or calculate()
+        return self._unique_words
 
     def weight_matrix(self, unique_words=None):
         if unique_words is None:
             unique_words = self.unique_words
-        return tuple(v.weight_vector(unique_words) for v in self.vectors)
+
+        def calculate():
+            return tuple(v.weight_vector(unique_words) for v in self.vectors)
+
+
+        self._weigh_matrix = self._weigh_matrix or calculate()
+        return self._weigh_matrix
 
     @property
     def similarity_matrix(self) -> np.ndarray:
         def calculate():
-            matrix = cosine_similarity(self.weight_matrix())
-            return np.ceil(matrix*100)/100
+            try:
+                matrix = cosine_similarity(self.weight_matrix())
+                return np.ceil(matrix*100)/100
+            except ValueError:
+                return np.ndarray((1,1))
 
-        return self._similarity_matrix or calculate()
+        self._similarity_matrix = self._similarity_matrix or calculate()
+        return self._similarity_matrix
 
     def __repr__(self):
         return self.similarity_matrix.__repr__()
@@ -65,6 +77,11 @@ class SimilarityMatrixType:
         if set(self.document_ids).intersection(other.document_ids):
             raise ValueError(
                 "Can't add two SimilarityMatrixType with same document_ids")
+
+        if not self.similarity_matrix:
+            return other
+        if not other.similarity_matrix:
+            return self
 
         # Combine dimensions
         unique_words = tuple(set(self.unique_words).add(other.unique_words))
