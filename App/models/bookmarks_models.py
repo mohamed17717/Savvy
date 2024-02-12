@@ -2,7 +2,6 @@ import urllib3
 import requests
 import secrets
 import base64
-import numpy as np
 
 from datetime import timedelta
 
@@ -156,7 +155,6 @@ class Bookmark(models.Model):
         related_name='bookmarks', blank=True, null=True
     )
 
-    # TODO depend on bookmark and remove url
     # TODO make url and title max length shorter
     # Required
     url = models.URLField(max_length=2048)
@@ -168,11 +166,13 @@ class Bookmark(models.Model):
         upload_to='bookmarks/images/', blank=True, null=True)
     image_url = models.URLField(max_length=2048, blank=True, null=True)
 
+    # Defaults
+    # merge all status with crawled and sim_calculated
     status = models.PositiveSmallIntegerField(
         default=choices.BookmarkStatusChoices.PENDING.value,
         choices=choices.BookmarkStatusChoices.choices)
-    # Defaults
     crawled = models.BooleanField(default=False)
+    similarity_calculated = models.BooleanField(default=False)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
@@ -281,23 +281,29 @@ class Bookmark(models.Model):
 
         return self.image
 
-    # shortcuts
     @classmethod
-    def cluster_bookmarks(cls, bookmarks: QuerySet['Bookmark']):
-        from . import Cluster
+    def make_clusters(cls, user):
+        from App.types import SimilarityMatrixType
+        from . import Cluster, SimilarityMatrix, DocumentWordWeight
 
-        bookmark_id = [b.id for b in bookmarks]
-        bookmarks = cls.objects.filter(id__in=bookmark_id)
-        # vectors = [b.word_vector for b in bookmarks]
-        vectors = [b.important_words for b in bookmarks]
+        # TODO make it db transaction
+        # Delete old cluster
+        user.clusters.delete()
 
-        sim_calculator = controllers.CosineSimilarityCalculator(vectors)
-        similarity_matrix = sim_calculator.similarity()
-        similarity_matrix = np.ceil(similarity_matrix*100)/100
+        # Get similarity with old ones in mind
+        bookmarks = user.bookmarks.all()
+        document_vectors = DocumentWordWeight.word_vectors(bookmarks)
+        document_ids, vectors = document_vectors.keys(), document_vectors.values()
+
+        similarity_object = SimilarityMatrix.get_object(user)
+        old_similarity = similarity_object.to_type
+        similarity = SimilarityMatrixType(vectors, document_ids)
+
+        new_similarity = old_similarity + similarity
 
         # Clustering
         clusters_maker = controllers.ClusterMaker(
-            bookmark_id, similarity_matrix)
+            document_ids, new_similarity.similarity_matrix)
         flat_clusters = clusters_maker.make()
 
         clusters_qs = [bookmarks.filter(id__in=cluster)
@@ -312,6 +318,10 @@ class Bookmark(models.Model):
             cluster_object.bookmarks.set(cluster)
             clusters_objects.append(cluster_object)
             index += 1
+
+        # update similarity file and make bookmarks to done
+        bookmarks.update(similarity_calculated=True)
+        similarity_object.update_matrix(new_similarity.similarity_matrix)
 
         return clusters_objects
 
