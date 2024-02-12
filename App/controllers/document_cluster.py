@@ -1,51 +1,13 @@
-import math
-from typing import Dict, Generator
+from typing import Generator
 
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
 
 from App.choices import CusterAlgorithmChoices as algo
-from App.types.cluster_types import ClustersHolderType
+from App.types import ClustersHolderType
 
 from common.utils.function_utils import single_to_plural
 from common.utils.matrix_utils import flat_matrix, filter_row_length_in_matrix
 from common.utils.math_utils import balanced_avg
-
-
-class CosineSimilarityCalculator:
-    def __init__(self, documents: list[Dict[str, int]]) -> None:
-        """Calculate similarity blindly between documents based on cosine similarity algorithm
-
-        Args:
-            documents (list[Dict[str, int]]): a list of word weight vector for each document, eg: [{word: weight, word2: weight}]
-        """
-        self.documents = documents
-
-    @property
-    def _unique_words(self) -> set:
-        words = set()
-        for doc in self.documents:
-            words.update(doc.keys())
-        return words
-
-    @property
-    def _doc_to_word_weight_matrix(self):
-        weight_matrix = np.zeros(
-            (len(self.documents), len(self._unique_words))
-        )
-
-        for i, doc in enumerate(self.documents):
-            for j, word in enumerate(self._unique_words):
-                # set the defined weight in each document
-                weight_matrix[i, j] = doc.get(word, 0)
-
-        return weight_matrix
-
-    def similarity(self) -> np.ndarray:
-        matrix = self._doc_to_word_weight_matrix
-        if matrix.shape[1] == 0:
-            return np.array([[1]])
-        return cosine_similarity(matrix)
 
 
 class ClusterMaker:
