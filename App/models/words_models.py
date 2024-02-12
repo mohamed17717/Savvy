@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 
+from App.types import WordVectorType
 from App.managers import SignalsCustomManager
 
 User = get_user_model()
@@ -28,3 +29,15 @@ class DocumentWordWeight(models.Model):
 
     def __str__(self):
         return f'{self.word} - {self.weight} <DOC: {self.bookmark}>'
+
+    @classmethod
+    def word_vectors(cls, bookmarks) -> dict[int, WordVectorType]:
+        words_qs = cls.objects.filter(bookmark__in=bookmarks, important=True)
+        words_qs = words_qs.values_list('bookmark_id', 'word', 'weight')
+
+        document_vectors = {}  # id: {word: weight}
+        for doc_id, word, weight in words_qs:
+            document_vectors.setdefault(doc_id, WordVectorType())
+            document_vectors[doc_id][word] = weight
+
+        return document_vectors
