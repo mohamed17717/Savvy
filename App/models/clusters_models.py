@@ -1,6 +1,13 @@
+import json
+import numpy as np
+
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.shortcuts import reverse
+from django.core.validators import FileExtensionValidator
+from django.core.files.base import ContentFile
+
+from common.utils.file_utils import random_filename
 
 
 class Cluster(models.Model):
@@ -78,3 +85,50 @@ class Tag(models.Model):
 
     def get_absolute_url(self):
         return reverse("app:tag-detail", kwargs={"pk": self.pk})
+
+
+class SimilarityMatrix(models.Model):
+    user = models.OneToOneField(
+        get_user_model(), on_delete=models.CASCADE, related_name='similarity_matrix'
+    )
+
+    file = models.FileField(
+        upload_to='similarity-matrix/',
+        validators=[FileExtensionValidator(['json'])])
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)  # Call the real save() method
+
+    @property
+    def bookmarks(self):
+        return self.user.bookmarks.filter(similarity_calculated=True)
+
+    @property
+    def to_type(self):
+        from . import DocumentWordWeight as WordWeight
+        from App.types import SimilarityMatrixType
+
+        document_vectors = WordWeight.word_vectors(self.bookmarks)
+
+        return SimilarityMatrixType.load(
+            vectors=list(document_vectors.values()),
+            document_ids=list(document_vectors.keys()),
+            path=self.file.path
+        )
+
+    def update_matrix(self, similarity_matrix: np.ndarray):
+        with self.file.open('w') as f:
+            f.write(json.dumps(similarity_matrix))
+        return True
+
+    @classmethod
+    def get_object(cls, user):
+        try:
+            return cls.objects.get(user=user)
+        except cls.DoesNotExist:
+            path = random_filename(cls.file.field.upload_to, 'json')
+            filename = path.split('/')[-1]
+            content_file = ContentFile(b"{}", name=filename)
+
+            return cls.objects.create(user=user, file=content_file)
