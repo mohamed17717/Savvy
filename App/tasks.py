@@ -3,17 +3,20 @@ import subprocess
 import logging
 
 from django.db import transaction
+from django.contrib.auth import get_user_model
 
 from celery import shared_task, current_app, chord
 from celery.signals import after_task_publish
 from celery.result import allow_join_result
 
 from App import models
+
 from common.utils.array_utils import window_list
 from common.utils.html_utils import extract_image_from_meta
 
 
 logger = logging.getLogger(__name__)
+User = get_user_model()
 
 
 @after_task_publish.connect
@@ -96,9 +99,9 @@ def store_weights_task(bookmark_id):
 
 
 @shared_task(queue='orm')
-def cluster_bookmarks_task(bookmark_ids):
-    bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
-    models.Bookmark.cluster_bookmarks(bookmarks)
+def cluster_bookmarks_task(user_id):
+    user = User.objects.get(pk=user_id)
+    models.Bookmark.make_clusters(user)
 
 
 @shared_task(queue='orm')
@@ -106,7 +109,8 @@ def store_bookmark_file_analytics_task(parent_id):
     parent = models.BookmarkFile.objects.get(id=parent_id)
 
     parent.total_links_count = parent.bookmarks.count()
-    parent.succeeded_links_count = parent.bookmarks.filter(crawled=True).count()
+    parent.succeeded_links_count = parent.bookmarks.filter(
+        crawled=True).count()
     parent.failed_links_count = parent.total_links_count - parent.succeeded_links_count
     parent.save()
 
@@ -137,8 +141,10 @@ def cluster_checker_task(bookmark_ids=[], iteration=0):
     ])
 
     if accepted:
+        user_id = models.Bookmark.objects.filter(
+            id__in=bookmark_ids).first().user.pk
         cluster_bookmarks_task.apply_async(
-            kwargs={'bookmark_ids': bookmark_ids})
+            kwargs={'user_id': user_id})
     else:
         cluster_checker_task.apply_async(
             kwargs={'bookmark_ids': bookmark_ids, 'iteration': iteration+1}, countdown=wait_time)
