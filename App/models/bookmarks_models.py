@@ -284,16 +284,15 @@ class Bookmark(models.Model):
     @classmethod
     def make_clusters(cls, user):
         from App.types import SimilarityMatrixType
-        from . import Cluster, SimilarityMatrix, DocumentWordWeight
+        from . import SimilarityMatrix, DocumentWordWeight
 
         # TODO make it db transaction
         # Delete old cluster
-        user.clusters.delete()
+        user.clusters.all().delete()
 
         # Get similarity with old ones in mind
         bookmarks = user.bookmarks.all()
-        document_vectors = DocumentWordWeight.word_vectors(bookmarks)
-        document_ids, vectors = document_vectors.keys(), document_vectors.values()
+        document_ids, vectors = DocumentWordWeight.word_vectors(bookmarks)
 
         similarity_object = SimilarityMatrix.get_object(user)
         old_similarity = similarity_object.to_type
@@ -302,22 +301,9 @@ class Bookmark(models.Model):
         new_similarity = old_similarity + similarity
 
         # Clustering
-        clusters_maker = controllers.ClusterMaker(
-            document_ids, new_similarity.similarity_matrix)
-        flat_clusters = clusters_maker.make()
-
-        clusters_qs = [bookmarks.filter(id__in=cluster)
-                       for cluster in flat_clusters.value]
-        clusters_objects = []
-        index = 0
-        for cluster, correlation in zip(clusters_qs, flat_clusters.correlation.values()):
-            user = cluster[0].user
-            cluster_name = f'{index}-threshold-{correlation}-{random_string(4)}'
-            cluster_object = Cluster.objects.create(
-                user=user, name=cluster_name, correlation=correlation)
-            cluster_object.bookmarks.set(cluster)
-            clusters_objects.append(cluster_object)
-            index += 1
+        clusters_objects = controllers.ClusterMaker(
+            document_ids, new_similarity.similarity_matrix
+        ).make()
 
         # update similarity file and make bookmarks to done
         bookmarks.update(similarity_calculated=True)
