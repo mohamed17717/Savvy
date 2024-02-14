@@ -1,3 +1,4 @@
+import json
 import copy
 
 import numpy as np
@@ -50,7 +51,6 @@ class SimilarityMatrixType:
         def calculate():
             return tuple(v.weight_vector(unique_words) for v in self.vectors)
 
-
         self._weigh_matrix = self._weigh_matrix or calculate()
         return self._weigh_matrix
 
@@ -61,9 +61,11 @@ class SimilarityMatrixType:
                 matrix = cosine_similarity(self.weight_matrix())
                 return np.ceil(matrix*100)/100
             except ValueError:
-                return np.ndarray((1,1))
+                return None
 
-        self._similarity_matrix = self._similarity_matrix or calculate()
+        if self._similarity_matrix is None:
+            self._similarity_matrix = calculate()
+
         return self._similarity_matrix
 
     def __repr__(self):
@@ -78,13 +80,13 @@ class SimilarityMatrixType:
             raise ValueError(
                 "Can't add two SimilarityMatrixType with same document_ids")
 
-        if not self.similarity_matrix:
+        if self.similarity_matrix is None or not self.vectors or not self.unique_words:
             return other
-        if not other.similarity_matrix:
+        if other.similarity_matrix is None or not other.vectors or not other.unique_words:
             return self
 
         # Combine dimensions
-        unique_words = tuple(set(self.unique_words).add(other.unique_words))
+        unique_words = tuple(set(self.unique_words).union(other.unique_words))
         intersect_similarity = cosine_similarity(
             other.weight_matrix(unique_words), self.weight_matrix(unique_words)
         )
@@ -116,13 +118,21 @@ class SimilarityMatrixType:
         Returns:
             str: full path
         """
-        np.save(path, self.similarity_matrix)
+        with open(path, 'w') as f:
+            json.dump(self.similarity_matrix.tolist(), f)
+
         return path
 
     @classmethod
     def load(cls, vectors: list[WordVectorType], document_ids: list[int], path: str) -> 'SimilarityMatrixType':
+        try:
+            with open(path) as f:
+                similarity_matrix = json.loads(f.read())
+        except json.decoder.JSONDecodeError:
+            similarity_matrix = None
+
         return cls(
             vectors=vectors,
             document_ids=document_ids,
-            similarity_matrix=np.load(path)
+            similarity_matrix=similarity_matrix
         )
