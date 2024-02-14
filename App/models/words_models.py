@@ -40,4 +40,4 @@ class DocumentWordWeight(models.Model):
             document_vectors.setdefault(doc_id, WordVectorType())
             document_vectors[doc_id][word] = weight
 
-        return document_vectors
+        return list(document_vectors.keys()), list(document_vectors.values())
