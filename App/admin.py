@@ -13,6 +13,8 @@ admin.site.register(models.WebpageHeader)
 admin.site.register(models.DocumentWordWeight)
 admin.site.register(models.Cluster)
 admin.site.register(models.Tag)
+admin.site.register(models.SimilarityMatrix)
+
 
 admin.site.register(silky_models.Request)
 admin.site.register(silky_models.Response)
