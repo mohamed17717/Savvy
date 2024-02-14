@@ -3,11 +3,10 @@ from typing import Generator
 import numpy as np
 
 from App.choices import CusterAlgorithmChoices as algo
-from App.types import ClustersHolderType
+from App.types import ClustersHolderType, ClusterType
 
 from common.utils.function_utils import single_to_plural
 from common.utils.matrix_utils import flat_matrix, filter_row_length_in_matrix
-from common.utils.math_utils import balanced_avg
 
 
 class ClusterMaker:
@@ -74,13 +73,11 @@ class ClusterMaker:
         for threshold in self.threshold_range:
             similarity_dict = self.similarity_matrix_to_dict(threshold)
             if threshold >= self.high_correlated_overlap:
-                similar, correlations = self.transitive_similarity(
-                    similarity_dict)
+                similar = self.transitive_similarity(similarity_dict)
             else:
-                similar, correlations = self.flat_similarity_algorithm(
-                    similarity_dict)
+                similar = self.flat_similarity_algorithm(similarity_dict)
 
-            yield threshold, similar, algorithm, correlations
+            yield threshold, similar, algorithm
 
     ### Helper Functions ###
     def remove_doc(self, doc_id) -> None:
@@ -99,49 +96,42 @@ class ClusterMaker:
         then x simialr to z by 0.4 or more
         which is accepted correlation
         """
-        correlations = []
         results = []
         while similarity_dict:
             doc_id = list(similarity_dict.keys())[0]
             similarities = similarity_dict.pop(doc_id)
             visited = [doc_id]
 
-            correlation = 0
-            cluster = [doc_id]
+            cluster = ClusterType(self.clusters)
+            cluster.append(doc_id, 1, algo.TRANSITIVE_SIMILARITY.value)
 
             while similarities:
                 other_id, other_similarity = similarities.pop(0)
                 if other_id in visited:
                     continue
-                cluster.append(other_id)
+                cluster.append(other_id, other_similarity, algo.TRANSITIVE_SIMILARITY.value)
                 visited.append(other_id)
-                correlation = balanced_avg(
-                    len(cluster), correlation, 1, other_similarity)
                 similarities.extend(similarity_dict.pop(other_id, []))
 
             results.append(cluster)
-            correlations.append(correlation)
-        return results, correlations
+        return results
 
     def flat_similarity_algorithm(self, similarity_dict) -> list[list]:
         results = []
         visited = []
-        correlations = []
         for doc_id, similarities in similarity_dict.items():
             if not similarities or doc_id in visited:
                 continue
 
-            correlation = 0
-            cluster = [doc_id]
-            for other_id, other_similarity in similarities:
-                cluster.append(other_id)
-                correlation = balanced_avg(
-                    len(cluster), correlation, 1, other_similarity)
+            cluster = ClusterType(self.clusters)
+            cluster.append(doc_id, 1, algo.EXCEL_THRESHOLD.value)
 
-            visited.extend(cluster)
+            for other_id, other_similarity in similarities:
+                cluster.append(other_id, other_similarity, algo.EXCEL_THRESHOLD.value)
+
+            visited.extend(cluster.value)
             results.append(cluster)
-            correlations.append(correlation)
-        return results, correlations
+        return results
 
     def to_most_relative_cluster_algorithm(self, one_elm_clusters) -> None:
         """
@@ -152,41 +142,44 @@ class ClusterMaker:
             nearest_elm, correlation = self.similarity_dict[elm][1]
             if correlation*100 > self.min_threshold_for_nearest_cluster:
                 # TODO get cluster with least correlation
-                cluster_index = self.clusters.items_map[nearest_elm][-1]
-                self.clusters[cluster_index].append(
+                cluster = self.clusters.items_map[nearest_elm][-1]
+                cluster.append(
                     elm, correlation=correlation, algorithm=algo.NEAREST_DOC_CLUSTER.value
                 )
             else:
-                self.clusters.append(
-                    [elm], correlation=0, algorithm=algo.NOTHING.value)
+                cluster = ClusterType(self.clusters)
+                cluster.append(elm, correlation=1, algorithm=algo.NOTHING.value)
+                self.clusters.append(cluster)
 
     ### CLUSTERING ###
-    def make(self) -> ClustersHolderType:
+    def make(self) -> list:
         remove_docs = single_to_plural(self.remove_doc)
 
-        for threshold, similars, algorithm, correlations in self.similars_generator:
+        for _, similars, algorithm in self.similars_generator:
             good_length_similars = filter(
-                lambda x: len(x[0]) >= self.cluster_good_length,
-                zip(similars, correlations)
+                lambda x: len(x) >= self.cluster_good_length,
+                similars
             )
 
-            for sublist, corr in good_length_similars:
-                self.clusters.append(sublist, corr, algorithm)
+            for sublist in good_length_similars:
+                self.clusters.append(sublist)
                 remove_docs(sublist)
         else:  # last loop
             one_length_similars = flat_matrix(
                 filter_row_length_in_matrix(similars, eq=1)
             )
             bad_length_similars = filter(
-                lambda x: self.cluster_good_length > len(x[0]) > 1,
-                zip(similars, correlations)
+                lambda x: self.cluster_good_length > len(x) > 1,
+                similars
             )
 
-            for sublist, corr in bad_length_similars:
-                self.clusters.append(sublist, corr, algorithm)
+            for sublist in bad_length_similars:
+                self.clusters.append(sublist)
                 remove_docs(sublist)
 
             self.to_most_relative_cluster_algorithm(one_length_similars)
             self.clusters.merge_repeated_clusters()
 
-        return self.clusters
+        return [
+            cluster.store() for cluster in self.clusters
+        ]
