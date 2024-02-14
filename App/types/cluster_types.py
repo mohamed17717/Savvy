@@ -1,7 +1,88 @@
-from collections import namedtuple
-
 from common.utils.array_utils import window_list
 from common.utils.math_utils import balanced_avg
+
+
+class ClusterType:
+    """This class represent the cluster and its operations
+    it will track
+    -> correlation
+    -> items
+    -> why item in cluster
+    -> length
+    -> merge to another if similarity passed 70%
+
+    also it track
+    -> parent
+    """
+
+    def __init__(self, parent=None):
+        self.parent = parent
+        self.value = []
+        self.correlation = 1
+        self.length = 0
+        self.why = []
+
+        # clusters merges
+        self.merge_parent = None
+
+    @property
+    def name(self):
+        return f'cluster power {self.correlation} contain {self.length} items'
+
+    def append(self, item, correlation=0, algorithm=None):
+        self.value.append(item)
+        self.why.append(algorithm)
+        self.length += 1
+        self.correlation = balanced_avg(
+            self.length, self.correlation, 1, correlation)
+
+        # TODO if needed convert it to signals and values
+        self.tell_parent(item)
+
+        return self
+
+    def tell_parent(self, item):
+        if self.parent:
+            self.parent.items_map.setdefault(item, [])
+            self.parent.items_map[item].append(self)
+
+    def store(self):
+        from App.models import Cluster, Bookmark
+
+        RCs = Bookmark.objects.filter(id__in=self.value)
+        user = RCs[0].user
+
+        cluster = Cluster.objects.create(
+            user=user, name=self.name, correlation=self.correlation)
+        cluster.bookmarks.set(RCs)
+
+        return cluster
+
+    def merge_with(self, child):
+        if self.merge_parent:
+            self.merge_parent.merge_with(child)
+        else:
+            self.value.extend(child.value)
+            self.correlation = balanced_avg(
+                self.length, self.correlation, child.length, child.correlation)
+            self.length += child.length
+            self.why.extend(child.why)
+
+            child.merge_parent = self
+            self.parent.value = list(
+                filter(lambda item: item is not child, self.parent.value))
+
+    def __len__(self):
+        return self.length
+
+    def __iter__(self):
+        return iter(self.value)
+
+    def __str__(self) -> str:
+        return f'cluster {self.length} items'
+
+    def __repr__(self) -> str:
+        return f'<cluster {self.length} items/>'
 
 
 class ClustersHolderType:
@@ -16,10 +97,7 @@ class ClustersHolderType:
 
     def __init__(self) -> None:
         self.value = []  # clusters list
-        self.correlation = {}  # track correlation {cluster_index: correlation}
         self.items_map = {}  # track item where {item: cluster_index}
-        self.index = 0  # track length
-        self.clustered_why = {}  # track algorithm {item: algorithm}
 
     @property
     def repeated_items(self) -> dict:
@@ -31,7 +109,6 @@ class ClustersHolderType:
     def merge_repeated_clusters(self):
         cluster_couples = self.ClusterCouplesHolderType(self)
 
-        cluster_merge_map = {}  # x to root
         similarity_acceptance = 0.7
         for couple, times in cluster_couples.items():
             # know the length of the couple
@@ -40,82 +117,30 @@ class ClustersHolderType:
             # if the repeated excel x% of the length of one of them -> then merge
             is_very_similar = times/_short.length > similarity_acceptance
 
-            if not is_very_similar:
+            already_merged = _short.merge_parent is not None
+            if not is_very_similar or already_merged:
                 continue
 
-            # calculate the root
-            root = cluster_couples.graph_root(cluster_merge_map, _long.index)
-            root_changed = root != _long.index
+            _long.merge_with(_short)
 
-            # if root changed the new root should have relation to this short_index
-            if root_changed and not cluster_couples.check_couple_has_relation(_short.index, root):
-                continue
+    def append(self, cluster_list, correlation=0, algorithm=None) -> None:
+        if type(cluster_list) is ClusterType:
+            cluster = cluster_list
+        else:
+            cluster = ClusterType(self)
+            for item in cluster_list:
+                cluster.append(item, correlation, algorithm)
 
-            # roots can't be normal nodes so check and replace shorts to its root
-            cluster_merge_map = {
-                key: (root if val == _short.index else val)
-                for key, val in cluster_merge_map.items()
-            }
-            cluster_merge_map.update({_short.index: root})
-
-        for point, root in sorted(cluster_merge_map.items(), key=lambda i: -i[0]):
-            root_cluster = self.value[root]
-            point_cluster = self.value[point]
-            self.correlation[root] = balanced_avg(len(
-                root_cluster), self.correlation[root], len(point_cluster), self.correlation[point])
-            self.value[root].extend(self.value.pop(point))
-
-    def append(self, cluster, correlation=0, algorithm=None) -> None:
-        self.value.append(
-            self.ClusterType(cluster, self, self.index)
-        )
-        for item in cluster:
-            self.items_map.setdefault(item, [])
-            self.items_map[item].append(self.index)
-            # TODO key should contain item and cluster or add it inside the map
-            self.clustered_why[item] = algorithm
-
-        self.correlation[self.index] = correlation
-        self.index += 1
-
-    def bulk_append(self, *clusters, correlation=0, algorithm=None):
-        if clusters:
-            for cluster in clusters:
-                self.append(cluster, correlation, algorithm)
+        self.value.append(cluster)
 
     def __getitem__(self, index):
         return self.value[index]
 
     def __len__(self):
-        return self.index
+        return len(self.value)
 
-    class ClusterType(list):
-        """ChildList type its a simple list with custom features
-        1- know its parent
-        2- know its index in its parent
-        3- transmit the append to its parent
-        """
-
-        def __init__(self, value, parent: 'ClustersHolderType' = None, index: int = None):
-            super().__init__(value)
-            self.parent = parent
-            self.index = index
-
-        def __avg_correlation(self, new_correlation):
-            correlation = self.parent.correlation.get(self.index, 1)
-            avg = balanced_avg(len(self), correlation, 1, new_correlation)
-            return avg
-
-        def append(self, obj, correlation=0, algorithm=None):
-            if self.parent:
-                self.parent.items_map.setdefault(obj, [])
-                self.parent.items_map[obj].append(self.index)
-                self.parent.clustered_why[obj] = algorithm
-                self.parent.correlation[self.index] = self.__avg_correlation(
-                    correlation
-                )
-
-            return super().append(obj)
+    def __iter__(self):
+        return iter(self.value)
 
     class ClusterCouplesHolderType(dict):
         """
@@ -126,6 +151,7 @@ class ClustersHolderType:
 
         def __init__(self, clusters: 'ClustersHolderType') -> None:
             self.clusters = clusters
+            self.id_map = {}  # contain id of couple and which couple are those
             self.__setup()
 
         def __setup(self):
@@ -134,38 +160,25 @@ class ClustersHolderType:
             # [2] know every couple repeated how many time
             """
             for repeating_list in self.clusters.repeated_items.values():
-                _l = window_list(repeating_list, 2, step=1)
-                _l = map(self.__name_couple, _l)
-                for couple in _l:
-                    self.setdefault(couple, 0)
-                    self[couple] += 1
+                couples = list(window_list(repeating_list, 2, step=1))
+                couples_names = (map(self.__name_couple, couples))
+                for name, couple in zip(couples_names, couples):
+                    self.setdefault(name, 0)
+                    self[name] += 1
+                    self.id_map[name] = couple
 
         def __name_couple(self, couple):
-            return ','.join(map(str, couple))
+            name = map(id, couple)
+            name = map(str, name)
+            name = ','.join(name)
+            return name
 
         def __unname_couple(self, name):
-            return tuple(map(int, name.split(',')))
-
-        def check_couple_has_relation(self, a, b):
-            return any([
-                self.__name_couple((a, b)) in self.keys(),
-                self.__name_couple((b, a)) in self.keys()
-            ])
+            return self.id_map[name]
 
         def couple_details(self, couple_name):
-            index1, index2 = self.__unname_couple(couple_name)
-            length1, length2 = len(self.clusters[index1]), len(
-                self.clusters[index2])
-
-            Item = namedtuple('Item', ['index', 'length'])
-
-            result = [Item(index1, length1), Item(index2, length2)]
+            cluster1, cluster2 = self.__unname_couple(couple_name)
+            result = [cluster1, cluster2]
             result.sort(key=lambda i: -i.length)
 
             return result
-
-        def graph_root(self, graph: dict, node):
-            root = node
-            while graph.get(root) is not None:
-                root = graph[root]
-            return root
