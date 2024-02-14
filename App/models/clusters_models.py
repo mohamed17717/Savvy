@@ -109,17 +109,17 @@ class SimilarityMatrix(models.Model):
         from . import DocumentWordWeight as WordWeight
         from App.types import SimilarityMatrixType
 
-        document_vectors = WordWeight.word_vectors(self.bookmarks)
+        document_ids, vectors = WordWeight.word_vectors(self.bookmarks)
 
         return SimilarityMatrixType.load(
-            vectors=list(document_vectors.values()),
-            document_ids=list(document_vectors.keys()),
+            vectors=vectors,
+            document_ids=document_ids,
             path=self.file.path
         )
 
     def update_matrix(self, similarity_matrix: np.ndarray):
         with self.file.open('w') as f:
-            f.write(json.dumps(similarity_matrix))
+            f.write(json.dumps(similarity_matrix.tolist()))
         return True
 
     @classmethod
