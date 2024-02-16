@@ -1,3 +1,6 @@
+import uuid
+import numpy as np
+
 from common.utils.array_utils import window_list
 from common.utils.math_utils import balanced_avg
 
@@ -16,6 +19,7 @@ class ClusterType:
     """
 
     def __init__(self, parent=None):
+        self.id = uuid.uuid4().int & (1 << 64) - 1
         self.parent = parent
         self.value = []
         self.correlation = 1
@@ -36,15 +40,10 @@ class ClusterType:
         self.correlation = balanced_avg(
             self.length, self.correlation, 1, correlation)
 
-        # TODO if needed convert it to signals and values
-        self.tell_parent(item)
+        if self.parent:
+            self.parent.item_logger.log(item, self)
 
         return self
-
-    def tell_parent(self, item):
-        if self.parent:
-            self.parent.items_map.setdefault(item, [])
-            self.parent.items_map[item].append(self)
 
     def store(self):
         from App.models import Cluster, Bookmark
@@ -64,7 +63,9 @@ class ClusterType:
         else:
             self.value.extend(child.value)
             self.correlation = balanced_avg(
-                self.length, self.correlation, child.length, child.correlation)
+                self.length, self.correlation,
+                child.length, child.correlation
+            )
             self.length += child.length
             self.why.extend(child.why)
 
@@ -85,43 +86,72 @@ class ClusterType:
         return f'<cluster {self.length} items/>'
 
 
+class ClusterItemLoggerType(dict):
+    """Map that log each item in which cluster/s"""
+
+    def __init__(self):
+        super().__init__()
+
+        self.cluster_id = {}  # str: ClusterType
+
+    def log(self, item, cluster):
+        self.setdefault(item, [])
+        self[item].append(cluster)
+        self.cluster_id[cluster.id] = cluster
+
+    @property
+    def _clusters_shared_items_counter_matrix(self):
+        """Tell how many item is shared between cluster x and cluster y"""
+        clusters_2d = {k: v for k, v in self.items() if len(v) > 1}.values()
+
+        l = len(self.cluster_id)
+        counter_matrix = np.zeros((l, l))
+        id_to_index = dict(zip(self.cluster_id.keys(), range(l)))
+        index_to_id = dict(zip(id_to_index.values(), id_to_index.keys()))
+
+        for clusters in clusters_2d:
+            for couple in window_list(clusters, 2, step=1):
+                c1, c2 = couple
+                index1, index2 = id_to_index[c1.id], id_to_index[c2.id]
+
+                counter_matrix[index1, index2] += 1
+                counter_matrix[index2, index1] += 1
+
+        return counter_matrix, index_to_id
+
+    def merge_similar_clusters(self):
+        l = len(self.cluster_id)
+        counter_matrix, index_to_id = self._clusters_shared_items_counter_matrix
+
+        similarity_acceptance = 0.7
+        for i in range(l):
+            for j in range(i, l):
+                id1, id2 = index_to_id[i], index_to_id[j]
+                c1, c2 = self.cluster_id[id1], self.cluster_id[id2]
+                _long, _short = sorted(
+                    [c1, c2], key=lambda x: x.length, reverse=True)
+
+                times = counter_matrix[i, j]
+                is_very_similar = times/_short.length > similarity_acceptance
+
+                already_merged = _short.merge_parent is not None
+                if not is_very_similar or already_merged:
+                    continue
+
+                _long.merge_with(_short)
+        return True
+
+
 class ClustersHolderType:
     """This class type is basic 2D list with custom features
-    1- tracking each item in which cluster
-    2- tracking why its in this cluster
-    3- tracking the length of the clusters
-    4- track the correlation in each cluster
-    5- track repeating in clusters
-    6- merge clusters if they are almost identical by 70%
+    - log each item in which cluster/s
+    - store all clusters in a list
+    - ability to merge clusters if they are almost identical
     """
 
     def __init__(self) -> None:
         self.value = []  # clusters list
-        self.items_map = {}  # track item where {item: cluster_index}
-
-    @property
-    def repeated_items(self) -> dict:
-        # return items that mentioned in many clusters
-        return {
-            k: v for k, v in self.items_map.items() if len(v) > 1
-        }
-
-    def merge_repeated_clusters(self):
-        cluster_couples = self.ClusterCouplesHolderType(self)
-
-        similarity_acceptance = 0.7
-        for couple, times in cluster_couples.items():
-            # know the length of the couple
-            _long, _short = cluster_couples.couple_details(couple)
-
-            # if the repeated excel x% of the length of one of them -> then merge
-            is_very_similar = times/_short.length > similarity_acceptance
-
-            already_merged = _short.merge_parent is not None
-            if not is_very_similar or already_merged:
-                continue
-
-            _long.merge_with(_short)
+        self.item_logger = ClusterItemLoggerType()
 
     def append(self, cluster_list, correlation=0, algorithm=None) -> None:
         if type(cluster_list) is ClusterType:
@@ -141,44 +171,3 @@ class ClustersHolderType:
 
     def __iter__(self):
         return iter(self.value)
-
-    class ClusterCouplesHolderType(dict):
-        """
-        This class aim to handle repetition in clusters and
-        check the similarity between them to decide if they should
-        be merged or not
-        """
-
-        def __init__(self, clusters: 'ClustersHolderType') -> None:
-            self.clusters = clusters
-            self.id_map = {}  # contain id of couple and which couple are those
-            self.__setup()
-
-        def __setup(self):
-            """
-            # [1] extract the couples
-            # [2] know every couple repeated how many time
-            """
-            for repeating_list in self.clusters.repeated_items.values():
-                couples = list(window_list(repeating_list, 2, step=1))
-                couples_names = (map(self.__name_couple, couples))
-                for name, couple in zip(couples_names, couples):
-                    self.setdefault(name, 0)
-                    self[name] += 1
-                    self.id_map[name] = couple
-
-        def __name_couple(self, couple):
-            name = map(id, couple)
-            name = map(str, name)
-            name = ','.join(name)
-            return name
-
-        def __unname_couple(self, name):
-            return self.id_map[name]
-
-        def couple_details(self, couple_name):
-            cluster1, cluster2 = self.__unname_couple(couple_name)
-            result = [cluster1, cluster2]
-            result.sort(key=lambda i: -i.length)
-
-            return result
