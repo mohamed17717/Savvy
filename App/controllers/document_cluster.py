@@ -68,8 +68,7 @@ class ClusterMaker:
         return results
 
     @property
-    def similars_generator(self):
-        algorithm = algo.EXCEL_THRESHOLD.value
+    def similars_generator(self) -> Generator[list[ClusterType], None, None]:
         for threshold in self.threshold_range:
             similarity_dict = self.similarity_matrix_to_dict(threshold)
             if threshold >= self.high_correlated_overlap:
@@ -77,7 +76,7 @@ class ClusterMaker:
             else:
                 similar = self.flat_similarity_algorithm(similarity_dict)
 
-            yield threshold, similar, algorithm
+            yield similar
 
     ### Helper Functions ###
     def remove_doc(self, doc_id) -> None:
@@ -90,7 +89,7 @@ class ClusterMaker:
             pass
 
     ### ALGORITHMS ###
-    def transitive_similarity(self, similarity_dict) -> list[list]:
+    def transitive_similarity(self, similarity_dict) -> list[ClusterType]:
         """it depned on similarity overlap between high correlated documents
         for example x is similar to y by 0.7 and y is similar to z by 0.7
         then x simialr to z by 0.4 or more
@@ -116,7 +115,7 @@ class ClusterMaker:
             results.append(cluster)
         return results
 
-    def flat_similarity_algorithm(self, similarity_dict) -> list[list]:
+    def flat_similarity_algorithm(self, similarity_dict) -> list[ClusterType]:
         results = []
         visited = []
         for doc_id, similarities in similarity_dict.items():
@@ -142,7 +141,7 @@ class ClusterMaker:
             nearest_elm, correlation = self.similarity_dict[elm][1]
             if correlation*100 > self.min_threshold_for_nearest_cluster:
                 # TODO get cluster with least correlation
-                cluster = self.clusters.items_map[nearest_elm][-1]
+                cluster = self.clusters.item_logger[nearest_elm][-1]
                 cluster.append(
                     elm, correlation=correlation, algorithm=algo.NEAREST_DOC_CLUSTER.value
                 )
@@ -155,7 +154,7 @@ class ClusterMaker:
     def make(self) -> list:
         remove_docs = single_to_plural(self.remove_doc)
 
-        for _, similars, algorithm in self.similars_generator:
+        for similars in self.similars_generator:
             good_length_similars = filter(
                 lambda x: len(x) >= self.cluster_good_length,
                 similars
