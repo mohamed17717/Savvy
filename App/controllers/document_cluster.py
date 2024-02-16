@@ -178,7 +178,7 @@ class ClusterMaker:
                 remove_docs(sublist)
 
             self.to_most_relative_cluster_algorithm(one_length_similars)
-            self.clusters.merge_repeated_clusters()
+            self.clusters.item_logger.merge_similar_clusters()
 
         return [
             cluster.store() for cluster in self.clusters
