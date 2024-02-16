@@ -410,7 +410,7 @@ class TagTestCase(TestCase):
 
     def deprecated_test_create_word_reflect_tag(self):
         word, weight1 = 'hello', 10
-        word_obj = models.DocumentWordWeight(
+        word_obj = models.WordWeight(
             bookmark=self.bookmark, word=word, weight=weight1
         )
         word_obj.save()
@@ -422,7 +422,7 @@ class TagTestCase(TestCase):
 
         # create again and make sure tag merged not duplicated
         word, weight2 = 'hello', 3
-        word_obj = models.DocumentWordWeight.objects.create(
+        word_obj = models.WordWeight.objects.create(
             bookmark=self.bookmark, word=word, weight=weight2
         )
 
@@ -437,8 +437,8 @@ class TagTestCase(TestCase):
             {'word': 'you', 'weight': 3},
             {'word': 'me', 'weight': 4},
         ]
-        words_objs = models.DocumentWordWeight.objects.bulk_create([
-            models.DocumentWordWeight(bookmark=self.bookmark, **word)
+        words_objs = models.WordWeight.objects.bulk_create([
+            models.WordWeight(bookmark=self.bookmark, **word)
             for word in words
         ])
 

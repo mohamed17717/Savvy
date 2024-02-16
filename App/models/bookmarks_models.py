@@ -221,7 +221,7 @@ class Bookmark(models.Model):
 
     # methods
     def store_word_vector(self):
-        from . import DocumentWordWeight
+        from . import WordWeight
         # Delete the old data , store new ones
         self.words_weights.all().delete()
 
@@ -229,14 +229,14 @@ class Bookmark(models.Model):
         important_words = set(self.calculate_important_words().keys())
 
         words_weights = [
-            DocumentWordWeight(
+            WordWeight(
                 bookmark=self, word=word, weight=weight,
                 important=word in important_words
             )
             for word, weight in word_vector.items()
         ]
 
-        return DocumentWordWeight.objects.bulk_create(words_weights, batch_size=250)
+        return WordWeight.objects.bulk_create(words_weights, batch_size=250)
 
     def store_tags(self):
         # TODO make this more efficient
@@ -284,7 +284,7 @@ class Bookmark(models.Model):
     @classmethod
     def make_clusters(cls, user):
         from App.types import SimilarityMatrixType
-        from . import SimilarityMatrix, DocumentWordWeight
+        from . import SimilarityMatrix, WordWeight
 
         # TODO make it db transaction
         # Delete old cluster
@@ -292,7 +292,7 @@ class Bookmark(models.Model):
 
         # Get similarity with old ones in mind
         bookmarks = user.bookmarks.all()
-        document_ids, vectors = DocumentWordWeight.word_vectors(bookmarks)
+        document_ids, vectors = WordWeight.word_vectors(bookmarks)
 
         similarity_object = SimilarityMatrix.get_object(user)
         old_similarity = similarity_object.to_type

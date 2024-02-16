@@ -41,12 +41,12 @@ models.Bookmark.cluster_bookmarks(bookmarks)
 # p.disable()
 
 # delete and refresh all words
-models.DocumentWordWeight.objects.all().delete()
+models.WordWeight.objects.all().delete()
 for bm in models.Bookmark.objects.all():
     bm.store_word_vector()
     
 models.Bookmark.objects.filter(words_weights__isnull=True)
-models.DocumentWordWeight.objects.filter(important=True)
+models.WordWeight.objects.filter(important=True)
 
 # cosine similarity
 from App import models, serializers

@@ -106,7 +106,7 @@ class SimilarityMatrix(models.Model):
 
     @property
     def to_type(self):
-        from . import DocumentWordWeight as WordWeight
+        from . import WordWeight
         from App.types import SimilarityMatrixType
 
         document_ids, vectors = WordWeight.word_vectors(self.bookmarks)

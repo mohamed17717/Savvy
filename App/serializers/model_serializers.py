@@ -29,9 +29,9 @@ class WebpageHeaderSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class DocumentWordWeightSerializer(serializers.ModelSerializer):
+class WordWeightSerializer(serializers.ModelSerializer):
     class Meta:
-        model = models.DocumentWordWeight
+        model = models.WordWeight
         fields = '__all__'
 
 

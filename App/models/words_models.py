@@ -7,7 +7,7 @@ from App.managers import SignalsCustomManager
 User = get_user_model()
 
 
-class DocumentWordWeight(models.Model):
+class WordWeight(models.Model):
     # Relations
     # TODO in future -> this field become generic relation
     # to relate with (bookmark / youtube / linkedin / etc...)

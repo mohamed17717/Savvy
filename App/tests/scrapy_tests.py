@@ -53,7 +53,7 @@ class BookmarkSpiderTestCase(TestCase):
         self.assertGreaterEqual(headers.count(), len(self.urls))
 
         # bookmarks have word vector
-        words = models.DocumentWordWeight.objects.filter(bookmark__in=self.bookmarks)
+        words = models.WordWeight.objects.filter(bookmark__in=self.bookmarks)
         self.assertGreaterEqual(words.count(), len(self.urls))
 
         # bookmarks got clustered
