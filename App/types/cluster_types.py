@@ -40,9 +40,6 @@ class ClusterType:
         self.correlation = balanced_avg(
             self.length, self.correlation, 1, correlation)
 
-        if self.parent:
-            self.parent.item_logger.log(item, self)
-
         return self
 
     def store(self):
@@ -84,6 +81,9 @@ class ClusterType:
 
     def __repr__(self) -> str:
         return f'<cluster {self.length} items/>'
+
+    def __eq__(self, other):
+        return self.id == other.id
 
 
 class ClusterItemLoggerType(dict):
@@ -128,8 +128,9 @@ class ClusterItemLoggerType(dict):
             for j in range(i, l):
                 id1, id2 = index_to_id[i], index_to_id[j]
                 c1, c2 = self.cluster_id[id1], self.cluster_id[id2]
-                _long, _short = sorted(
-                    [c1, c2], key=lambda x: x.length, reverse=True)
+                _long, _short = c1, c2
+                if c1.length < c2.length:
+                    _long, _short = c2, c1
 
                 times = counter_matrix[i, j]
                 is_very_similar = times/_short.length > similarity_acceptance
@@ -153,13 +154,12 @@ class ClustersHolderType:
         self.value = []  # clusters list
         self.item_logger = ClusterItemLoggerType()
 
-    def append(self, cluster_list, correlation=0, algorithm=None) -> None:
-        if type(cluster_list) is ClusterType:
-            cluster = cluster_list
-        else:
-            cluster = ClusterType(self)
-            for item in cluster_list:
-                cluster.append(item, correlation, algorithm)
+    def append(self, cluster: ClusterType) -> None:
+        if type(cluster) is not ClusterType:
+            raise ValueError('It only accept `ClusterType` objects')
+
+        for item in cluster:
+            self.item_logger.log(item, cluster)
 
         self.value.append(cluster)
 
