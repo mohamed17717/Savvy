@@ -51,6 +51,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/usr/src/app/media
     depends_on:
       - db
       - redis
@@ -67,6 +69,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/usr/src/app/media
     depends_on:
       - db
       - redis
@@ -83,6 +87,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/usr/src/app/media
     depends_on:
       - db
       - redis
@@ -99,6 +105,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/usr/src/app/media
     depends_on:
       - db
       - redis
