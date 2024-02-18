@@ -28,16 +28,21 @@ from App import choices, controllers
 User = get_user_model()
 
 
-def custom_get_or_create(model, **kwargs):
+def custom_get_or_create(qs: QuerySet, **kwargs):
     # because of normal get_or_create cause issues in concurrency
     # so i updated the flow to make sure its doing things right
+    if type(qs) is not QuerySet:
+        qs = qs.objects.all()
+
     try:
         with transaction.atomic():
+            model = qs.model
             obj, created = model.objects.get_or_create(**kwargs)
             return obj, created
     except IntegrityError:
         # Handle the exception if a duplicate is trying to be created
-        obj = model.objects.select_for_update().get(**kwargs)
+        kwargs.pop('defaults', None)
+        obj = qs.select_for_update().get(**kwargs)
         return obj, False
 
 
