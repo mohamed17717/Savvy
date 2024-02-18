@@ -28,22 +28,18 @@ from App import choices, controllers
 User = get_user_model()
 
 
-def custom_get_or_create(qs: QuerySet, **kwargs):
+def custom_get_or_create(model, **kwargs):
     # because of normal get_or_create cause issues in concurrency
     # so i updated the flow to make sure its doing things right
-    if type(qs) is not QuerySet:
-        qs = qs.objects.all()
-
-    try:
-        with transaction.atomic():
-            model = qs.model
+    with transaction.atomic():
+        try:
             obj, created = model.objects.get_or_create(**kwargs)
             return obj, created
-    except IntegrityError:
-        # Handle the exception if a duplicate is trying to be created
-        kwargs.pop('defaults', None)
-        obj = qs.select_for_update().get(**kwargs)
-        return obj, False
+        except IntegrityError:
+            # Handle the exception if a duplicate is trying to be created
+            kwargs.pop('defaults', None)
+            obj = models.objects.select_for_update().get(**kwargs)
+            return obj, False
 
 
 class BookmarkFile(models.Model):
@@ -244,10 +240,11 @@ class Bookmark(models.Model):
         return WordWeight.objects.bulk_create(words_weights, batch_size=250)
 
     def store_tags(self):
+        from App.models import Tag
         # TODO make this more efficient
         tags = []
         for word, weight in self.important_words.items():
-            tag, _ = custom_get_or_create(self.user.tags.all(), name=word)
+            tag, _ = custom_get_or_create(Tag, name=word, user=self.user)
 
             tag.bookmarks.add(self)
             tag.weight += weight
