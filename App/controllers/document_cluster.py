@@ -119,14 +119,15 @@ class ClusterMaker:
         results = []
         visited = []
         for doc_id, similarities in similarity_dict.items():
-            if not similarities or doc_id in visited:
+            if doc_id in visited:
                 continue
 
             cluster = ClusterType(self.clusters)
             cluster.append(doc_id, 1, algo.EXCEL_THRESHOLD.value)
 
-            for other_id, other_similarity in similarities:
-                cluster.append(other_id, other_similarity, algo.EXCEL_THRESHOLD.value)
+            if similarities:
+                for other_id, other_similarity in similarities:
+                    cluster.append(other_id, other_similarity, algo.EXCEL_THRESHOLD.value)
 
             visited.extend(cluster.value)
             results.append(cluster)
