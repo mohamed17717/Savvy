@@ -203,7 +203,7 @@ class Bookmark(models.Model):
 
     @property
     def important_words(self) -> dict:
-        qs = self.word_weights.filter(important=True)
+        qs = self.words_weights.filter(important=True)
         return dict(qs.values_list('word', 'weight'))
 
     def calculate_important_words(self) -> dict:
