@@ -121,13 +121,14 @@ def on_finish_crawling_task(callback_result=[], bookmark_ids=[]):
         return
 
     parent = models.Bookmark.objects.get(id=bookmark_ids[0]).parent_file
+    user_id = parent.user.id
 
     store_bookmark_file_analytics_task.delay(parent.id)
-    cluster_checker_task.delay(bookmark_ids, 0)
+    cluster_checker_task.delay(user_id, bookmark_ids, 0)
 
 
 @shared_task(queue='orm')
-def cluster_checker_task(bookmark_ids=[], iteration=0):
+def cluster_checker_task(user_id, bookmark_ids=[], iteration=0):
     max_time = 15*60  # 15 min
     wait_time = 10  # 10 sec
     max_iteration = max_time // wait_time
@@ -141,10 +142,8 @@ def cluster_checker_task(bookmark_ids=[], iteration=0):
     ])
 
     if accepted:
-        user_id = models.Bookmark.objects.filter(
-            id__in=bookmark_ids).first().user.pk
         cluster_bookmarks_task.apply_async(
             kwargs={'user_id': user_id})
     else:
         cluster_checker_task.apply_async(
-            kwargs={'bookmark_ids': bookmark_ids, 'iteration': iteration+1}, countdown=wait_time)
+            kwargs={'user_id': user_id, 'bookmark_ids': bookmark_ids, 'iteration': iteration+1}, countdown=wait_time)
