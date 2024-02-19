@@ -64,6 +64,27 @@ class ClusterAPI(RULViewSet):
         return qs
 
 
+class ClusterFullListAPI(ListAPIView):
+    filterset_class = filters.ClusterFilter
+    serializer_class = serializers.ClusterSerializer.ClusterFullDetails
+    pagination_class = None
+
+    def _prefetch(self, qs: QuerySet) -> QuerySet:
+        tags_qs = self.request.user.tags.all().order_by('-weight')
+        tags_prefetch = Prefetch('bookmarks__tags', queryset=tags_qs)
+
+        return qs.prefetch_related('bookmarks', tags_prefetch)
+
+    def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return models.Cluster.objects.none()
+
+        qs = self.request.user.clusters.all().order_by('-correlation')
+        qs = self._prefetch(qs)
+
+        return qs
+
+
 class BookmarkAPI(RULViewSet):
     filterset_class = filters.BookmarkFilter
     serializer_class = serializers.BookmarkSerializer

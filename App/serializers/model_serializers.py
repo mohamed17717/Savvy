@@ -102,7 +102,8 @@ class ClusterSerializer(serializers.ModelSerializer):
         def get_tags(self, obj):
             tags = []
             for bm in obj.bookmarks.all()[:10]:
-                tags.extend(TagSerializer.TagList(bm.tags.all()[:3], many=True).data)
+                tags.extend(TagSerializer.TagList(
+                    bm.tags.all()[:3], many=True).data)
 
             tags.sort(key=lambda x: x['weight'], reverse=True)
             return tags[:5]
@@ -115,6 +116,17 @@ class ClusterSerializer(serializers.ModelSerializer):
         class Meta:
             model = models.Cluster
             fields = '__all__'
+
+    class ClusterFullDetails(ClusterDetails):
+        def get_tags(self, obj):
+            tags = models.Tag.objects.filter(
+                bookmarks__in=obj.bookmarks.all()).distinct().order_by('-weight')
+            return TagSerializer.TagList(tags, many=True).data
+
+        def get_bookmarks(self, obj):
+            serializer_class = BookmarkSerializer.BookmarkDetails
+            qs = obj.bookmarks.all()
+            return serializer_class(qs, many=True).data
 
     class ClusterUpdate(serializers.ModelSerializer):
         class Meta:
