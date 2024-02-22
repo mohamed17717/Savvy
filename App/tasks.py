@@ -66,7 +66,7 @@ def crawl_bookmarks_task(bookmark_ids: list[int]):
 
 
 @shared_task(queue='orm')
-def store_webpage_task(bookmark_id, url, page_title, meta_tags, headers):
+def store_webpage_task(bookmark_id, page_title, meta_tags, headers):
     with transaction.atomic():
         bookmark = models.Bookmark.objects.get(id=bookmark_id)
         webpage = models.BookmarkWebpage.objects.create(
