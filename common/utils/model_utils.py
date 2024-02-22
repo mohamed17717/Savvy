@@ -28,9 +28,7 @@ def is_future_date_validator(value: date):
         raise ValidationError('date must be in the future.')
 
 
-def custom_get_or_create(model, **kwargs):
-    # because of normal get_or_create cause issues in concurrency
-    # so i updated the flow to make sure its doing things right
+def concurrent_get_or_create(model, **kwargs):
     with transaction.atomic():
         try:
             obj, created = model.objects.get_or_create(**kwargs)
