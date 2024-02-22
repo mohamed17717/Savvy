@@ -2,13 +2,16 @@ import math
 
 from django.db.models import Prefetch, QuerySet
 
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
+
+from django_filters.rest_framework import DjangoFilterBackend
 
 from App import serializers, filters, models
 
 from common.utils.drf.viewsets import CRDLViewSet, RULViewSet
-from common.utils.math_utils import dynamic_number_boundaries
+from common.utils.math_utils import minmax
 
 
 class BookmarkFileAPI(CRDLViewSet):
@@ -26,8 +29,13 @@ class BookmarkFileAPI(CRDLViewSet):
 
 
 class ClusterAPI(RULViewSet):
-    filterset_class = filters.ClusterFilter
     serializer_class = serializers.ClusterSerializer
+
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = filters.ClusterFilter
+    search_fields = ['@name']
+    ordering_fields = ['correlation', 'id']
+    ordering = ['-correlation']
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
@@ -56,7 +64,6 @@ class ClusterAPI(RULViewSet):
         if self.action == 'update' or self.action == 'partial_update':
             pass
         elif self.action == 'list':
-            qs = qs.order_by('-correlation')
             qs = self._prefetch(qs)
         elif self.action == 'retrieve':
             qs = self._prefetch(qs)
@@ -64,30 +71,19 @@ class ClusterAPI(RULViewSet):
         return qs
 
 
-class ClusterFullListAPI(ListAPIView):
-    filterset_class = filters.ClusterFilter
+class ClusterFullListAPI(ClusterAPI):
     serializer_class = serializers.ClusterSerializer.ClusterFullDetails
     pagination_class = None
 
-    def _prefetch(self, qs: QuerySet) -> QuerySet:
-        tags_qs = self.request.user.tags.all().order_by('-weight')
-        tags_prefetch = Prefetch('bookmarks__tags', queryset=tags_qs)
-
-        return qs.prefetch_related('bookmarks', tags_prefetch)
-
-    def get_queryset(self):
-        if self.request.user.is_anonymous:
-            return models.Cluster.objects.none()
-
-        qs = self.request.user.clusters.all().order_by('-correlation')
-        qs = self._prefetch(qs)
-
-        return qs
-
 
 class BookmarkAPI(RULViewSet):
-    filterset_class = filters.BookmarkFilter
     serializer_class = serializers.BookmarkSerializer
+
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_class = filters.BookmarkFilter
+    search_fields = ['@words_weights__word']
+    ordering_fields = ['parent_file_id', 'id']
+    ordering = ['id']
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
@@ -143,7 +139,7 @@ class TagAPI(RULViewSet):
             pass
         elif self.action == 'list':
             limit = math.ceil(qs.count() * 0.1)
-            limit = dynamic_number_boundaries(limit, 10, 50)
+            limit = minmax(limit, 10, 50)
             qs = qs.order_by('-weight')[:limit]
         elif self.action == 'retrieve':
             qs = qs.prefetch_related('bookmarks')
@@ -153,9 +149,14 @@ class TagAPI(RULViewSet):
 
 class TagListAPI(ListAPIView):
     serializer_class = serializers.TagSerializer.TagList
+
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = filters.TagFilter
+    search_fields = ['@name', '@alias_name']
+    ordering_fields = ['weight', 'id']
+    ordering = ['-weight']
 
     def get_queryset(self):
         if self.request.user.is_anonymous:
             return models.Tag.objects.none()
-        return self.request.user.tags.all().order_by('-weight')
+        return self.request.user.tags.all()
