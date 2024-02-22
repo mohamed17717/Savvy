@@ -1,5 +1,7 @@
 from datetime import date
 
+from django.db import transaction
+from django.db.utils import IntegrityError
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
@@ -24,3 +26,36 @@ def is_future_date_validator(value: date):
     today = date.today()
     if value < today:
         raise ValidationError('date must be in the future.')
+
+
+def custom_get_or_create(model, **kwargs):
+    # because of normal get_or_create cause issues in concurrency
+    # so i updated the flow to make sure its doing things right
+    with transaction.atomic():
+        try:
+            obj, created = model.objects.get_or_create(**kwargs)
+            return obj, created
+        except IntegrityError:
+            # Handle the exception if a duplicate is trying to be created
+            kwargs.pop('defaults', None)
+            obj = model.objects.select_for_update().get(**kwargs)
+            return obj, False
+
+
+def clone(instance):
+    instance.pk = None
+    instance.save()
+
+    return instance
+
+
+def bulk_clone(qs, changes: dict):
+    model = qs.model
+    instances = []
+    for instance in qs:
+        instance.pk = None
+        for field, value in changes.items():
+            setattr(instance, field, value)
+        instances.append(instance)
+
+    return model.objects.bulk_create(instances)
