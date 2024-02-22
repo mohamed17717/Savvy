@@ -3,7 +3,7 @@ def balanced_avg(length1, avg1, length2, avg2):
     return round(avg, 3)
 
 
-def dynamic_number_boundaries(num, bottom, top):
+def minmax(num, bottom, top):
     if num > top:
         num = top
     if num < bottom:
