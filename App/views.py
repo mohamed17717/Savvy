@@ -2,7 +2,6 @@ import math
 
 from django.db.models import Prefetch, QuerySet
 
-from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
 
@@ -31,7 +30,6 @@ class BookmarkFileAPI(CRDLViewSet):
 class ClusterAPI(RULViewSet):
     serializer_class = serializers.ClusterSerializer
 
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = filters.ClusterFilter
     search_fields = ['@name']
     ordering_fields = ['correlation', 'id']
@@ -79,7 +77,6 @@ class ClusterFullListAPI(ClusterAPI):
 class BookmarkAPI(RULViewSet):
     serializer_class = serializers.BookmarkSerializer
 
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = filters.BookmarkFilter
     search_fields = ['@words_weights__word']
     ordering_fields = ['parent_file_id', 'id']
@@ -150,7 +147,6 @@ class TagAPI(RULViewSet):
 class TagListAPI(ListAPIView):
     serializer_class = serializers.TagSerializer.TagList
 
-    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     filterset_class = filters.TagFilter
     search_fields = ['@name', '@alias_name']
     ordering_fields = ['weight', 'id']
