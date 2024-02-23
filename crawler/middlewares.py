@@ -10,14 +10,6 @@ class LogResponseMiddleware:
         from crawler.orm import DjangoProxy
         self.dj_proxy = DjangoProxy()
 
-    async def process_request(self, request, spider):
-        exists = await self.dj_proxy.response_log_url_exists(request.url)
-        if exists:
-            # If the URL exists in the database, skip the request
-            message = f"URL {request.url} already exists in the database. Skipping."
-            spider.logger.info(message)
-            raise scrapy.exceptions.IgnoreRequest()
-
     async def process_response(self, request, response, spider):
         # Store the URL, status code, and response body in a file, and store the file path in the database
         error_msg = None

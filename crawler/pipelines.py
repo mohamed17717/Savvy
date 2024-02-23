@@ -19,7 +19,6 @@ class SQLitePipeline:
         # in case of succeeded crawled item
             await django_wrapper(tasks.store_webpage_task.apply_async, kwargs={
                 'bookmark_id': bookmark.id,
-                'url': url,
                 'page_title': page_title,
                 'meta_tags': meta_tags,
                 'headers': headers

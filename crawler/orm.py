@@ -10,10 +10,6 @@ def django_wrapper(func, *args, **kwargs):
 
 class DjangoProxy:
     @sync_to_async
-    def response_log_url_exists(self, url):
-        return models.ScrapyResponseLog.is_url_exists(url)
-
-    @sync_to_async
     def bookmark_parent(self, bookmarks):
         return bookmarks[0].parent_file
 
