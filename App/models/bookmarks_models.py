@@ -225,7 +225,7 @@ class Bookmark(models.Model):
         from App.models import Tag
 
         words = self.important_words
-        
+
         with transaction.atomic():
             existing_tags = Tag.objects.select_for_update().filter(name__in=words.keys())
 
@@ -233,10 +233,13 @@ class Bookmark(models.Model):
                 tag.weight += F('weight') + words.pop(tag.name, 0)
 
             Tag.objects.bulk_update(existing_tags, ['weight'], batch_size=250)
-            new_tags = Tag.objects.bulk_create([
-                Tag(name=word, weight=weight, user=self.user)
-                for word, weight in words.items()
-            ], batch_size=250)
+            new_tags = [
+                Tag(name=word, weight=weight, user=self.user) for word, weight in words.items()
+            ]
+            # NOTE - bulk_create will ignore conflicts
+            # which will make some tags lost some of the weights
+            new_tags = Tag.objects.bulk_create(
+                new_tags, batch_size=250, ignore_conflicts=True)
 
         return [*existing_tags, *new_tags]
 
