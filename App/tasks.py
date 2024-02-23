@@ -1,9 +1,11 @@
 import json
 import subprocess
 import logging
+from datetime import timedelta
 
 from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from celery import shared_task, current_app, chord
 from celery.signals import after_task_publish
@@ -11,7 +13,8 @@ from celery.result import allow_join_result
 
 from App import models
 
-from common.utils.array_utils import window_list
+from common.utils.array_utils import window_list, unique_dicts_in_list
+from common.utils.dict_utils import dict_values_to_keys
 from common.utils.html_utils import extract_image_from_meta
 
 
@@ -34,6 +37,25 @@ def update_sent_state(sender=None, headers=None, **kwargs):
 def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
     parent = models.BookmarkFile.objects.get(id=parent_id)
 
+    # remove duplication from bookmarks_data (unique on url)
+    bookmarks_data = unique_dicts_in_list(bookmarks_data, 'url')
+    # use pre existing bookmarks
+    urls = dict(enumerate([b['url'] for b in bookmarks_data]))
+    urls = dict_values_to_keys(urls)
+
+    exists_bookmarks = models.Bookmark.objects.filter(
+        url__in=urls.keys(), crawled=True,
+        scrapes__created_at__gte=timezone.now() - timedelta(days=50),
+    )
+    # remove bookmarks from bookmarks_data
+    exists_urls = exists_bookmarks.values_list('url', flat=True)
+    indexes = sorted(map(urls.get, exists_urls), reverse=True)
+    list(map(bookmarks_data.pop, indexes))
+    # loop throw exists bookmarks then decide clone or skip
+    for bookmark in exists_bookmarks.exclude(user=parent.user):
+        bookmark.deep_clone(parent.user, parent)
+
+    # Start creating new bookmarks
     bookmarks = tuple(map(parent.init_bookmark, bookmarks_data))
 
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
