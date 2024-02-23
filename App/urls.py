@@ -14,7 +14,7 @@ router.register(r'tag', views.TagAPI, basename='tag')
 app_name = 'app'
 
 urlpatterns = [
-    path('clusters/all/', views.ClusterFullListAPI.as_view(), name='clusters_list'),
+    path('clusters/all/', views.ClusterFullListAPI.as_view({'get': 'list'}), name='clusters_list'),
     path('tags/list/', views.TagListAPI.as_view(), name='tag_list'),
 
     path('', include(router.urls)),
