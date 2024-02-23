@@ -3,22 +3,17 @@ import requests
 import secrets
 import base64
 
-from datetime import timedelta
-
 from django.db import models, transaction
-from django.db.models import QuerySet
-from django.db.utils import IntegrityError
+from django.db.models import F
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files import File
-from django.utils import timezone
 
 from crawler import settings as scrapy_settings
 
-from common.utils.model_utils import FileSizeValidator
-from common.utils.string_utils import random_string
+from common.utils.model_utils import FileSizeValidator, clone, bulk_clone
 from common.utils.file_utils import hash_file, random_filename
 from common.utils.image_utils import compress_image, resize_image
 
@@ -26,20 +21,6 @@ from App import choices, controllers
 
 
 User = get_user_model()
-
-
-def custom_get_or_create(model, **kwargs):
-    # because of normal get_or_create cause issues in concurrency
-    # so i updated the flow to make sure its doing things right
-    with transaction.atomic():
-        try:
-            obj, created = model.objects.get_or_create(**kwargs)
-            return obj, created
-        except IntegrityError:
-            # Handle the exception if a duplicate is trying to be created
-            kwargs.pop('defaults', None)
-            obj = models.objects.select_for_update().get(**kwargs)
-            return obj, False
 
 
 class BookmarkFile(models.Model):
@@ -174,6 +155,7 @@ class Bookmark(models.Model):
         choices=choices.BookmarkStatusChoices.choices)
     crawled = models.BooleanField(default=False)
     similarity_calculated = models.BooleanField(default=False)
+    cloned = models.BooleanField(default=False)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
@@ -241,18 +223,22 @@ class Bookmark(models.Model):
 
     def store_tags(self):
         from App.models import Tag
-        # TODO make this more efficient
-        tags = []
-        for word, weight in self.important_words.items():
-            tag, _ = custom_get_or_create(Tag, name=word, user=self.user)
 
-            tag.bookmarks.add(self)
-            tag.weight += weight
-            tag.save(update_fields=['weight'])
+        words = self.important_words
+        
+        with transaction.atomic():
+            existing_tags = Tag.objects.select_for_update().filter(name__in=words.keys())
 
-            tags.append(tag)
+            for tag in existing_tags:
+                tag.weight += F('weight') + words.pop(tag.name, 0)
 
-        return tags
+            Tag.objects.bulk_update(existing_tags, ['weight'], batch_size=250)
+            new_tags = Tag.objects.bulk_create([
+                Tag(name=word, weight=weight, user=self.user)
+                for word, weight in words.items()
+            ], batch_size=250)
+
+        return [*existing_tags, *new_tags]
 
     def set_image_from_url(self, url: str, new_width: int = 300):
         if url.startswith('data:image'):
@@ -282,6 +268,48 @@ class Bookmark(models.Model):
         self.save(update_fields=['image_url'])
 
         return self.image
+
+    def deep_clone(self, user, parent_file=None):
+        """Clone bookmark with all relations for new user
+        relations are ->
+            - webpages -> meta tags / headers
+            - words_weights
+            - tags
+
+        new parameters ->
+            - user
+            - parent file
+
+        skip relations ->
+            - clusters (because it is not needed for new user)
+
+        update field ->
+            - similarity_calculated to False
+            - status to PENDING
+        """
+        with transaction.atomic():
+            new_bookmark = clone(self)
+
+            new_bookmark.user = user
+            new_bookmark.cloned = True
+            new_bookmark.parent_file = parent_file
+            new_bookmark.similarity_calculated = False
+            new_bookmark.status = choices.BookmarkStatusChoices.PENDING.value
+            new_bookmark.save(update_fields=[
+                              'user', 'parent_file', 'similarity_calculated', 'status', 'cloned'])
+
+            new_webpage = clone(self.webpage)
+            new_webpage.bookmark = new_bookmark
+            new_webpage.save(update_fields=['bookmark'])
+
+            bulk_clone(self.webpage.meta_tags.all(), {'webpage': new_webpage})
+            bulk_clone(self.webpage.headers.all(), {'webpage': new_webpage})
+
+            bulk_clone(self.words_weights.all(), {'bookmark': new_bookmark})
+
+            new_bookmark.store_tags()
+
+        return new_bookmark
 
     @classmethod
     def make_clusters(cls, user):
@@ -336,8 +364,6 @@ class ScrapyResponseLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    LIFE_LONG = timedelta(days=50)
-
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
@@ -358,16 +384,6 @@ class ScrapyResponseLog(models.Model):
             self.save(update_fields=['html_file'])
 
         return file_path
-
-    @classmethod
-    def is_url_exists(cls, url, life_long=None):
-        if life_long is None:
-            life_long = cls.LIFE_LONG
-
-        white_date = timezone.now() - life_long
-        return cls.objects.filter(
-            bookmark__url=url, error__isnull=True, created_at__gte=white_date
-        ).exists()
 
 
 class BookmarkWebpage(models.Model):
