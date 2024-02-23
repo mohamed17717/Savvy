@@ -9,9 +9,6 @@ class BookmarkSpider(scrapy.Spider):
     def __init__(self, bookmarks: list):
         self.bookmarks = bookmarks
 
-        from crawler.orm import DjangoProxy
-        self.dj_proxy = DjangoProxy()
-
     def start_requests(self):
         # for url in self.urls:
         for bookmark in self.bookmarks:

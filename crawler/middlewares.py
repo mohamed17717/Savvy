@@ -1,34 +1,31 @@
-import scrapy
 from urllib.parse import urlencode
 
-from App import tasks
-from .orm import django_wrapper
+from App import tasks, models
+from common.utils.async_utils import django_wrapper
 
 
 class LogResponseMiddleware:
-    def __init__(self) -> None:
-        from crawler.orm import DjangoProxy
-        self.dj_proxy = DjangoProxy()
-
     async def process_response(self, request, response, spider):
         # Store the URL, status code, and response body in a file, and store the file path in the database
         error_msg = None
         if response.status != 200:
             error_msg = f"HTTP status code {response.status}"
 
-        await self.dj_proxy.response_log_write(request, response, spider, error_msg)
+        bookmark = request.meta.get('bookmark')
+        log = models.ScrapyResponseLog.objects.acreate(
+            bookmark=bookmark, status_code=response.status, error=error_msg
+        )
+        log.store_file(response.body)
 
         # in case of failed crawled item
-        bookmark = request.meta.get('bookmark')
         await django_wrapper(tasks.store_weights_task.apply_async, kwargs={'bookmark_id': bookmark.id})
-
         return response
 
     async def process_exception(self, request, exception, spider):
-        if isinstance(exception, scrapy.exceptions.IgnoreRequest):
-            return None  # Do nothing for IgnoreRequest
-
-        await self.dj_proxy.response_log_write(request, None, spider, str(exception))
+        bookmark = request.meta.get('bookmark')
+        models.ScrapyResponseLog.objects.acreate(
+            bookmark=bookmark, status_code=500, error=str(exception)
+        )
 
 
 class ScrapeOpsRotateProxyMiddleware:

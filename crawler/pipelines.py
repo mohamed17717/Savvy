@@ -1,12 +1,8 @@
 from App import tasks
-from .orm import django_wrapper
+from common.utils.async_utils import django_wrapper
+
 
 class SQLitePipeline:
-    def __init__(self) -> None:
-        # because its block scrapy shell
-        from crawler.orm import DjangoProxy
-        self.dj_proxy = DjangoProxy()
-
     async def process_item(self, item, spider):
         meta_tags = item.get('meta_tags', [])
         headers = item.get('headers', [])
