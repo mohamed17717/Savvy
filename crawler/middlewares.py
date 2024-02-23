@@ -12,18 +12,17 @@ class LogResponseMiddleware:
             error_msg = f"HTTP status code {response.status}"
 
         bookmark = request.meta.get('bookmark')
-        log = models.ScrapyResponseLog.objects.acreate(
+        log = await models.ScrapyResponseLog.objects.acreate(
             bookmark=bookmark, status_code=response.status, error=error_msg
         )
-        log.store_file(response.body)
-
+        await django_wrapper(log.store_file, response.body)
         # in case of failed crawled item
         await django_wrapper(tasks.store_weights_task.apply_async, kwargs={'bookmark_id': bookmark.id})
         return response
 
     async def process_exception(self, request, exception, spider):
         bookmark = request.meta.get('bookmark')
-        models.ScrapyResponseLog.objects.acreate(
+        await models.ScrapyResponseLog.objects.acreate(
             bookmark=bookmark, status_code=500, error=str(exception)
         )
 
