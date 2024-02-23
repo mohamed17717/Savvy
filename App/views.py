@@ -72,6 +72,15 @@ class ClusterAPI(RULViewSet):
 class ClusterFullListAPI(ClusterAPI):
     serializer_class = serializers.ClusterSerializer.ClusterFullDetails
     pagination_class = None
+    ordering = None
+
+    def get_serializer_class(self):
+        return self.serializer_class
+
+    def get_queryset(self):
+        from django.db.models import Count
+        qs = super().get_queryset()
+        return qs.annotate(bookmarks_count=Count('bookmarks')).order_by('-bookmarks_count')
 
 
 class BookmarkAPI(RULViewSet):
