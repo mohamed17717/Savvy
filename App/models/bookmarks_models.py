@@ -18,8 +18,6 @@ from common.utils.file_utils import hash_file, random_filename
 from common.utils.image_utils import compress_image, resize_image
 
 from App import choices, controllers, types
-from App.models import SimilarityMatrix, WordWeight
-
 
 User = get_user_model()
 
@@ -317,6 +315,8 @@ class Bookmark(models.Model):
 
     @classmethod
     def make_clusters(cls, user):
+        from . import SimilarityMatrix, WordWeight
+        
         with transaction.atomic():
             user.clusters.all().delete()
 
