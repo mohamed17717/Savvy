@@ -1,15 +1,17 @@
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
+from django.db import transaction
 
 from App import models, tasks
 
 
 @receiver(post_save, sender=models.BookmarkFile)
 def on_create_bookmark_file_extract_urls(sender, instance, created, **kwargs):
-    if not created:
-        return
-
-    tasks.store_bookmarks_task.delay(instance.id, instance.bookmarks_links)
+    if created:
+        transaction.on_commit(
+            lambda: tasks.store_bookmarks_task.delay(
+                instance.id, instance.bookmarks_links)
+        )
 
 
 @receiver(pre_save, sender=models.BookmarkFile)
