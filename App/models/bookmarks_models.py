@@ -332,7 +332,7 @@ class Bookmark(models.Model):
 
             # Clustering
             clusters_objects = controllers.ClusterMaker(
-                document_ids, new_similarity.similarity_matrix
+                new_similarity.document_ids, new_similarity.similarity_matrix
             ).make()
 
             # update similarity file and make bookmarks to done
