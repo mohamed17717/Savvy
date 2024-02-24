@@ -31,7 +31,6 @@ class SimilarityMatrixType:
         self.document_ids = document_ids
         self._unique_words = unique_words
         self._similarity_matrix = similarity_matrix
-        self._weigh_matrix = None
 
     @property
     def unique_words(self) -> set:
@@ -45,14 +44,8 @@ class SimilarityMatrixType:
         return self._unique_words
 
     def weight_matrix(self, unique_words=None):
-        if unique_words is None:
-            unique_words = self.unique_words
-
-        def calculate():
-            return tuple(v.weight_vector(unique_words) for v in self.vectors)
-
-        self._weigh_matrix = self._weigh_matrix or calculate()
-        return self._weigh_matrix
+        unique_words = unique_words or self.unique_words
+        return tuple(v.weight_vector(unique_words) for v in self.vectors)
 
     @property
     def similarity_matrix(self) -> np.ndarray:
