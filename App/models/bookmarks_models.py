@@ -17,7 +17,8 @@ from common.utils.model_utils import FileSizeValidator, clone, bulk_clone
 from common.utils.file_utils import hash_file, random_filename
 from common.utils.image_utils import compress_image, resize_image
 
-from App import choices, controllers
+from App import choices, controllers, types
+from App.models import SimilarityMatrix, WordWeight
 
 
 User = get_user_model()
@@ -316,31 +317,27 @@ class Bookmark(models.Model):
 
     @classmethod
     def make_clusters(cls, user):
-        from App.types import SimilarityMatrixType
-        from . import SimilarityMatrix, WordWeight
+        with transaction.atomic():
+            user.clusters.all().delete()
 
-        # TODO make it db transaction
-        # Delete old cluster
-        user.clusters.all().delete()
+            # Get similarity with old ones in mind
+            bookmarks = user.bookmarks.filter(similarity_calculated=False)
+            document_ids, vectors = WordWeight.word_vectors(bookmarks)
 
-        # Get similarity with old ones in mind
-        bookmarks = user.bookmarks.filter(similarity_calculated=False)
-        document_ids, vectors = WordWeight.word_vectors(bookmarks)
+            similarity_object = SimilarityMatrix.get_object(user)
+            old_similarity = similarity_object.to_type
+            similarity = types.SimilarityMatrixType(vectors, document_ids)
 
-        similarity_object = SimilarityMatrix.get_object(user)
-        old_similarity = similarity_object.to_type
-        similarity = SimilarityMatrixType(vectors, document_ids)
+            new_similarity = old_similarity + similarity
 
-        new_similarity = old_similarity + similarity
+            # Clustering
+            clusters_objects = controllers.ClusterMaker(
+                document_ids, new_similarity.similarity_matrix
+            ).make()
 
-        # Clustering
-        clusters_objects = controllers.ClusterMaker(
-            document_ids, new_similarity.similarity_matrix
-        ).make()
-
-        # update similarity file and make bookmarks to done
-        bookmarks.update(similarity_calculated=True)
-        similarity_object.update_matrix(new_similarity.similarity_matrix)
+            # update similarity file and make bookmarks to done
+            bookmarks.update(similarity_calculated=True)
+            similarity_object.update_matrix(new_similarity.similarity_matrix)
 
         return clusters_objects
 
