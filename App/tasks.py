@@ -11,7 +11,7 @@ from celery import shared_task, current_app, chord
 from celery.signals import after_task_publish
 from celery.result import allow_join_result
 
-from App import models
+from App import models, choices
 
 from common.utils.array_utils import window_list, unique_dicts_in_list
 from common.utils.dict_utils import dict_values_to_keys
@@ -33,29 +33,35 @@ def update_sent_state(sender=None, headers=None, **kwargs):
     backend.store_result(headers['id'], None, "SENT")
 
 
-@shared_task(queue='orm')
-def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
-    parent = models.BookmarkFile.objects.get(id=parent_id)
-
-    # remove duplication from bookmarks_data (unique on url)
-    bookmarks_data = unique_dicts_in_list(bookmarks_data, 'url')
+def cleanup_duplicated_bookmarks(bookmarks: list[dict]) -> list[dict]:
+    # remove duplication from bookmarks (unique on url)
+    bookmarks = unique_dicts_in_list(bookmarks, 'url')
     # use pre existing bookmarks
-    urls = dict(enumerate([b['url'] for b in bookmarks_data]))
+    urls = dict(enumerate([b['url'] for b in bookmarks]))
     urls = dict_values_to_keys(urls)
 
     exists_bookmarks = models.Bookmark.objects.filter(
-        url__in=urls.keys(), crawled=True,
+        url__in=urls.keys(),
+        process_status__gte=choices.BookmarkProcessStatusChoices.TEXT_PROCESSED.value,
         scrapes__created_at__gte=timezone.now() - timedelta(days=50),
     )
     # remove bookmarks from bookmarks_data
     exists_urls = exists_bookmarks.values_list('url', flat=True)
     indexes = sorted(map(urls.get, exists_urls), reverse=True)
-    list(map(bookmarks_data.pop, indexes))
+    list(map(bookmarks.pop, indexes))
     # loop throw exists bookmarks then decide clone or skip
-    for bookmark in exists_bookmarks.exclude(user=parent.user):
-        bookmark.deep_clone(parent.user, parent)
+    for bookmark in exists_bookmarks:
+        bookmark.deep_clone(bookmark.parent_file.user, bookmark.parent_file)
+
+    return bookmarks
+
+
+@shared_task(queue='orm')
+def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
+    parent = models.BookmarkFile.objects.get(id=parent_id)
 
     # Start creating new bookmarks
+    bookmarks_data = cleanup_duplicated_bookmarks(bookmarks_data)
     bookmarks = tuple(map(parent.init_bookmark, bookmarks_data))
 
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
@@ -82,6 +88,9 @@ def batch_bookmarks_to_crawl_task(bookmark_ids: list[int]):
 
 @shared_task(queue='scrapy')
 def crawl_bookmarks_task(bookmark_ids: list[int]):
+    models.Bookmark.objects.filter(id__in=bookmark_ids).update(
+        process_status=choices.BookmarkProcessStatusChoices.START_CRAWL.value)
+
     ids = json.dumps(bookmark_ids)
     command = ['python', 'manage.py', 'crawl_bookmarks', ids]
     subprocess.run(command, capture_output=True, text=True, check=True)
@@ -116,8 +125,16 @@ def store_bookmark_image_task(bookmark_id, meta_tags):
 @shared_task(queue='orm')
 def store_weights_task(bookmark_id):
     bookmark = models.Bookmark.objects.get(id=bookmark_id)
-    bookmark.store_word_vector()
-    bookmark.store_tags()
+
+    bookmark.process_status = choices.BookmarkProcessStatusChoices.START_TEXT_PROCESSING.value
+    bookmark.save(update_fields=['process_status'])
+
+    with transaction.atomic():
+        bookmark.store_word_vector()
+        bookmark.store_tags()
+
+        bookmark.process_status = choices.BookmarkProcessStatusChoices.TEXT_PROCESSED.value
+        bookmark.save(update_fields=['process_status'])
 
 
 @shared_task(queue='orm')
@@ -132,7 +149,9 @@ def store_bookmark_file_analytics_task(parent_id):
 
     parent.total_links_count = parent.bookmarks.count()
     parent.succeeded_links_count = parent.bookmarks.filter(
-        crawled=True).count()
+        process_status=choices.BookmarkProcessStatusChoices.CLONED.value,
+        process_status__gte=choices.BookmarkProcessStatusChoices.CRAWLED.value
+    ).count()
     parent.failed_links_count = parent.total_links_count - parent.succeeded_links_count
     parent.save()
 
@@ -156,7 +175,9 @@ def cluster_checker_task(user_id, bookmark_ids=[], iteration=0):
     max_iteration = max_time // wait_time
 
     uncompleted_bookmarks = models.Bookmark.objects.filter(
-        id__in=bookmark_ids, crawled=True, words_weights__isnull=True
+        id__in=bookmark_ids, 
+        process_status__gte=choices.BookmarkProcessStatusChoices.CRAWLED.value,
+        process_status__lt=choices.BookmarkProcessStatusChoices.TEXT_PROCESSED.value,
     ).exists()
     accepted = any([
         iteration >= max_iteration,
@@ -164,6 +185,8 @@ def cluster_checker_task(user_id, bookmark_ids=[], iteration=0):
     ])
 
     if accepted:
+        models.Bookmark.objects.filter(id__in=bookmark_ids).update(
+            process_status=choices.BookmarkProcessStatusChoices.START_CLUSTER.value)
         cluster_bookmarks_task.apply_async(
             kwargs={'user_id': user_id})
     else:
