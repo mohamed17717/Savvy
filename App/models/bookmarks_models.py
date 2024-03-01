@@ -148,13 +148,12 @@ class Bookmark(models.Model):
     image_url = models.URLField(max_length=2048, blank=True, null=True)
 
     # Defaults
-    # merge all status with crawled and sim_calculated
-    status = models.PositiveSmallIntegerField(
-        default=choices.BookmarkStatusChoices.PENDING.value,
-        choices=choices.BookmarkStatusChoices.choices)
-    crawled = models.BooleanField(default=False)
-    similarity_calculated = models.BooleanField(default=False)
-    cloned = models.BooleanField(default=False)
+    process_status = models.PositiveSmallIntegerField(
+        default=choices.BookmarkProcessStatusChoices.CREATED.value,
+        choices=choices.BookmarkProcessStatusChoices.choices)
+    user_status = models.PositiveSmallIntegerField(
+        default=choices.BookmarkUserStatusChoices.PENDING.value,
+        choices=choices.BookmarkUserStatusChoices.choices)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
@@ -293,12 +292,11 @@ class Bookmark(models.Model):
             new_bookmark = clone(self)
 
             new_bookmark.user = user
-            new_bookmark.cloned = True
             new_bookmark.parent_file = parent_file
-            new_bookmark.similarity_calculated = False
-            new_bookmark.status = choices.BookmarkStatusChoices.PENDING.value
+            new_bookmark.user_status = choices.BookmarkUserStatusChoices.PENDING.value
+            new_bookmark.process_status = choices.BookmarkProcessStatusChoices.CLONED.value
             new_bookmark.save(update_fields=[
-                              'user', 'parent_file', 'similarity_calculated', 'status', 'cloned'])
+                              'user', 'parent_file', 'user_status', 'process_status'])
 
             new_webpage = clone(self.webpage)
             new_webpage.bookmark = new_bookmark
@@ -321,7 +319,11 @@ class Bookmark(models.Model):
             user.clusters.all().delete()
 
             # Get similarity with old ones in mind
-            bookmarks = user.bookmarks.filter(similarity_calculated=False)
+            bookmarks = user.bookmarks.filter(
+                process_status=choices.BookmarkProcessStatusChoices.CLONED.value,
+                process_status__gte=choices.BookmarkProcessStatusChoices.TEXT_PROCESSED.value,
+                process_status__lt=choices.BookmarkProcessStatusChoices.CLUSTERED.value,
+            )
             document_ids, vectors = WordWeight.word_vectors(bookmarks)
 
             similarity_object = SimilarityMatrix.get_object(user)
@@ -336,7 +338,7 @@ class Bookmark(models.Model):
             ).make()
 
             # update similarity file and make bookmarks to done
-            bookmarks.update(similarity_calculated=True)
+            bookmarks.update(process_status=choices.BookmarkProcessStatusChoices.CLUSTERED.value)
             similarity_object.update_matrix(new_similarity.similarity_matrix)
 
         return clusters_objects
@@ -374,7 +376,7 @@ class ScrapyResponseLog(models.Model):
     def store_file(self, content):
         file_path = random_filename(scrapy_settings.STORAGE_PATH, 'html')
         with open(file_path, 'wb+') as f:
-            if type(content) is str:
+            if isinstance(content, str):
                 content = content.encode('utf8')
 
             dj_file = File(f)
