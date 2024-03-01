@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth import get_user_model
 
 from App.types import WordVectorType
-from App.managers import SignalsCustomManager
 
 User = get_user_model()
 
@@ -24,8 +23,6 @@ class WordWeight(models.Model):
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    objects = SignalsCustomManager()
 
     def __str__(self):
         return f'{self.word} - {self.weight} <DOC: {self.bookmark}>'
