@@ -28,8 +28,8 @@ class BookmarkUserStatusChoices(models.IntegerChoices):
 
 
 class BookmarkProcessStatusChoices(models.IntegerChoices):
-    CLONED = 10, _('cloned from another user bookmark (to status 60)')
-    CREATED = 20, _('created')
+    CREATED = 10, _('created')
+    CLONED = 20, _('cloned from another user bookmark (to status 60)')
 
     START_CRAWL = 30, _('sent to scrapy crawler')
     CRAWLED_ERROR = 35, _('crawled failed for any reason')
