@@ -5,8 +5,6 @@ from django.db.models import Prefetch, QuerySet
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
 
-from django_filters.rest_framework import DjangoFilterBackend
-
 from App import serializers, filters, models
 
 from common.utils.drf.viewsets import CRDLViewSet, RULViewSet

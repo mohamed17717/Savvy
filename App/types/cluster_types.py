@@ -104,9 +104,9 @@ class ClusterItemLoggerType(dict):
         """Tell how many item is shared between cluster x and cluster y"""
         clusters_2d = {k: v for k, v in self.items() if len(v) > 1}.values()
 
-        l = len(self.cluster_id)
-        counter_matrix = np.zeros((l, l))
-        id_to_index = dict(zip(self.cluster_id.keys(), range(l)))
+        length = len(self.cluster_id)
+        counter_matrix = np.zeros((length, length))
+        id_to_index = dict(zip(self.cluster_id.keys(), range(length)))
         index_to_id = dict(zip(id_to_index.values(), id_to_index.keys()))
 
         for clusters in clusters_2d:
@@ -120,12 +120,12 @@ class ClusterItemLoggerType(dict):
         return counter_matrix, index_to_id
 
     def merge_similar_clusters(self):
-        l = len(self.cluster_id)
+        length = len(self.cluster_id)
         counter_matrix, index_to_id = self._clusters_shared_items_counter_matrix
 
         similarity_acceptance = 0.7
-        for i in range(l):
-            for j in range(i, l):
+        for i in range(length):
+            for j in range(i, length):
                 id1, id2 = index_to_id[i], index_to_id[j]
                 c1, c2 = self.cluster_id[id1], self.cluster_id[id2]
                 _long, _short = c1, c2
