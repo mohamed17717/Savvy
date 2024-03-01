@@ -43,6 +43,9 @@ django-cors-headers = "*"
 gunicorn = "*"
 pillow = "*"
 meta-tags-parser = "*"
+fastapi = "*"
+uvicorn = "*"
+pydantic = "*"
 
 [dev-packages]
 
