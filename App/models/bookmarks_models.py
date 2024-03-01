@@ -127,6 +127,9 @@ class Bookmark(models.Model):
     ACTIONS
         - CUD operations happened internally -- just (R)ead
     """
+    ProcessStatus = choices.BookmarkProcessStatusChoices
+    UserStatus = choices.BookmarkUserStatusChoices
+    
     # Relations
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='bookmarks'
@@ -149,11 +152,11 @@ class Bookmark(models.Model):
 
     # Defaults
     process_status = models.PositiveSmallIntegerField(
-        default=choices.BookmarkProcessStatusChoices.CREATED.value,
-        choices=choices.BookmarkProcessStatusChoices.choices)
+        default=ProcessStatus.CREATED.value,
+        choices=ProcessStatus.choices)
     user_status = models.PositiveSmallIntegerField(
-        default=choices.BookmarkUserStatusChoices.PENDING.value,
-        choices=choices.BookmarkUserStatusChoices.choices)
+        default=UserStatus.PENDING.value,
+        choices=UserStatus.choices)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
@@ -255,7 +258,8 @@ class Bookmark(models.Model):
                 url = f'https://{self.domain}' + url
 
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'}
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
+            }
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             content = response.content
@@ -295,8 +299,8 @@ class Bookmark(models.Model):
 
             new_bookmark.user = user
             new_bookmark.parent_file = parent_file
-            new_bookmark.user_status = choices.BookmarkUserStatusChoices.PENDING.value
-            new_bookmark.process_status = choices.BookmarkProcessStatusChoices.CLONED.value
+            new_bookmark.user_status = self.UserStatus.PENDING.value
+            new_bookmark.process_status = self.ProcessStatus.CLONED.value
             new_bookmark.save(update_fields=[
                               'user', 'parent_file', 'user_status', 'process_status'])
 
@@ -322,9 +326,9 @@ class Bookmark(models.Model):
 
             # Get similarity with old ones in mind
             bookmarks = user.bookmarks.filter(
-                process_status=choices.BookmarkProcessStatusChoices.CLONED.value,
-                process_status__gte=choices.BookmarkProcessStatusChoices.TEXT_PROCESSED.value,
-                process_status__lt=choices.BookmarkProcessStatusChoices.CLUSTERED.value,
+                process_status=cls.ProcessStatus.CLONED.value,
+                process_status__gte=cls.ProcessStatus.TEXT_PROCESSED.value,
+                process_status__lt=cls.ProcessStatus.CLUSTERED.value,
             )
             document_ids, vectors = WordWeight.word_vectors(bookmarks)
 
@@ -340,7 +344,7 @@ class Bookmark(models.Model):
             ).make()
 
             # update similarity file and make bookmarks to done
-            bookmarks.update(process_status=choices.BookmarkProcessStatusChoices.CLUSTERED.value)
+            bookmarks.update(process_status=cls.ProcessStatus.CLUSTERED.value)
             similarity_object.update_matrix(new_similarity.similarity_matrix)
 
         return clusters_objects

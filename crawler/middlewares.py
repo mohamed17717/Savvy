@@ -1,6 +1,6 @@
 from urllib.parse import urlencode
 
-from App import tasks, models, choices
+from App import tasks, models
 from common.utils.async_utils import django_wrapper
 
 
@@ -13,7 +13,7 @@ class LogResponseMiddleware:
 
         bookmark = request.meta.get('bookmark')
         
-        bookmark.process_status = choices.BookmarkProcessStatusChoices.CRAWLED.value
+        bookmark.process_status = models.Bookmark.ProcessStatus.CRAWLED.value
         await bookmark.asave(update_fields=['process_status'])
 
         log = await models.ScrapyResponseLog.objects.acreate(
@@ -27,7 +27,7 @@ class LogResponseMiddleware:
     async def process_exception(self, request, exception, spider):
         bookmark = request.meta.get('bookmark')
         
-        bookmark.process_status = choices.BookmarkProcessStatusChoices.CRAWLED_ERROR.value
+        bookmark.process_status = models.Bookmark.ProcessStatus.CRAWLED_ERROR.value
         await bookmark.asave(update_fields=['process_status'])
         await models.ScrapyResponseLog.objects.acreate(
             bookmark=bookmark, status_code=500, error=str(exception)
