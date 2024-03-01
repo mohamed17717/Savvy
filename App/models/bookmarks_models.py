@@ -17,7 +17,7 @@ from common.utils.model_utils import FileSizeValidator, clone, bulk_clone
 from common.utils.file_utils import hash_file, random_filename
 from common.utils.image_utils import compress_image, resize_image
 
-from App import choices, controllers, types
+from App import choices, controllers, types, managers
 
 User = get_user_model()
 
@@ -158,6 +158,8 @@ class Bookmark(models.Model):
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = managers.SignalsCustomManager()
 
     def __str__(self) -> str:
         return f'{self.id} - {self.url}'
