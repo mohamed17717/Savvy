@@ -2,6 +2,7 @@ import urllib3
 import requests
 import secrets
 import base64
+from datetime import timedelta
 
 from django.db import models, transaction
 from django.db.models import F
@@ -10,12 +11,15 @@ from django.core.validators import MinValueValidator, MaxValueValidator, FileExt
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
 from django.core.files import File
+from django.utils import timezone
 
 from crawler import settings as scrapy_settings
 
 from common.utils.model_utils import FileSizeValidator, clone, bulk_clone
 from common.utils.file_utils import hash_file, random_filename
 from common.utils.image_utils import compress_image, resize_image
+from common.utils.array_utils import unique_dicts_in_list
+from common.utils.dict_utils import dict_values_to_keys
 
 from App import choices, controllers, types, managers
 
@@ -104,10 +108,37 @@ class BookmarkFile(models.Model):
         return obj
 
     @property
-    def bookmarks_links(self):
+    def bookmarks_links(self) -> list[dict]:
         file_obj = self.file_obj
         file_obj.validate(raise_exception=True)
-        return file_obj.get_links()
+
+        links = file_obj.get_links()
+        # TODO it shouldn't happen here
+        links = self.__cleanup_duplicated_bookmarks_links(links)
+
+        return links
+
+    def __cleanup_duplicated_bookmarks_links(self, bookmarks: list[dict]) -> list[dict]:
+        # remove duplication from bookmarks (unique on url)
+        bookmarks = unique_dicts_in_list(bookmarks, 'url')
+        # use pre existing bookmarks
+        urls = dict(enumerate([b['url'] for b in bookmarks]))
+        urls = dict_values_to_keys(urls)
+
+        exists_bookmarks = Bookmark.objects.filter(
+            url__in=urls.keys(),
+            process_status__gte=Bookmark.ProcessStatus.TEXT_PROCESSED.value,
+            scrapes__created_at__gte=timezone.now() - timedelta(days=100),
+        )
+        # remove bookmarks from bookmarks_data
+        exists_urls = exists_bookmarks.values_list('url', flat=True)
+        indexes = sorted(map(urls.get, exists_urls), reverse=True)
+        list(map(bookmarks.pop, indexes))
+        # loop throw exists bookmarks then decide clone or skip
+        for bookmark in exists_bookmarks:
+            bookmark.deep_clone(bookmark.parent_file.user, self)
+
+        return bookmarks
 
     def init_bookmark(self, data):
         url = data.pop('url')
@@ -129,7 +160,7 @@ class Bookmark(models.Model):
     """
     ProcessStatus = choices.BookmarkProcessStatusChoices
     UserStatus = choices.BookmarkUserStatusChoices
-    
+
     # Relations
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='bookmarks'
@@ -320,7 +351,7 @@ class Bookmark(models.Model):
     @classmethod
     def make_clusters(cls, user):
         from . import SimilarityMatrix, WordWeight
-        
+
         with transaction.atomic():
             user.clusters.all().delete()
 
