@@ -274,3 +274,6 @@ CORS_ORIGIN_WHITELIST = (
     'http://localhost:8080',
     'http://localhost:5173'
 )
+
+JWT_ALGORITHM = os.getenv('JWT_ALGORITHM')
+JWT_SECRET = os.getenv('JWT_SECRET')
