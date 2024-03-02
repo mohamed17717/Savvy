@@ -1,9 +1,12 @@
 import math
+import jwt
 
 from django.db.models import Prefetch, QuerySet
 
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
+
+from dj.settings import JWT_SECRET, JWT_ALGORITHM
 
 from App import serializers, filters, models
 
@@ -14,6 +17,18 @@ from common.utils.math_utils import minmax
 class BookmarkFileAPI(CRDLViewSet):
     parser_classes = (MultiPartParser, FormParser)
     serializer_class = serializers.BookmarkFileSerializer
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+
+        payload = {'user_id': self.request.user.id}
+        user_jwt = jwt.encode(payload, JWT_SECRET, JWT_ALGORITHM)
+
+        response.set_cookie(
+            'user_jwt', user_jwt, httponly=True, samesite='None', secure=False
+        )
+
+        return response
 
     def get_queryset(self):
         if self.request.user.is_anonymous:
