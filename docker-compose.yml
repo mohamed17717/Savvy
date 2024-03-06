@@ -23,8 +23,8 @@ services:
     command: sh -c "
       pipenv run python manage.py migrate --noinput &&
       pipenv run python manage.py collectstatic --noinput &&
-      pipenv run gunicorn dj.wsgi:application --bind 0.0.0.0:8000"
-      # pipenv run python manage.py runserver 0.0.0.0:8000"
+      pipenv run python manage.py runserver 0.0.0.0:8000"
+      # pipenv run gunicorn dj.wsgi:application --bind 0.0.0.0:8000"
     expose:
       - 8000
     env_file:
@@ -40,6 +40,23 @@ services:
       - redis
     links:
       - db:db
+      - redis:redis
+    networks:
+      - djangonetwork
+
+  fastapi:
+    build: ./fastapi
+    expose:
+      - 8001
+    env_file:
+      - ./fastapi/.env
+    volumes:
+      - ./fastapi:/usr/src/fastapi
+    ports:
+      - "8001:8000" # Expose the service on host port 8001 and container port 8000
+    depends_on:
+      - redis
+    links:
       - redis:redis
     networks:
       - djangonetwork
