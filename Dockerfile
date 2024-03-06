@@ -44,5 +44,5 @@ COPY . .
 EXPOSE 8000
 
 # Run your app using Pipenv's virtual environment
-# CMD ["pipenv", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
-CMD ["pipenv", "run", "gunicorn", "dj.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["pipenv", "run", "python", "manage.py", "runserver", "0.0.0.0:8000"]
+# CMD ["pipenv", "run", "gunicorn", "dj.wsgi:application", "--bind", "0.0.0.0:8000"]
