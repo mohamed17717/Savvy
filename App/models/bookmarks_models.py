@@ -5,7 +5,7 @@ import base64
 from datetime import timedelta
 
 from django.db import models, transaction
-from django.db.models import F
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
@@ -193,7 +193,7 @@ class Bookmark(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    objects = managers.SignalsCustomManager()
+    objects = managers.BookmarkQuerySet.as_manager()
 
     def __str__(self) -> str:
         return f'{self.id} - {self.url}'
@@ -262,11 +262,11 @@ class Bookmark(models.Model):
 
         with transaction.atomic():
             existing_tags = Tag.objects.select_for_update().filter(name__in=words.keys())
-
             for tag in existing_tags:
-                tag.weight += F('weight') + words.pop(tag.name, 0)
+                tag.weight += words.pop(tag.name, 0)
 
             Tag.objects.bulk_update(existing_tags, ['weight'], batch_size=250)
+
             new_tags = [
                 Tag(name=word, weight=weight, user=self.user) for word, weight in words.items()
             ]
@@ -275,7 +275,12 @@ class Bookmark(models.Model):
             new_tags = Tag.objects.bulk_create(
                 new_tags, batch_size=250, ignore_conflicts=True)
 
-        return [*existing_tags, *new_tags]
+            all_tags = [*existing_tags, *new_tags]
+            transaction.on_commit(lambda: self.tags.add(
+                *Tag.objects.filter(name__in=self.important_words.keys())
+            ))
+
+        return all_tags
 
     def set_image_from_url(self, url: str, new_width: int = 300):
         if url.startswith('data:image'):
@@ -331,9 +336,10 @@ class Bookmark(models.Model):
             new_bookmark.user = user
             new_bookmark.parent_file = parent_file
             new_bookmark.user_status = self.UserStatus.PENDING.value
-            new_bookmark.process_status = self.ProcessStatus.CLONED.value
-            new_bookmark.save(update_fields=[
-                              'user', 'parent_file', 'user_status', 'process_status'])
+            new_bookmark.save(
+                update_fields=['user', 'parent_file', 'user_status'])
+
+            new_bookmark.update_process_status(self.ProcessStatus.CLONED.value)
 
             new_webpage = clone(self.webpage)
             new_webpage.bookmark = new_bookmark
@@ -348,6 +354,18 @@ class Bookmark(models.Model):
 
         return new_bookmark
 
+    def update_process_status(self, new_status):
+        if self.process_status >= new_status:
+            return
+
+        self.process_status = new_status
+        self.save(update_fields=['process_status'])
+
+        publisher = controllers.BookmarkRedisPublisher(self.user)
+        publisher.publish(
+            {'bookmark_id': self.id, 'status': new_status}
+        )
+
     @classmethod
     def make_clusters(cls, user):
         from . import SimilarityMatrix, WordWeight
@@ -357,9 +375,11 @@ class Bookmark(models.Model):
 
             # Get similarity with old ones in mind
             bookmarks = user.bookmarks.filter(
-                process_status=cls.ProcessStatus.CLONED.value,
-                process_status__gte=cls.ProcessStatus.TEXT_PROCESSED.value,
-                process_status__lt=cls.ProcessStatus.CLUSTERED.value,
+                Q(process_status=cls.ProcessStatus.CLONED.value)
+                | Q(
+                    process_status__gte=cls.ProcessStatus.TEXT_PROCESSED.value,
+                    process_status__lt=cls.ProcessStatus.CLUSTERED.value,
+                )
             )
             document_ids, vectors = WordWeight.word_vectors(bookmarks)
 
@@ -367,16 +387,18 @@ class Bookmark(models.Model):
             old_similarity = similarity_object.to_type
             similarity = types.SimilarityMatrixType(vectors, document_ids)
 
-            new_similarity = old_similarity + similarity
+            if old_similarity is not None:
+                similarity += old_similarity
+                del old_similarity
 
             # Clustering
             clusters_objects = controllers.ClusterMaker(
-                new_similarity.document_ids, new_similarity.similarity_matrix
+                similarity.document_ids, similarity.similarity_matrix
             ).make()
 
             # update similarity file and make bookmarks to done
-            bookmarks.update(process_status=cls.ProcessStatus.CLUSTERED.value)
-            similarity_object.update_matrix(new_similarity.similarity_matrix)
+            bookmarks.update_process_status(cls.ProcessStatus.CLUSTERED.value)
+            similarity_object.update_matrix(similarity.similarity_matrix)
 
         return clusters_objects
 
