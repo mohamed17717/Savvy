@@ -4,13 +4,13 @@ from redis import asyncio as aioredis
 
 
 app = FastAPI()
-data = {'count': 0}
+data = {'count': 0, 'messages': []}
 
 
 @app.get("/")
 async def index():
     print('endpoint hit')
-    return {"message": "Hello, World!", "count": data['count']}
+    return {"message": "Hello, World!", **data}
 
 
 async def redis_listener(channel_name: str):
@@ -24,6 +24,7 @@ async def redis_listener(channel_name: str):
         data['count'] += 1
         message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
         if message:
+            data['messages'].append(message)
             print(f"Received message: {message}")
         else:
             print("No message received")
