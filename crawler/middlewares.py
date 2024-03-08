@@ -12,9 +12,6 @@ class LogResponseMiddleware:
             error_msg = f"HTTP status code {response.status}"
 
         bookmark = request.meta.get('bookmark')
-        
-        bookmark.process_status = models.Bookmark.ProcessStatus.CRAWLED.value
-        await bookmark.asave(update_fields=['process_status'])
 
         log = await models.ScrapyResponseLog.objects.acreate(
             bookmark=bookmark, status_code=response.status, error=error_msg
@@ -26,9 +23,7 @@ class LogResponseMiddleware:
 
     async def process_exception(self, request, exception, spider):
         bookmark = request.meta.get('bookmark')
-        
-        bookmark.process_status = models.Bookmark.ProcessStatus.CRAWLED_ERROR.value
-        await bookmark.asave(update_fields=['process_status'])
+
         await models.ScrapyResponseLog.objects.acreate(
             bookmark=bookmark, status_code=500, error=str(exception)
         )
