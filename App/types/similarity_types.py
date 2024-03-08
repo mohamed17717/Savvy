@@ -50,11 +50,8 @@ class SimilarityMatrixType:
     @property
     def similarity_matrix(self) -> np.ndarray:
         def calculate():
-            try:
-                matrix = cosine_similarity(self.weight_matrix())
-                return np.ceil(matrix*100)/100
-            except ValueError:
-                return None
+            matrix = cosine_similarity(self.weight_matrix())
+            return np.ceil(matrix*100)/100
 
         if self._similarity_matrix is None:
             self._similarity_matrix = calculate()
