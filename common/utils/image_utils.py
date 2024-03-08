@@ -12,7 +12,9 @@ def resize_image(content: bytes, new_width: int) -> Image:
 
 
 def compress_image(image: Image, quality: int = 85) -> bytes:
-    if image.mode != 'RGB':
+    if image.format == 'PNG':
+        image = image.convert('RGBA')
+    elif image.mode != 'RGB':
         image = image.convert('RGB')
 
     image_io = BytesIO()
