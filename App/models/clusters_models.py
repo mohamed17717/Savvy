@@ -113,6 +113,8 @@ class SimilarityMatrix(models.Model):
         from App.types import SimilarityMatrixType
 
         document_ids, vectors = WordWeight.word_vectors(self.bookmarks)
+        if not document_ids or not vectors:
+            return None
 
         return SimilarityMatrixType.load(
             vectors=vectors,
