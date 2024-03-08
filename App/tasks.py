@@ -3,6 +3,7 @@ import subprocess
 import logging
 
 from django.db import transaction
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 
 from celery import shared_task, current_app, chord
@@ -61,8 +62,9 @@ def batch_bookmarks_to_crawl_task(bookmark_ids: list[int]):
 
 @shared_task(queue='scrapy')
 def crawl_bookmarks_task(bookmark_ids: list[int]):
-    models.Bookmark.objects.filter(id__in=bookmark_ids).update(
-        process_status=models.Bookmark.ProcessStatus.START_CRAWL.value)
+    models.Bookmark.objects.filter(id__in=bookmark_ids).update_process_status(
+        models.Bookmark.ProcessStatus.START_CRAWL.value
+    )
 
     ids = json.dumps(bookmark_ids)
     command = ['python', 'manage.py', 'crawl_bookmarks', ids]
@@ -90,22 +92,23 @@ def store_bookmark_image_task(bookmark_id, meta_tags):
         try:
             bookmark.set_image_from_url(image_url)
         except Exception as e:
-            logger.error(
-                'store_bookmark_image_task(%s, %s)' % (bookmark_id, image_url), e)
+            logger.error('store_bookmark_image_task(%s, %s)' %
+                         (bookmark_id, image_url))
             raise e
 
 
 @shared_task(queue='orm')
 def store_weights_task(bookmark_id):
-    bookmark = models.Bookmark.objects.get(id=bookmark_id)
-    bookmark.process_status = models.Bookmark.ProcessStatus.START_TEXT_PROCESSING.value
-    bookmark.save(update_fields=['process_status'])
+    Status = models.Bookmark.ProcessStatus
 
     with transaction.atomic():
+        bookmark = models.Bookmark.objects.get(id=bookmark_id)
+        bookmark.update_process_status(Status.START_TEXT_PROCESSING.value)
+
         bookmark.store_word_vector()
         bookmark.store_tags()
-        bookmark.process_status = models.Bookmark.ProcessStatus.TEXT_PROCESSED.value
-        bookmark.save(update_fields=['process_status'])
+
+        bookmark.update_process_status(Status.TEXT_PROCESSED.value)
 
 
 @shared_task(queue='orm')
@@ -120,8 +123,8 @@ def store_bookmark_file_analytics_task(parent_id):
 
     parent.total_links_count = parent.bookmarks.count()
     parent.succeeded_links_count = parent.bookmarks.filter(
-        process_status=models.Bookmark.ProcessStatus.CLONED.value,
-        process_status__gte=models.Bookmark.ProcessStatus.CRAWLED.value
+        Q(process_status=models.Bookmark.ProcessStatus.CLONED.value,)
+        | Q(process_status__gte=models.Bookmark.ProcessStatus.CRAWLED.value)
     ).count()
     parent.failed_links_count = parent.total_links_count - parent.succeeded_links_count
     parent.save()
@@ -132,6 +135,9 @@ def on_finish_crawling_task(callback_result=[], bookmark_ids=[]):
     if not bookmark_ids:
         return
 
+    models.Bookmark.objects.filter(id__in=bookmark_ids).update_process_status(
+        models.Bookmark.ProcessStatus.CRAWLED.value)
+
     parent = models.Bookmark.objects.get(id=bookmark_ids[0]).parent_file
     user_id = parent.user.id
 
@@ -141,14 +147,13 @@ def on_finish_crawling_task(callback_result=[], bookmark_ids=[]):
 
 @shared_task(queue='orm')
 def cluster_checker_task(user_id, bookmark_ids=[], iteration=0):
-    max_time = 15*60  # 15 min
-    wait_time = 10  # 10 sec
+    max_time = 10*60  # 10 min
+    wait_time = 2  # 2 sec
     max_iteration = max_time // wait_time
 
     uncompleted_bookmarks = models.Bookmark.objects.filter(
         id__in=bookmark_ids,
-        process_status__gte=models.Bookmark.ProcessStatus.CRAWLED.value,
-        process_status__lt=models.Bookmark.ProcessStatus.TEXT_PROCESSED.value,
+        words_weights__isnull=True
     ).exists()
     accepted = any([
         iteration >= max_iteration,
@@ -156,8 +161,8 @@ def cluster_checker_task(user_id, bookmark_ids=[], iteration=0):
     ])
 
     if accepted:
-        models.Bookmark.objects.filter(id__in=bookmark_ids).update(
-            process_status=models.Bookmark.ProcessStatus.START_CLUSTER.value)
+        models.Bookmark.objects.filter(id__in=bookmark_ids).update_process_status(
+            models.Bookmark.ProcessStatus.START_CLUSTER.value)
         cluster_bookmarks_task.apply_async(
             kwargs={'user_id': user_id})
     else:
