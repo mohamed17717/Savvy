@@ -61,4 +61,4 @@ class RedisPubSub:
         while True:
             message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
             if message and message['type'] == 'message':
-                callback(json.loads(message['data']))
+                await callback(json.loads(message['data']))
