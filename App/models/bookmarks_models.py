@@ -23,7 +23,7 @@ from common.utils.dict_utils import dict_values_to_keys
 
 from App import choices, controllers, types, managers
 
-from fastapi.common.redis_utils import RedisPubSub
+from realtime.common.redis_utils import RedisPubSub
 
 User = get_user_model()
 

@@ -4,7 +4,7 @@ from django.dispatch import receiver
 
 from App import models, tasks
 
-from fastapi.common.redis_utils import RedisPubSub
+from realtime.common.redis_utils import RedisPubSub
 
 
 @receiver(post_save, sender=models.BookmarkFile)

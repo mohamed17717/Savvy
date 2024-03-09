@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models.signals import post_save, pre_save
 
-from fastapi.common.redis_utils import RedisPubSub
+from realtime.common.redis_utils import RedisPubSub
 
 
 class BulkSignalsQuerySet(models.QuerySet):

@@ -9,7 +9,7 @@ from App import serializers, filters, models
 
 from common.utils.drf.viewsets import CRDLViewSet, RULViewSet
 from common.utils.math_utils import minmax
-from fastapi.common.jwt_utils import JwtManager
+from realtime.common.jwt_utils import JwtManager
 
 
 class BookmarkFileAPI(CRDLViewSet):
