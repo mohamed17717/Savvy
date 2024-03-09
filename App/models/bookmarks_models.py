@@ -23,6 +23,8 @@ from common.utils.dict_utils import dict_values_to_keys
 
 from App import choices, controllers, types, managers
 
+from fastapi.common.redis_utils import RedisPubSub
+
 User = get_user_model()
 
 
@@ -361,10 +363,12 @@ class Bookmark(models.Model):
         self.process_status = new_status
         self.save(update_fields=['process_status'])
 
-        publisher = controllers.BookmarkRedisPublisher(self.user)
-        publisher.publish(
-            {'bookmark_id': self.id, 'status': new_status}
-        )
+        RedisPubSub.pub({
+            'type': RedisPubSub.MessageTypes.BOOKMARK_CHANGE,
+            'user_id': self.user.id,
+            'bookmark_id': self.id,
+            'status': new_status
+        })
 
     @classmethod
     def make_clusters(cls, user):
