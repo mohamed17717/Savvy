@@ -44,14 +44,14 @@ services:
     networks:
       - djangonetwork
 
-  fastapi:
-    build: ./fastapi
+  realtime:
+    build: ./realtime
     expose:
       - 8001
     env_file:
       - .env
     volumes:
-      - ./fastapi:/usr/src/fastapi
+      - ./realtime:/usr/src/realtime
     ports:
       - "8001:8000" # Expose the service on host port 8001 and container port 8000
     depends_on:
