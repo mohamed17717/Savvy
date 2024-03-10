@@ -3,7 +3,7 @@ import redis
 import json
 from redis import asyncio as aioredis
 
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 
 
 class RedisPubSub:
@@ -20,13 +20,13 @@ class RedisPubSub:
         FILE_UPLOAD = 1
         BOOKMARK_CHANGE = 2
 
-    class FileUploadData(BaseModel, extra=Extra.allow):
+    class FileUploadData(BaseModel, extra='allow'):
         user_id: int
         total_bookmarks: int
         type: int = Field(
             default_factory=lambda: RedisPubSub.MessageTypes.FILE_UPLOAD)
 
-    class BookmarkChangeData(BaseModel, extra=Extra.allow):
+    class BookmarkChangeData(BaseModel, extra='allow'):
         user_id: int
         bookmark_id: int
         status: int

@@ -23,7 +23,7 @@ class JwtManager:
     def create_access_token(cls, data: dict) -> str:
         auth_payload = cls.AuthPayload.parse_obj(data)
         encoded_jwt = jwt.encode(
-            auth_payload.dict(), cls.SECRET_KEY, algorithm=cls.ALGORITHM)
+            auth_payload.model_dump(), cls.SECRET_KEY, algorithm=cls.ALGORITHM)
         return encoded_jwt
 
     @classmethod
