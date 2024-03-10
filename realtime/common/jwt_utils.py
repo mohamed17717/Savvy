@@ -1,7 +1,7 @@
 import os
 import jwt
 from datetime import datetime, timedelta
-from pydantic import BaseModel, Extra, Field
+from pydantic import BaseModel, Field
 
 from rest_framework.response import Response
 from fastapi import Request, HTTPException
@@ -13,7 +13,7 @@ class JwtManager:
     COOKIE_NAME = os.getenv('JWT_COOKIE_NAME')
     ACCESS_TOKEN_EXPIRE_DAYS = 3
 
-    class AuthPayload(BaseModel, extra=Extra.allow):
+    class AuthPayload(BaseModel, extra='allow'):
         user_id: int
         exp: float = Field(default_factory=lambda: (
             datetime.utcnow() + timedelta(days=JwtManager.ACCESS_TOKEN_EXPIRE_DAYS)
@@ -62,4 +62,4 @@ class JwtManager:
         except Exception as e:
             raise HTTPException(status_code=401, detail=str(e))
 
-        return cls.AuthPayload.parse_obj(data)
+        return cls.AuthPayload.model_validate(data)
