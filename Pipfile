@@ -48,6 +48,7 @@ uvicorn = "*"
 pydantic = "*"
 pyjwt = "*"
 aioredis = "*"
+sse-starlette = "*"
 
 [dev-packages]
 

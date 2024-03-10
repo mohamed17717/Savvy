@@ -12,6 +12,7 @@ redis = "*"
 aioredis = "*"
 djangorestframework = "*"
 python-dotenv = "*"
+sse-starlette = "*"
 
 [dev-packages]
 
