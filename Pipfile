@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+django = "4.2.7"
 beautifulsoup4 = "*"
 requests = "*"
 pandas = "*"
@@ -16,7 +17,6 @@ scikit-learn = "*"
 iso639-lang = "*"
 scrapy = "*"
 scrapy-fake-useragent = "*"
-django = "*"
 validators = "*"
 asgiref = "*"
 djangorestframework = "*"
