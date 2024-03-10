@@ -1,32 +1,43 @@
 import asyncio
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from common.redis_utils import RedisPubSub
-from common.progress import UserProgressSingleton as UserProgress
+from common.jwt_utils import JwtManager
+from common.progress import UserProgressSingleton, ProgressSSE
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = FastAPI()
-global_data = {'messages': [], 'progress': None}
+
+# add CORS so our web page can connect to our api
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
-@app.get("/")
-async def index():
-    print('endpoint hit')
-    return {"message": "Hello, World!", **global_data}
+@app.get("/progress")
+async def progress(request: Request):
+    user_id = JwtManager.fastapi_auth(request).user_id
+    user_progress = await UserProgressSingleton.get_instance(user_id)
+    if user_progress is None:
+        raise HTTPException(status_code=404, detail="User progress not found")
+
+    return ProgressSSE.stream(request)
 
 
 @app.on_event("startup")
 async def startup_event():
     async def callback(data: dict):
         user_id = data['user_id']
-        user_progress = await UserProgress.get_instance(user_id)
+        user_progress = await UserProgressSingleton.get_or_create_instance(user_id)
         user_progress.change(data)
-
-        global_data['messages'].append(data)
-        global_data['progress'] = str(user_progress)
 
     asyncio.create_task(RedisPubSub.sub(callback))
