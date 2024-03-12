@@ -28,7 +28,7 @@ class JwtManager:
 
     @classmethod
     def inject_cookie(cls, response: Response, data: dict) -> None:
-        response.set_cookie(            
+        response.set_cookie(
             cls.COOKIE_NAME,
             cls.create_access_token(data),
             max_age=timedelta(days=cls.ACCESS_TOKEN_EXPIRE_DAYS),
