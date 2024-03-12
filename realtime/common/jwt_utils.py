@@ -21,16 +21,22 @@ class JwtManager:
 
     @classmethod
     def create_access_token(cls, data: dict) -> str:
-        auth_payload = cls.AuthPayload.parse_obj(data)
+        auth_payload = cls.AuthPayload.model_validate(data)
         encoded_jwt = jwt.encode(
             auth_payload.model_dump(), cls.SECRET_KEY, algorithm=cls.ALGORITHM)
         return encoded_jwt
 
     @classmethod
     def inject_cookie(cls, response: Response, data: dict) -> None:
-        response.set_cookie(
-            cls.COOKIE_NAME, cls.create_access_token(data),
-            httponly=True, samesite='none', secure=False
+        response.set_cookie(            
+            cls.COOKIE_NAME,
+            cls.create_access_token(data),
+            max_age=timedelta(days=cls.ACCESS_TOKEN_EXPIRE_DAYS),
+            domain=None,
+            path='/',
+            secure=False or None,
+            httponly=True,
+            samesite='Lax',
         )
 
     @classmethod
