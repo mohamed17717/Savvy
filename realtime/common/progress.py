@@ -93,7 +93,6 @@ class ProgressSSE:
         return json.dumps({
             "event": "progress",
             "id": uuid.uuid4().hex,
-            "retry": self.MESSAGE_STREAM_RETRY_TIMEOUT,
             "data": data,
         })
 
@@ -110,12 +109,12 @@ class ProgressSSE:
                 self.progress = progress
 
                 message = str(self.user_progress)
-                yield f'data: {self.wrap_message(message)}\n\n'
+                yield self.wrap_message(message)
 
-                if self.user_progress.DONE:
-                    break
+            if self.user_progress.DONE:
+                break
 
             await asyncio.sleep(self.MESSAGE_STREAM_DELAY)
 
-    async def stream(self, request: Request):
+    async def stream(self, request: Request) -> EventSourceResponse:
         return EventSourceResponse(self.event_loop(request))
