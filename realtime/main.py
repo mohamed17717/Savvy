@@ -16,7 +16,7 @@ app = FastAPI()
 # add CORS so our web page can connect to our api
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,7 +30,7 @@ async def progress(request: Request):
     if user_progress is None:
         raise HTTPException(status_code=404, detail="User progress not found")
 
-    return ProgressSSE.stream(request)
+    return await ProgressSSE(user_progress).stream(request)
 
 
 @app.on_event("startup")
