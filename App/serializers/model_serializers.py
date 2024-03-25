@@ -156,4 +156,4 @@ class BookmarkSerializer(serializers.ModelSerializer):
     class BookmarkUpdate(serializers.ModelSerializer):
         class Meta:
             model = models.Bookmark
-            fields = ['status']
+            fields = ['user_status']
