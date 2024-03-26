@@ -28,11 +28,12 @@ class LoginAPI(KnoxLoginView):
     def post(self, request):
         serializer = setup_serializer(self, request)
         user = serializer.validated_data['user']
+
         login(request, user)
         return super(LoginAPI, self).post(request, format=None)
 
 
-class ResetPasswordAPI(GenericAPIView):
+class ResetPasswordAPI(KnoxLoginView):
     permission_classes = []
     serializer_class = serializers.UserSerializer.ResetPassword
 
@@ -44,7 +45,8 @@ class ResetPasswordAPI(GenericAPIView):
         user.set_password(password)
         user.save()
 
-        return Response(status=HTTP_204_NO_CONTENT)
+        login(request, user)
+        return super(ResetPasswordAPI, self).post(request, format=None)
 
 
 class AskForOTPCodeAPI(GenericAPIView):
@@ -64,8 +66,8 @@ class AskForOTPCodeAPI(GenericAPIView):
         return Response(status=HTTP_204_NO_CONTENT)
 
 
-class RegisterAPI(GenericAPIView):
-    permission_classes = []
+class RegisterAPI(KnoxLoginView):
+    permission_classes = [AllowAny]
     authentication_classes = []
     serializer_class = serializers.UserSerializer.Register
 
@@ -73,7 +75,8 @@ class RegisterAPI(GenericAPIView):
         serializer = setup_serializer(self, request)
         user = serializer.save()
 
-        return Response(serializers.UserSerializer(user).data)
+        login(request, user)
+        return super(RegisterAPI, self).post(request, format=None)
 
 
 class UserProfileAPI(RUViewSet):
