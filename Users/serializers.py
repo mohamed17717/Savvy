@@ -23,15 +23,17 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         exclude = ['password', 'groups', 'user_permissions', ]
 
-    class Register(ValidatePasswordMixin, serializers.ModelSerializer):
+    class Register(serializers.ModelSerializer):
         class Meta:
             model = User
-            exclude = [
-                'email_verified', 'is_staff', 'is_active', 'is_superuser']
-            extra_kwargs = {
-                'first_name': {'required': True},
-                'last_name': {'required': True},
-            }
+            fields = ['email', 'password']
+
+        def validate(self, attrs):
+            attrs['username'] = attrs['email'].split('@')[0]
+            attrs['first_name'] = attrs['username']
+            attrs['confirm_password'] = attrs['password']
+
+            return super().validate(attrs)
 
         def create(self, validated_data):
             User = self.Meta.model
