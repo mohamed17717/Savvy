@@ -24,6 +24,7 @@ class LogResponseMiddleware:
     async def process_exception(self, request, exception, spider):
         bookmark = request.meta.get('bookmark')
 
+        await django_wrapper(tasks.store_weights_task.apply_async, kwargs={'bookmark_id': bookmark.id})
         await models.ScrapyResponseLog.objects.acreate(
             bookmark=bookmark, status_code=500, error=str(exception)
         )
