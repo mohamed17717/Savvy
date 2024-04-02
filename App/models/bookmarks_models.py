@@ -404,7 +404,7 @@ class Bookmark(models.Model):
 
             # update similarity file and make bookmarks to done
             bookmarks.update_process_status(cls.ProcessStatus.CLUSTERED.value)
-            similarity_object.update_matrix(similarity.similarity_matrix)
+            similarity_object.update_matrix(similarity.similarity_matrix, similarity.document_ids)
 
         return clusters_objects
 
