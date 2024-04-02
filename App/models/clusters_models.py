@@ -93,6 +93,7 @@ class SimilarityMatrix(models.Model):
         get_user_model(), on_delete=models.CASCADE, related_name='similarity_matrix'
     )
 
+    bookmarks_ids = models.JSONField(default=list)
     file = models.FileField(
         upload_to='similarity-matrix/',
         validators=[FileExtensionValidator(['json'])])
@@ -103,10 +104,9 @@ class SimilarityMatrix(models.Model):
 
     @property
     def bookmarks(self):
-        from App.models import Bookmark
-        return self.user.bookmarks.filter(
-            process_status=Bookmark.ProcessStatus.CLUSTERED.value
-        )
+        # from App.models import Bookmark
+        # process_status=Bookmark.ProcessStatus.CLUSTERED.value
+        return self.user.bookmarks.filter(pk__in=self.bookmarks_ids)
 
     @property
     def to_type(self):
@@ -123,9 +123,13 @@ class SimilarityMatrix(models.Model):
             path=self.file.path
         )
 
-    def update_matrix(self, similarity_matrix: np.ndarray):
+    def update_matrix(self, similarity_matrix: np.ndarray, bookmarks_ids: list):
         with self.file.open('w') as f:
             f.write(json.dumps(similarity_matrix.tolist()))
+
+        self.bookmarks_ids = bookmarks_ids
+        self.save(update_fields=['bookmarks_ids'])
+
         return True
 
     @classmethod
