@@ -141,7 +141,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
-        'rest_framework.filters.SearchFilter',
+        'common.utils.drf.filters.FullTextSearchFilter',
         'rest_framework.filters.OrderingFilter',
     ],
     'EXCEPTION_HANDLER': 'common.utils.drf.exceptions.custom_exception_handler',
