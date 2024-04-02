@@ -20,6 +20,7 @@ class Cluster(models.Model):
         get_user_model(), on_delete=models.CASCADE, related_name='clusters'
     )
     bookmarks = models.ManyToManyField('App.Bookmark', related_name='clusters')
+    bookmarks_count = models.PositiveSmallIntegerField(default=0)
 
     # Required , can be null and user can set it
     # if it null then it will be calculated using the highest tag
