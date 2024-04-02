@@ -45,12 +45,14 @@ class ClusterType:
     def store(self):
         from App.models import Cluster, Bookmark
 
-        RCs = Bookmark.objects.filter(id__in=self.value)
-        user = RCs[0].user
+        bookmarks = Bookmark.objects.filter(id__in=self.value)
+        user = bookmarks[0].user
 
         cluster = Cluster.objects.create(
-            user=user, name=self.name, correlation=self.correlation)
-        cluster.bookmarks.set(RCs)
+            user=user, name=self.name, correlation=self.correlation,
+            bookmarks_count=len(bookmarks)
+        )
+        cluster.bookmarks.set(bookmarks)
 
         return cluster
 
