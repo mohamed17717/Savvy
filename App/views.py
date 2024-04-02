@@ -94,7 +94,7 @@ class BookmarkAPI(RULViewSet):
     serializer_class = serializers.BookmarkSerializer
 
     filterset_class = filters.BookmarkFilter
-    search_fields = ['@words_weights__word']
+    search_fields = ['words_weights__word', 'title', 'url']
     ordering_fields = ['parent_file_id', 'id']
     ordering = ['id']
 
