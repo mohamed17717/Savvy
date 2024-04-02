@@ -19,7 +19,6 @@ from common.utils.model_utils import FileSizeValidator, clone, bulk_clone
 from common.utils.file_utils import hash_file, random_filename
 from common.utils.image_utils import compress_image, resize_image
 from common.utils.array_utils import unique_dicts_in_list
-from common.utils.dict_utils import dict_values_to_keys
 
 from App import choices, controllers, types, managers
 
@@ -123,22 +122,22 @@ class BookmarkFile(models.Model):
     def __cleanup_duplicated_bookmarks_links(self, bookmarks: list[dict]) -> list[dict]:
         # remove duplication from bookmarks (unique on url)
         bookmarks = unique_dicts_in_list(bookmarks, 'url')
-        # use pre existing bookmarks
-        urls = dict(enumerate([b['url'] for b in bookmarks]))
-        urls = dict_values_to_keys(urls)
-
-        exists_bookmarks = Bookmark.objects.filter(
-            url__in=urls.keys(),
+        # get only new bookmarks for this user
+        stored_bookmarks = set(
+            self.user.bookmarks.all().values_list('url', flat=True))
+        bookmarks = [b for b in bookmarks if b['url'] not in stored_bookmarks]
+        # clone from other users if any of those bookmarks are exist and fresh to save time
+        other_users_bookmarks = Bookmark.objects.exclude(user=self.user).filter(
+            url__in=[b['url'] for b in bookmarks],
             process_status__gte=Bookmark.ProcessStatus.TEXT_PROCESSED.value,
             scrapes__created_at__gte=timezone.now() - timedelta(days=100),
-        )
-        # remove bookmarks from bookmarks_data
-        exists_urls = exists_bookmarks.values_list('url', flat=True)
-        indexes = sorted(map(urls.get, exists_urls), reverse=True)
-        list(map(bookmarks.pop, indexes))
-        # loop throw exists bookmarks then decide clone or skip
-        for bookmark in exists_bookmarks:
-            bookmark.deep_clone(bookmark.parent_file.user, self)
+        ).distinct('url')
+        other_users_urls = set(
+            other_users_bookmarks.values_list('url', flat=True))
+        bookmarks = [b for b in bookmarks if b['url'] not in other_users_urls]
+
+        for bookmark in other_users_bookmarks:
+            bookmark.deep_clone(self.user, self)
 
         return bookmarks
 
@@ -343,12 +342,15 @@ class Bookmark(models.Model):
 
             new_bookmark.update_process_status(self.ProcessStatus.CLONED.value)
 
-            new_webpage = clone(self.webpage)
-            new_webpage.bookmark = new_bookmark
-            new_webpage.save(update_fields=['bookmark'])
+            if self.webpage:
+                new_webpage = clone(self.webpage)
+                new_webpage.bookmark = new_bookmark
+                new_webpage.save(update_fields=['bookmark'])
 
-            bulk_clone(self.webpage.meta_tags.all(), {'webpage': new_webpage})
-            bulk_clone(self.webpage.headers.all(), {'webpage': new_webpage})
+                bulk_clone(self.webpage.meta_tags.all(),
+                           {'webpage': new_webpage})
+                bulk_clone(self.webpage.headers.all(),
+                           {'webpage': new_webpage})
 
             bulk_clone(self.words_weights.all(), {'bookmark': new_bookmark})
 
