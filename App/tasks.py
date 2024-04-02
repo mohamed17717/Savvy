@@ -102,13 +102,18 @@ def store_weights_task(bookmark_id):
     Status = models.Bookmark.ProcessStatus
 
     with transaction.atomic():
-        bookmark = models.Bookmark.objects.get(id=bookmark_id)
-        bookmark.update_process_status(Status.START_TEXT_PROCESSING.value)
+        bookmark = models.Bookmark.objects.filter(
+            id=bookmark_id,
+            words_weights__isnull=True,
+            # process_status__lt=Status.START_TEXT_PROCESSING.value
+        ).first()
+        if bookmark:
+            bookmark.update_process_status(Status.START_TEXT_PROCESSING.value)
 
-        bookmark.store_word_vector()
-        bookmark.store_tags()
+            bookmark.store_word_vector()
+            bookmark.store_tags()
 
-        bookmark.update_process_status(Status.TEXT_PROCESSED.value)
+            bookmark.update_process_status(Status.TEXT_PROCESSED.value)
 
 
 @shared_task(queue='orm')
