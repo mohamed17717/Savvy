@@ -93,7 +93,7 @@ class SimilarityMatrix(models.Model):
         get_user_model(), on_delete=models.CASCADE, related_name='similarity_matrix'
     )
 
-    bookmarks_ids = models.JSONField(default=list)
+    bookmarks_ids = models.JSONField(default=list, blank=True)
     file = models.FileField(
         upload_to='similarity-matrix/',
         validators=[FileExtensionValidator(['json'])])
