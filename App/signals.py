@@ -13,7 +13,7 @@ def on_create_bookmark_file_extract_urls(sender, instance, created, **kwargs):
         return
 
     def event():
-        links = instance.bookmarks_links
+        links = instance.cleaned_bookmarks_links()
         tasks.store_bookmarks_task.delay(instance.id, links)
 
         RedisPubSub.pub({

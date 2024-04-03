@@ -113,15 +113,11 @@ class BookmarkFile(models.Model):
         file_obj = self.file_obj
         file_obj.validate(raise_exception=True)
 
-        links = file_obj.get_links()
-        # TODO it shouldn't happen here
-        links = self.__cleanup_duplicated_bookmarks_links(links)
+        return file_obj.get_links()
 
-        return links
-
-    def __cleanup_duplicated_bookmarks_links(self, bookmarks: list[dict]) -> list[dict]:
+    def cleaned_bookmarks_links(self) -> list[dict]:
         # remove duplication from bookmarks (unique on url)
-        bookmarks = unique_dicts_in_list(bookmarks, 'url')
+        bookmarks = unique_dicts_in_list(self.bookmarks_links, 'url')
         # get only new bookmarks for this user
         stored_bookmarks = set(
             self.user.bookmarks.all().values_list('url', flat=True))
