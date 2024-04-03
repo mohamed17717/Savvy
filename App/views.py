@@ -18,9 +18,7 @@ class BookmarkFileAPI(CRDLViewSet):
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
-
-        jwt_payload = {'user_id': request.user.id}
-        JwtManager.inject_cookie(response, jwt_payload)
+        JwtManager.inject_cookie(response, data={'user_id': request.user.id})
 
         return response
 
