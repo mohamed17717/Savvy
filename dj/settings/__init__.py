@@ -277,3 +277,8 @@ CORS_ORIGIN_WHITELIST = (
 )
 CORS_ALLOWED_ORIGINS = CORS_ORIGIN_WHITELIST
 CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
+
+# Maximum size, in bytes, of a request before it will be streamed to the file system instead of into memory.
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5 MB
+# Maximum size in bytes that a request's body may be before a SuspiciousOperation (RequestDataTooBig) is raised.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5 MB
