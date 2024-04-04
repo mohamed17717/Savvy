@@ -38,7 +38,7 @@ class ClusterAPI(RULViewSet):
     filterset_class = filters.ClusterFilter
     search_fields = ['@name']
     ordering_fields = ['correlation', 'id']
-    ordering = ['-correlation']
+    ordering = ['-bookmarks_count', '-correlation']
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
@@ -83,9 +83,8 @@ class ClusterFullListAPI(ClusterAPI):
         return self.serializer_class
 
     def get_queryset(self):
-        from django.db.models import Count
         qs = super().get_queryset()
-        return qs.annotate(bookmarks_count=Count('bookmarks')).order_by('-bookmarks_count')
+        return qs.order_by('-bookmarks_count')
 
 
 class BookmarkAPI(RULViewSet):
