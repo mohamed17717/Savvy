@@ -1,7 +1,6 @@
 import urllib3
 import requests
 import secrets
-import base64
 from datetime import timedelta
 
 from django.db import models, transaction
@@ -17,8 +16,9 @@ from crawler import settings as scrapy_settings
 
 from common.utils.model_utils import FileSizeValidator, clone, bulk_clone
 from common.utils.file_utils import hash_file, random_filename
-from common.utils.image_utils import compress_image, resize_image
+from common.utils.image_utils import compress_image, resize_image, download_image
 from common.utils.array_utils import unique_dicts_in_list
+from common.utils.url_utils import url_builder
 
 from App import choices, controllers, types, managers
 
@@ -236,21 +236,23 @@ class Bookmark(models.Model):
     # methods
     def store_word_vector(self):
         from . import WordWeight
-        # Delete the old data , store new ones
-        self.words_weights.all().delete()
+        # Delete the old data , store new ones        
+        with transaction.atomic():
+            self.words_weights.all().delete()
 
-        word_vector = self.word_vector
-        important_words = set(self.calculate_important_words().keys())
+            word_vector = self.word_vector
+            important_words = set(self.calculate_important_words().keys())
 
-        words_weights = [
-            WordWeight(
-                bookmark=self, word=word, weight=weight,
-                important=word in important_words
-            )
-            for word, weight in word_vector.items()
-        ]
+            words_weights = [
+                WordWeight(
+                    bookmark=self, word=word, weight=weight,
+                    important=word in important_words
+                )
+                for word, weight in word_vector.items()
+            ]
+            results = WordWeight.objects.bulk_create(words_weights, batch_size=250)
 
-        return WordWeight.objects.bulk_create(words_weights, batch_size=250)
+        return results
 
     def store_tags(self):
         from App.models import Tag
@@ -280,22 +282,19 @@ class Bookmark(models.Model):
         return all_tags
 
     def set_image_from_url(self, url: str, new_width: int = 300):
-        if url.startswith('data:image'):
-            content = base64.b64decode(url.split(',')[-1])
-        else:
-            if url.startswith('://'):
-                url = 'https' + url
-            if not url.startswith('http') and not url.startswith('/'):
-                url = '/' + url
-            if url.startswith('/'):
-                url = f'https://{self.domain}' + url
+        url = url_builder(url, self.domain)
+        try:
+            content, url = download_image(url)
+        except requests.exceptions.HTTPError as e:
+            if str(e).startswith('429'):
+                # Too many requests error, so schedule for later
+                from App import tasks
+                tasks.schedule_store_bookmark_image_task.delay(self.id, url)
+                return
+            raise e
 
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36'
-            }
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            content = response.content
+        if content is None:
+            return
 
         image = resize_image(content, new_width)
         image = compress_image(image)
@@ -306,8 +305,6 @@ class Bookmark(models.Model):
         self.image_url = url
         self.image.save(file_name, image, save=True)
         self.save(update_fields=['image_url'])
-
-        return self.image
 
     def deep_clone(self, user, parent_file=None):
         """Clone bookmark with all relations for new user
@@ -400,7 +397,8 @@ class Bookmark(models.Model):
 
             # update similarity file and make bookmarks to done
             bookmarks.update_process_status(cls.ProcessStatus.CLUSTERED.value)
-            similarity_object.update_matrix(similarity.similarity_matrix, similarity.document_ids)
+            similarity_object.update_matrix(
+                similarity.similarity_matrix, similarity.document_ids)
 
         return clusters_objects
 
