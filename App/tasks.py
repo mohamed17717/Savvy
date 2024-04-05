@@ -85,16 +85,27 @@ def store_webpage_task(bookmark_id, page_title, meta_tags, headers):
 
 
 @shared_task(queue='orm')
-def store_bookmark_image_task(bookmark_id, meta_tags):
+def store_bookmark_image_task(bookmark_id, meta_tags=None, image_url=None):
     bookmark = models.Bookmark.objects.get(id=bookmark_id)
-    image_url = extract_image_from_meta(meta_tags)
+    if meta_tags:
+        image_url = extract_image_from_meta(meta_tags)
+
     if image_url:
         try:
             bookmark.set_image_from_url(image_url)
         except Exception as e:
-            logger.error('store_bookmark_image_task(%s, %s)' %
-                         (bookmark_id, image_url))
+            logger.error(
+                'store_bookmark_image_task(%s, %s)' % (bookmark_id, image_url))
             raise e
+
+
+@shared_task(queue='orm')
+def schedule_store_bookmark_image_task(bookmark_id, image_url):
+    wait_time = 60 * 60  # 1 hour
+    store_bookmark_image_task.apply_async(kwargs={
+        'bookmark_id': bookmark_id,
+        'image_url': image_url
+    }, countdown=wait_time)
 
 
 @shared_task(queue='orm')
@@ -111,9 +122,12 @@ def store_weights_task(bookmark_id):
             bookmark.update_process_status(Status.START_TEXT_PROCESSING.value)
 
             bookmark.store_word_vector()
-            bookmark.store_tags()
-
             bookmark.update_process_status(Status.TEXT_PROCESSED.value)
+
+
+@shared_task(queue='orm')
+def store_tags_task(bookmark_ids):
+    models.Tag.update_tags_with_new_bookmarks(bookmark_ids)
 
 
 @shared_task(queue='orm')
@@ -151,25 +165,53 @@ def on_finish_crawling_task(callback_result=[], bookmark_ids=[]):
 
 
 @shared_task(queue='orm')
-def cluster_checker_task(user_id, bookmark_ids=[], iteration=0):
-    max_time = 10*60  # 10 min
+def cluster_checker_task(user_id, bookmark_ids=[], iteration=0, uncompleted_bookmarks_history:dict={}):
+    max_time = 3*60  # 3 min
     wait_time = 2  # 2 sec
     max_iteration = max_time // wait_time
 
     uncompleted_bookmarks = models.Bookmark.objects.filter(
-        id__in=bookmark_ids,
+        id__in=set(bookmark_ids) - set([i for i, value in uncompleted_bookmarks_history.items() if value['times'] > 3]),
         words_weights__isnull=True
-    ).exists()
+    )
+
+    for uncompleted in uncompleted_bookmarks:
+        uncompleted_bookmarks_history.setdefault(uncompleted.id, {'times': 0, 'status': 'wait'})
+        uncompleted_bookmarks_history[uncompleted.id]['times'] += 1
+
+    # if this bookmark come more than 3 times
+    if uncompleted_bookmarks.exists():
+        has_scrapes = uncompleted_bookmarks.filter(
+            scrapes__isnull=False).values_list('id', flat=True)
+        for bookmark_id in has_scrapes:
+            bookmark_history = uncompleted_bookmarks_history[bookmark_id]
+            if bookmark_history['status'] != 'wait':
+                continue
+            elif bookmark_history['times'] == 3:
+                bookmark_history['status'] = 'calculated'
+                store_weights_task.delay(bookmark_id)
+
+        has_no_scrapes = uncompleted_bookmarks.filter(
+            scrapes__isnull=True).values_list('id', flat=True)
+        ready_to_scrape = []
+        for i, value in uncompleted_bookmarks_history.items():
+            if i in has_no_scrapes and value['times'] > 3 and value['status'] == 'wait':
+                ready_to_scrape.append(i)
+                uncompleted_bookmarks_history[i]['status'] = 'scraped'
+        
+        batch_bookmarks_to_crawl_task.delay(ready_to_scrape)
+
     accepted = any([
         iteration >= max_iteration,
-        uncompleted_bookmarks is False
+        uncompleted_bookmarks.exists() is False
     ])
 
     if accepted:
         models.Bookmark.objects.filter(id__in=bookmark_ids).update_process_status(
             models.Bookmark.ProcessStatus.START_CLUSTER.value)
-        cluster_bookmarks_task.apply_async(
-            kwargs={'user_id': user_id})
+
+        store_tags_task.apply_async(kwargs={'bookmark_ids': bookmark_ids})
+        cluster_bookmarks_task.apply_async(kwargs={'user_id': user_id})
     else:
         cluster_checker_task.apply_async(
             kwargs={'user_id': user_id, 'bookmark_ids': bookmark_ids, 'iteration': iteration+1}, countdown=wait_time)
