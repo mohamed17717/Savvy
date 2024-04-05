@@ -49,6 +49,7 @@ pydantic = "*"
 pyjwt = "*"
 aioredis = "*"
 sse-starlette = "*"
+cairosvg = "*"
 
 [dev-packages]
 
