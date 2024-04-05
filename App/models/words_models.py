@@ -29,6 +29,7 @@ class WordWeight(models.Model):
 
     @classmethod
     def word_vectors(cls, bookmarks) -> dict[int, WordVectorType]:
+        # TODO return vector for each bookmark
         words_qs = cls.objects.filter(bookmark__in=bookmarks, important=True)
         words_qs = words_qs.values_list('bookmark_id', 'word', 'weight')
 
