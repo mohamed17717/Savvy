@@ -84,7 +84,7 @@ def store_webpage_task(bookmark_id, page_title, meta_tags, headers):
         models.WebpageHeader.bulk_create(webpage, headers)
 
 
-@shared_task(queue='orm')
+@shared_task(queue='download_images')
 def store_bookmark_image_task(bookmark_id, meta_tags=None, image_url=None):
     bookmark = models.Bookmark.objects.get(id=bookmark_id)
     if meta_tags:
@@ -99,7 +99,7 @@ def store_bookmark_image_task(bookmark_id, meta_tags=None, image_url=None):
             raise e
 
 
-@shared_task(queue='orm')
+@shared_task(queue='download_images')
 def schedule_store_bookmark_image_task(bookmark_id, image_url):
     wait_time = 60 * 60  # 1 hour
     store_bookmark_image_task.apply_async(kwargs={

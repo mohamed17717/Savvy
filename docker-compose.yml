@@ -97,6 +97,25 @@ services:
     networks:
       - djangonetwork
 
+  celery_download_images_worker:
+    build: .
+    command: pipenv run celery -A dj worker -l INFO -n download_images_worker -Q download_images -E --concurrency=10
+    env_file:
+      - .env
+    volumes:
+      - .:/usr/src/app
+      - static_volume:/usr/src/app/staticfiles
+      - media_volume:/usr/src/app/media
+    depends_on:
+      - db
+      - redis
+    links:
+      - db:db
+      - redis:redis
+    networks:
+      - djangonetwork
+
+
   celery_email_worker:
     build: .
     command: pipenv run celery -A dj worker -l INFO -n email_worker -Q email -E --concurrency=4
