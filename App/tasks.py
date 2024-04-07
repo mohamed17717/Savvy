@@ -39,6 +39,23 @@ def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
     bookmarks = tuple(map(parent.init_bookmark, bookmarks_data))
 
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
+
+    # categorize bookmarks to route them to the right flow controller
+    categories = {}  # type: dict[str, list[models.Bookmark]]
+    flow_controllers = {}  # type: dict[str, models.FlowController]
+    for bookmark in bookmarks:
+        if bookmark.flow_controller:
+            domain = bookmark.flow_controller.DOMAIN
+
+            categories.setdefault(domain, [])
+            categories[domain].append(bookmark)
+            flow_controllers[domain] = bookmark.flow_controller
+
+    for domain, bookmarks in categories.items():
+        controller = flow_controllers[domain]
+        controller(bookmarks).run_flow()
+    # batch bookmarks that don't have custom flow controller
+    bookmarks = list(filter(lambda b: not b.flow_controller, bookmarks))
     batch_bookmarks_to_crawl_task.delay(
         [bookmark.id for bookmark in bookmarks])
 
@@ -54,6 +71,23 @@ def batch_bookmarks_to_crawl_task(bookmark_ids: list[int]):
     ]
     callback = (
         on_finish_crawling_task.s(bookmark_ids=bookmark_ids).set(queue='orm')
+    )
+    job = chord(tasks)(callback)
+    with allow_join_result():
+        job.get()
+
+
+@shared_task(queue='orm')
+def batch_bookmarks_to_crawl_without_callback_task(bookmark_ids: list[int]):
+    batch_size = 30
+    id_groups = window_list(bookmark_ids, batch_size, batch_size)
+
+    tasks = [
+        crawl_bookmarks_task.s(group).set(queue='scrapy')
+        for group in id_groups
+    ]
+    callback = (
+        empty_callback_task.s(bookmark_ids=bookmark_ids).set(queue='orm')
     )
     job = chord(tasks)(callback)
     with allow_join_result():
@@ -165,18 +199,25 @@ def on_finish_crawling_task(callback_result=[], bookmark_ids=[]):
 
 
 @shared_task(queue='orm')
-def cluster_checker_task(user_id, bookmark_ids=[], iteration=0, uncompleted_bookmarks_history:dict={}):
+def empty_callback_task(callback_result=[], bookmark_ids=[]):
+    pass
+
+
+@shared_task(queue='orm')
+def cluster_checker_task(user_id, bookmark_ids=[], iteration=0, uncompleted_bookmarks_history: dict = {}):
     max_time = 3*60  # 3 min
     wait_time = 2  # 2 sec
     max_iteration = max_time // wait_time
 
     uncompleted_bookmarks = models.Bookmark.objects.filter(
-        id__in=set(bookmark_ids) - set([i for i, value in uncompleted_bookmarks_history.items() if value['times'] > 3]),
+        id__in=set(bookmark_ids) - set(
+            [i for i, value in uncompleted_bookmarks_history.items() if value['times'] > 3]),
         words_weights__isnull=True
     )
 
     for uncompleted in uncompleted_bookmarks:
-        uncompleted_bookmarks_history.setdefault(uncompleted.id, {'times': 0, 'status': 'wait'})
+        uncompleted_bookmarks_history.setdefault(
+            uncompleted.id, {'times': 0, 'status': 'wait'})
         uncompleted_bookmarks_history[uncompleted.id]['times'] += 1
 
     # if this bookmark come more than 3 times
@@ -198,7 +239,7 @@ def cluster_checker_task(user_id, bookmark_ids=[], iteration=0, uncompleted_book
             if i in has_no_scrapes and value['times'] > 3 and value['status'] == 'wait':
                 ready_to_scrape.append(i)
                 uncompleted_bookmarks_history[i]['status'] = 'scraped'
-        
+
         batch_bookmarks_to_crawl_task.delay(ready_to_scrape)
 
     accepted = any([
