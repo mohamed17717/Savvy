@@ -20,7 +20,7 @@ from common.utils.image_utils import compress_image, resize_image, download_imag
 from common.utils.array_utils import unique_dicts_in_list
 from common.utils.url_utils import url_builder
 
-from App import choices, controllers, types, managers
+from App import choices, controllers, types, managers, flows
 
 from realtime.common.redis_utils import RedisPubSub
 
@@ -200,7 +200,7 @@ class Bookmark(models.Model):
     def domain(self) -> str:
         # domain with subdomains
         url = urllib3.util.parse_url(self.url)
-        return url.host
+        return '.'.join(url.host.split('.')[-2:])
 
     @property
     def site_name(self) -> str:
@@ -213,12 +213,28 @@ class Bookmark(models.Model):
     @property
     def word_vector(self) -> dict:
         from App.serializers import BookmarkWeightingSerializer
-        return BookmarkWeightingSerializer(self).total_weight
+
+        weighting_serializer = BookmarkWeightingSerializer
+        if self.flow_controller:
+            try:
+                weighting_serializer = self.flow_controller.get_weighting_serializer()
+            except AttributeError:
+                pass
+
+        return weighting_serializer(self).total_weight
 
     @property
     def important_words(self) -> dict:
         qs = self.words_weights.filter(important=True)
         return dict(qs.values_list('word', 'weight'))
+
+    @property
+    def flow_controller(self) -> flows.FlowController:
+        for cls in flows.get_flows():
+            if cls.DOMAIN == self.domain:
+                return cls
+
+        return None
 
     def calculate_important_words(self) -> dict:
         word_vector = self.word_vector
@@ -236,7 +252,7 @@ class Bookmark(models.Model):
     # methods
     def store_word_vector(self):
         from . import WordWeight
-        # Delete the old data , store new ones        
+        # Delete the old data , store new ones
         with transaction.atomic():
             self.words_weights.all().delete()
 
@@ -250,7 +266,8 @@ class Bookmark(models.Model):
                 )
                 for word, weight in word_vector.items()
             ]
-            results = WordWeight.objects.bulk_create(words_weights, batch_size=250)
+            results = WordWeight.objects.bulk_create(
+                words_weights, batch_size=250)
 
         return results
 
