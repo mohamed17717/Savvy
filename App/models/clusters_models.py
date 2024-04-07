@@ -43,7 +43,7 @@ class Cluster(models.Model):
     def general_words_vector(self):
         general_vector = {}
         for b in self.bookmarks.all():
-            for word, weight in b.word_vector.items():
+            for word, weight in b.important_words.items():
                 general_vector.setdefault(word, 0)
                 general_vector[word] += weight
 
