@@ -4,7 +4,6 @@ import secrets
 from datetime import timedelta
 
 from django.db import models, transaction
-from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
@@ -390,13 +389,7 @@ class Bookmark(models.Model):
             user.clusters.all().delete()
 
             # Get similarity with old ones in mind
-            bookmarks = user.bookmarks.filter(
-                Q(process_status=cls.ProcessStatus.CLONED.value)
-                | Q(
-                    process_status__gte=cls.ProcessStatus.TEXT_PROCESSED.value,
-                    process_status__lt=cls.ProcessStatus.CLUSTERED.value,
-                )
-            )
+            bookmarks = user.bookmarks.filter(words_weights__isnull=False)
             document_ids, vectors = WordWeight.word_vectors(bookmarks)
 
             similarity_object = SimilarityMatrix.get_object(user)
