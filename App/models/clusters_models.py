@@ -134,7 +134,7 @@ class Tag(models.Model):
         for tag in all_tags:
             relations.extend([
                 relation_model(bookmark_id=bookmark_id, tag_id=tag.pk)
-                for bookmark_id in words_map[tag.name]['bookmark_ids']
+                for bookmark_id in set(words_map[tag.name]['bookmark_ids'])
             ])
 
         relation_model.objects.bulk_create(relations, batch_size=250)
