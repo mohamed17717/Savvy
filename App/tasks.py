@@ -51,9 +51,9 @@ def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
             categories[domain].append(bookmark)
             flow_controllers[domain] = bookmark.flow_controller
 
-    for domain, bookmarks in categories.items():
+    for domain, domain_bookmarks in categories.items():
         controller = flow_controllers[domain]
-        controller(bookmarks).run_flow()
+        controller(domain_bookmarks).run_flow()
     # batch bookmarks that don't have custom flow controller
     bookmarks = list(filter(lambda b: not b.flow_controller, bookmarks))
     batch_bookmarks_to_crawl_task.delay(
@@ -160,8 +160,10 @@ def store_weights_task(bookmark_id):
 
 
 @shared_task(queue='orm')
-def store_tags_task(bookmark_ids):
-    models.Tag.update_tags_with_new_bookmarks(bookmark_ids)
+def store_tags_task(user_id):
+    user = User.objects.get(pk=user_id)
+    bookmark_ids = user.bookmarks.filter(tags__isnull=True).values_list('id', flat=True)
+    models.Tag.update_tags_with_new_bookmarks(list(bookmark_ids))
 
 
 @shared_task(queue='orm')
@@ -240,7 +242,20 @@ def cluster_checker_task(user_id, bookmark_ids=[], iteration=0, uncompleted_book
                 ready_to_scrape.append(i)
                 uncompleted_bookmarks_history[i]['status'] = 'scraped'
 
-        batch_bookmarks_to_crawl_task.delay(ready_to_scrape)
+        if ready_to_scrape:
+            tasks = [crawl_bookmarks_task.s(ready_to_scrape).set(queue='scrapy')]
+            callback = (
+                cluster_checker_task.s(
+                    user_id=user_id, bookmark_ids=bookmark_ids, 
+                    iteration=iteration+1, 
+                    uncompleted_bookmarks_history=uncompleted_bookmarks_history
+                ).set(queue='orm')
+            )
+            job = chord(tasks)(callback)
+            with allow_join_result():
+                job.get()
+
+            return
 
     accepted = any([
         iteration >= max_iteration,
@@ -250,9 +265,14 @@ def cluster_checker_task(user_id, bookmark_ids=[], iteration=0, uncompleted_book
     if accepted:
         models.Bookmark.objects.filter(id__in=bookmark_ids).update_process_status(
             models.Bookmark.ProcessStatus.START_CLUSTER.value)
+        uncompleted_bookmarks = models.Bookmark.objects.filter(
+            user_id=user_id, words_weights__isnull=True
+        )
+        for bookmark in uncompleted_bookmarks:
+            bookmark.store_word_vector()
 
-        store_tags_task.apply_async(kwargs={'bookmark_ids': bookmark_ids})
+        store_tags_task.apply_async(kwargs={'user_id': user_id})
         cluster_bookmarks_task.apply_async(kwargs={'user_id': user_id})
     else:
         cluster_checker_task.apply_async(
-            kwargs={'user_id': user_id, 'bookmark_ids': bookmark_ids, 'iteration': iteration+1}, countdown=wait_time)
+            kwargs={'user_id': user_id, 'bookmark_ids': bookmark_ids, 'iteration': iteration+1, 'uncompleted_bookmarks_history': uncompleted_bookmarks_history}, countdown=wait_time)
