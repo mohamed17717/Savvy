@@ -162,7 +162,7 @@ def store_weights_task(bookmark_id):
 @shared_task(queue='orm')
 def store_tags_task(user_id):
     user = User.objects.get(pk=user_id)
-    bookmark_ids = user.bookmarks.filter(tags__isnull=True).values_list('id', flat=True)
+    bookmark_ids = user.bookmarks.filter(tags__isnull=True).distinct().values_list('id', flat=True)
     models.Tag.update_tags_with_new_bookmarks(list(bookmark_ids))
 
 
