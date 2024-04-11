@@ -1,3 +1,6 @@
+import re
+
+
 def url_builder(url, domain):
     if url.startswith('://'):
         url = 'https' + url
@@ -8,3 +11,7 @@ def url_builder(url, domain):
 
     return url
 
+
+def is_valid_domain(domain):
+    pattern = r"^(?!-)([A-Za-z0-9-]{1,63}(?<!-)\.)+[A-Za-z]{2,6}$"
+    return re.match(pattern, domain) is not None
