@@ -389,7 +389,7 @@ class Bookmark(models.Model):
             user.clusters.all().delete()
 
             # Get similarity with old ones in mind
-            bookmarks = user.bookmarks.filter(words_weights__isnull=False)
+            bookmarks = user.bookmarks.filter(words_weights__isnull=False).distinct()
             document_ids, vectors = WordWeight.word_vectors(bookmarks)
 
             similarity_object = SimilarityMatrix.get_object(user)
