@@ -7,17 +7,13 @@ from common.utils.async_utils import django_wrapper
 class LogResponseMiddleware:
     async def process_response(self, request, response, spider):
         # Store the URL, status code, and response body in a file, and store the file path in the database
-        error_msg = None
-        if response.status != 200:
-            error_msg = f"HTTP status code {response.status}"
-
         bookmark = request.meta.get('bookmark')
 
         log = await models.ScrapyResponseLog.objects.acreate(
-            bookmark=bookmark, status_code=response.status, error=error_msg
+            bookmark=bookmark, status_code=response.status,
+            error=None if response.status == 200 else f"HTTP status code {response.status}"
         )
         await django_wrapper(log.store_file, response.body)
-        # in case of failed crawled item
         await django_wrapper(tasks.store_weights_task.apply_async, kwargs={'bookmark_id': bookmark.id})
         return response
 
