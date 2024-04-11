@@ -211,15 +211,7 @@ class Bookmark(models.Model):
 
     @property
     def word_vector(self) -> dict:
-        from App.serializers import BookmarkWeightingSerializer
-
-        weighting_serializer = BookmarkWeightingSerializer
-        if self.flow_controller:
-            try:
-                weighting_serializer = self.flow_controller.get_weighting_serializer()
-            except AttributeError:
-                pass
-
+        weighting_serializer = self.hooks.get_weighting_serializer()
         return weighting_serializer(self).total_weight
 
     @property
@@ -228,15 +220,18 @@ class Bookmark(models.Model):
         return dict(qs.values_list('word', 'weight'))
 
     @property
-    def flow_controller(self) -> flows.FlowController:
-        for cls in flows.get_flows():
-            if cls.DOMAIN == self.domain:
-                return cls
+    def hooks(self):
+        from App.flows.default import BookmarkHooks
+        hook_class = BookmarkHooks
+        for h in flows.get_flows():
+            if h.DOMAIN == self.domain:
+                hook_class = h
+                break
+        return hook_class(self)
 
-        return None
-
-    def calculate_important_words(self) -> dict:
-        word_vector = self.word_vector
+    def calculate_important_words(self, word_vector: dict = None) -> dict:
+        if word_vector is None:
+            word_vector = self.word_vector
 
         top_weights_ranks = 5
         weights = sorted(set(word_vector.values()), reverse=True)
@@ -249,14 +244,14 @@ class Bookmark(models.Model):
         return word_vector
 
     # methods
-    def store_word_vector(self):
+    def store_word_vector(self, commit=True):
         from . import WordWeight
         # Delete the old data , store new ones
         with transaction.atomic():
             self.words_weights.all().delete()
 
             word_vector = self.word_vector
-            important_words = set(self.calculate_important_words().keys())
+            important_words = self.calculate_important_words(word_vector)
 
             words_weights = [
                 WordWeight(
@@ -265,8 +260,11 @@ class Bookmark(models.Model):
                 )
                 for word, weight in word_vector.items()
             ]
-            results = WordWeight.objects.bulk_create(
-                words_weights, batch_size=250)
+            if commit:
+                results = WordWeight.objects.bulk_create(
+                    words_weights, batch_size=250)
+            else:
+                return words_weights
 
         return results
 
@@ -389,7 +387,8 @@ class Bookmark(models.Model):
             user.clusters.all().delete()
 
             # Get similarity with old ones in mind
-            bookmarks = user.bookmarks.filter(words_weights__isnull=False).distinct()
+            bookmarks = user.bookmarks.filter(
+                words_weights__isnull=False).distinct()
             document_ids, vectors = WordWeight.word_vectors(bookmarks)
 
             similarity_object = SimilarityMatrix.get_object(user)
