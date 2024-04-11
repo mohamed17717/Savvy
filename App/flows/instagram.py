@@ -1,32 +1,31 @@
-from . import FlowController
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from App.models import Bookmark
+from .default import BookmarkHooks
+from common.utils.array_utils import window_list
 
 
-class InstagramBookmarkFlowController(FlowController):
+class InstagramBookmarkHooks(BookmarkHooks):
     # 1- clustering don't depend on crawling // no webpage // no scrapes
     # 2- don't weight the existing title and url because they are useless
     # 3- using url patterns inject words weights
     # 4- crawl with custom spider to store just the image
 
-    DOMAIN = 'instagram.com'
+    _domain = 'instagram.com'
 
-    def __init__(self, bookmarks: list['Bookmark']) -> None:
-        self.bookmarks = bookmarks
-
-    @classmethod
-    def get_weighting_serializer(cls):
+    def get_weighting_serializer(self):
         from App.serializers import InstagramBookmarkWeightingSerializer
         return InstagramBookmarkWeightingSerializer
 
-    def run_flow(self) -> None:
-        from App import tasks
+    def get_batch_method(self) -> callable:
+        from App.tasks import bulk_store_weights_task
+        return bulk_store_weights_task
 
-        for bookmark in self.bookmarks:
-            tasks.store_weights_task.delay(bookmark.id)
+    def post_batch(self) -> callable:
+        def method(bookmark_ids):
+            from App import tasks
 
-        # run the instagram spider -> get meta tags -> get image -> download & store image
-        tasks.batch_bookmarks_to_crawl_without_callback_task.delay(
-            [bookmark.id for bookmark in self.bookmarks])
+            batch_size = 30
+            id_groups = window_list(bookmark_ids, batch_size, batch_size)
+
+            for group in id_groups:
+                tasks.crawl_bookmarks_task.delay(group)
+
+        return method
