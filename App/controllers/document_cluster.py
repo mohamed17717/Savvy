@@ -35,7 +35,7 @@ class ClusterMaker:
         self.threshold_step = 5
         self.min_threshold = 30
         self.max_threshold = 95
-        self.min_threshold_for_nearest_cluster = 50
+        self.min_threshold_for_nearest_cluster = 15
 
         # it generate min overlap to 30% which is accepted
         self.high_correlated_overlap = 0.65
@@ -142,13 +142,18 @@ class ClusterMaker:
             nearest_elm, correlation = self.similarity_dict[elm][1]
             if correlation*100 > self.min_threshold_for_nearest_cluster:
                 # TODO get cluster with least correlation
-                cluster = self.clusters.item_logger[nearest_elm][-1]
-                cluster.append(
-                    elm, correlation=correlation, algorithm=algo.NEAREST_DOC_CLUSTER.value
-                )
+                cluster = self.clusters.item_logger.get(nearest_elm)
+                if cluster:
+                    cluster[-1].append(elm, correlation, algo.NEAREST_DOC_CLUSTER.value)
+                else:
+                    # TODO skip nearest elm from the loop to not create 2 clusters with same data
+                    cluster = ClusterType(self.clusters)
+                    cluster.append(elm, correlation, algo.NEAREST_DOC_CLUSTER.value)
+                    cluster.append(nearest_elm, correlation, algo.NEAREST_DOC_CLUSTER.value)
+                    self.clusters.append(cluster)
             else:
                 cluster = ClusterType(self.clusters)
-                cluster.append(elm, correlation=1, algorithm=algo.NOTHING.value)
+                cluster.append(elm, 1, algo.NOTHING.value)
                 self.clusters.append(cluster)
 
     ### CLUSTERING ###
