@@ -1,28 +1,12 @@
-from abc import ABC, abstractmethod
-
-
-class FlowController(ABC):
-    DOMAIN = None
-
-    @classmethod
-    @abstractmethod
-    def get_weighting_serializer(cls):
-        pass
-
-    @abstractmethod
-    def run_flow(self):
-        pass
-
-
 def get_flows():
-    from .facebook import FacebookBookmarkFlowController
-    from .youtube import YoutubeBookmarkFlowController
-    from .instagram import InstagramBookmarkFlowController
+    from .facebook import FacebookBookmarkHooks
+    from .youtube import YoutubeBookmarkHooks
+    from .instagram import InstagramBookmarkHooks
 
     return [
-        FacebookBookmarkFlowController,
-        YoutubeBookmarkFlowController,
-        InstagramBookmarkFlowController
+        FacebookBookmarkHooks,
+        YoutubeBookmarkHooks,
+        InstagramBookmarkHooks,
     ]
 
 
