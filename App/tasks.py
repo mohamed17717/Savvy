@@ -20,6 +20,27 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
+def group_bookmarks_by_hook(bookmarks, hook_name) -> list[list[callable, list[int]]]:
+    hooks_methods = {}
+    hooks_groups = {}
+    for bookmark in bookmarks:
+        hook = getattr(bookmark.hooks, hook_name)
+        hook_result = hook()
+        if hook_result is not None:
+            func_name = hook_result.__name__
+
+            hooks_methods[func_name] = hook_result
+
+            hooks_groups.setdefault(func_name, [])
+            hooks_groups[func_name].append(bookmark.id)
+
+    # zip methods and groups by name
+    return [
+        (method, hooks_groups[name])
+        for name, method in hooks_methods.items()
+    ]
+
+
 @after_task_publish.connect
 def update_sent_state(sender=None, headers=None, **kwargs):
     # the task may not exist if sent using `send_task` which
@@ -35,60 +56,29 @@ def update_sent_state(sender=None, headers=None, **kwargs):
 def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
     parent = models.BookmarkFile.objects.get(id=parent_id)
 
-    # Start creating new bookmarks
     bookmarks = tuple(map(parent.init_bookmark, bookmarks_data))
-
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
 
-    # categorize bookmarks to route them to the right flow controller
-    categories = {}  # type: dict[str, list[models.Bookmark]]
-    flow_controllers = {}  # type: dict[str, models.FlowController]
-    for bookmark in bookmarks:
-        if bookmark.flow_controller:
-            domain = bookmark.flow_controller.DOMAIN
-
-            categories.setdefault(domain, [])
-            categories[domain].append(bookmark)
-            flow_controllers[domain] = bookmark.flow_controller
-
-    for domain, domain_bookmarks in categories.items():
-        controller = flow_controllers[domain]
-        controller(domain_bookmarks).run_flow()
-    # batch bookmarks that don't have custom flow controller
-    bookmarks = list(filter(lambda b: not b.flow_controller, bookmarks))
-    batch_bookmarks_to_crawl_task.delay(
-        [bookmark.id for bookmark in bookmarks])
+    batch_bookmarks_to_tasks.delay([b.id for b in bookmarks])
 
 
 @shared_task(queue='orm')
-def batch_bookmarks_to_crawl_task(bookmark_ids: list[int]):
+def batch_bookmarks_to_tasks(bookmark_ids: list[int]):
     batch_size = 30
-    id_groups = window_list(bookmark_ids, batch_size, batch_size)
 
-    tasks = [
-        crawl_bookmarks_task.s(group).set(queue='scrapy')
-        for group in id_groups
-    ]
+    bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
+    batches = group_bookmarks_by_hook(bookmarks, 'get_batch_method')
+
+    tasks = []
+    for hook_method, hook_group in batches:
+        id_groups = window_list(hook_group, batch_size, batch_size)
+        tasks.extend([hook_method.s(group) for group in id_groups])
+        # .set(queue='scrapy')
+
     callback = (
-        on_finish_crawling_task.s(bookmark_ids=bookmark_ids).set(queue='orm')
+        post_batch_bookmarks_task.s(bookmark_ids=bookmark_ids).set(queue='orm')
     )
-    job = chord(tasks)(callback)
-    with allow_join_result():
-        job.get()
 
-
-@shared_task(queue='orm')
-def batch_bookmarks_to_crawl_without_callback_task(bookmark_ids: list[int]):
-    batch_size = 30
-    id_groups = window_list(bookmark_ids, batch_size, batch_size)
-
-    tasks = [
-        crawl_bookmarks_task.s(group).set(queue='scrapy')
-        for group in id_groups
-    ]
-    callback = (
-        empty_callback_task.s(bookmark_ids=bookmark_ids).set(queue='orm')
-    )
     job = chord(tasks)(callback)
     with allow_join_result():
         job.get()
@@ -103,6 +93,18 @@ def crawl_bookmarks_task(bookmark_ids: list[int]):
     ids = json.dumps(bookmark_ids)
     command = ['python', 'manage.py', 'crawl_bookmarks', ids]
     subprocess.run(command, capture_output=True, text=True, check=True)
+
+
+@shared_task(queue='orm')
+def bulk_store_weights_task(bookmark_ids: list[int]):
+    bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
+    words_weights = []
+    for bookmark in bookmarks:
+        words_weights.extend(
+            bookmark.store_word_vector(commit=False))
+
+    if words_weights:
+        models.WordWeight.objects.bulk_create(words_weights, batch_size=1000)
 
 
 @shared_task(queue='orm')
@@ -162,7 +164,8 @@ def store_weights_task(bookmark_id):
 @shared_task(queue='orm')
 def store_tags_task(user_id):
     user = User.objects.get(pk=user_id)
-    bookmark_ids = user.bookmarks.filter(tags__isnull=True).distinct().values_list('id', flat=True)
+    bookmark_ids = user.bookmarks.filter(
+        tags__isnull=True).distinct().values_list('id', flat=True)
     models.Tag.update_tags_with_new_bookmarks(list(bookmark_ids))
 
 
@@ -186,23 +189,24 @@ def store_bookmark_file_analytics_task(parent_id):
 
 
 @shared_task(queue='orm')
-def on_finish_crawling_task(callback_result=[], bookmark_ids=[]):
+def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
     if not bookmark_ids:
         return
 
-    models.Bookmark.objects.filter(id__in=bookmark_ids).update_process_status(
-        models.Bookmark.ProcessStatus.CRAWLED.value)
+    bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
+    batches = group_bookmarks_by_hook(bookmarks, 'post_batch')
+
+    for hook_method, hook_group in batches:
+        hook_method(hook_group)
+
+    bookmark_status = models.Bookmark.ProcessStatus.CRAWLED.value
+    bookmarks.update_process_status(bookmark_status)
 
     parent = models.Bookmark.objects.get(id=bookmark_ids[0]).parent_file
     user_id = parent.user.id
 
     store_bookmark_file_analytics_task.delay(parent.id)
     cluster_checker_task.delay(user_id, bookmark_ids, 0)
-
-
-@shared_task(queue='orm')
-def empty_callback_task(callback_result=[], bookmark_ids=[]):
-    pass
 
 
 @shared_task(queue='orm')
@@ -243,11 +247,12 @@ def cluster_checker_task(user_id, bookmark_ids=[], iteration=0, uncompleted_book
                 uncompleted_bookmarks_history[i]['status'] = 'scraped'
 
         if ready_to_scrape:
-            tasks = [crawl_bookmarks_task.s(ready_to_scrape).set(queue='scrapy')]
+            tasks = [crawl_bookmarks_task.s(
+                ready_to_scrape).set(queue='scrapy')]
             callback = (
                 cluster_checker_task.s(
-                    user_id=user_id, bookmark_ids=bookmark_ids, 
-                    iteration=iteration+1, 
+                    user_id=user_id, bookmark_ids=bookmark_ids,
+                    iteration=iteration+1,
                     uncompleted_bookmarks_history=uncompleted_bookmarks_history
                 ).set(queue='orm')
             )
@@ -275,4 +280,10 @@ def cluster_checker_task(user_id, bookmark_ids=[], iteration=0, uncompleted_book
         cluster_bookmarks_task.apply_async(kwargs={'user_id': user_id})
     else:
         cluster_checker_task.apply_async(
-            kwargs={'user_id': user_id, 'bookmark_ids': bookmark_ids, 'iteration': iteration+1, 'uncompleted_bookmarks_history': uncompleted_bookmarks_history}, countdown=wait_time)
+            kwargs={
+                'user_id': user_id,
+                'bookmark_ids': bookmark_ids,
+                'iteration': iteration+1,
+                'uncompleted_bookmarks_history': uncompleted_bookmarks_history
+            }, countdown=wait_time
+        )
