@@ -1,5 +1,4 @@
-from abc import ABC, abstractmethod
-from common.utils.url_utils import is_valid_domain
+from abc import ABC
 
 from typing import TYPE_CHECKING
 
@@ -10,22 +9,14 @@ if TYPE_CHECKING:
 
 
 class BookmarkHooks(ABC):
-    _domain = None
 
     def __init__(self, bookmark: 'Bookmark') -> None:
         self.bookmark = bookmark
         super().__init__()
-
+    
     @property
-    @abstractmethod
-    def domain(self) -> str:
-        return self._domain
-
-    @domain.setter
-    def domain(self, value: str) -> None:
-        if not is_valid_domain(value):
-            raise ValueError('Invalid domain')
-        self._domain = value
+    def DOMAIN(self):
+        raise NotImplementedError
 
     def get_batch_method(self) -> callable:
         from App.tasks import crawl_bookmarks_task

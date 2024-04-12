@@ -8,7 +8,7 @@ class InstagramBookmarkHooks(BookmarkHooks):
     # 3- using url patterns inject words weights
     # 4- crawl with custom spider to store just the image
 
-    _domain = 'instagram.com'
+    DOMAIN = 'instagram.com'
 
     def get_weighting_serializer(self):
         from App.serializers import InstagramBookmarkWeightingSerializer

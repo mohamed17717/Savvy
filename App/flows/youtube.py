@@ -6,7 +6,7 @@ class YoutubeBookmarkHooks(BookmarkHooks):
     # 2- weight only the existing title and url
     # 3- using url patterns inject words weights
 
-    _domain = 'youtube.com'
+    DOMAIN = 'youtube.com'
 
     def get_weighting_serializer(self):
         from App.serializers import YoutubeBookmarkWeightingSerializer

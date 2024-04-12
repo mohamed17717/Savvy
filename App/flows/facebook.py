@@ -8,7 +8,7 @@ class FacebookBookmarkHooks(BookmarkHooks):
 
     # TODO crawl using random cookies to make sure
     # we don't get banned and get valid results
-    _domain = 'facebook.com'
+    DOMAIN = 'facebook.com'
 
     def get_weighting_serializer(self):
         from App.serializers import FacebookBookmarkWeightingSerializer
