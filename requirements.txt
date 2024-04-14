@@ -47,7 +47,7 @@ filelock==3.13.1
 gprof2dot==2022.7.29
 humanize==4.9.0
 hyperlink==21.0.0
-idna==3.4
+idna==3.7
 incremental==22.10.0
 inflection==0.5.1
 iso639-lang==2.2.1
