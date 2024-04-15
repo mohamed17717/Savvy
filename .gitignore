@@ -131,5 +131,4 @@ resources/**/*.txt*
 
 *.rdb
 
-*.lock
 *.patch
