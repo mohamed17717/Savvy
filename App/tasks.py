@@ -206,11 +206,12 @@ def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
     user_id = parent.user.id
 
     store_bookmark_file_analytics_task.delay(parent.id)
-    cluster_checker_task.delay(user_id, bookmark_ids, 0)
+    # cluster_checker_task.delay(user_id, bookmark_ids, 0)
+    cluster_checker_task.delay(user_id=user_id, bookmark_ids=bookmark_ids, iteration=0)
 
 
 @shared_task(queue='orm')
-def cluster_checker_task(user_id, bookmark_ids=[], iteration=0, uncompleted_bookmarks_history: dict = {}):
+def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iteration=0, uncompleted_bookmarks_history: dict = {}):
     max_time = 3*60  # 3 min
     wait_time = 2  # 2 sec
     max_iteration = max_time // wait_time
