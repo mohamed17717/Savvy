@@ -53,6 +53,7 @@ class ClusterType:
             bookmarks_count=len(bookmarks)
         )
         cluster.bookmarks.set(bookmarks)
+        cluster.tags.set(cluster.calculate_tags())
 
         return cluster
 

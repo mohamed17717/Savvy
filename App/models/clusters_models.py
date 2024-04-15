@@ -24,6 +24,8 @@ class Cluster(models.Model):
     bookmarks = models.ManyToManyField('App.Bookmark', related_name='clusters')
     bookmarks_count = models.PositiveSmallIntegerField(default=0)
 
+    tags = models.ManyToManyField('App.Tag', related_name='clusters')
+
     # Required , can be null and user can set it
     # if it null then it will be calculated using the highest tag
     name = models.CharField(max_length=128)
@@ -33,8 +35,7 @@ class Cluster(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    @property
-    def tags(self):
+    def calculate_tags(self):
         tags = Tag.objects.filter(
             bookmarks__in=self.bookmarks.all()).distinct()
         return tags
@@ -63,7 +64,6 @@ class Tag(models.Model):
     user = models.ForeignKey(
         get_user_model(), on_delete=models.CASCADE, related_name='tags'
     )
-    # TODO bookmarks should be RCs
     bookmarks = models.ManyToManyField(
         'App.Bookmark', blank=True, related_name='tags')
 
