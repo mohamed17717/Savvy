@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from App import models
-from silk import models as silky_models
+# from silk import models as silky_models
 
 
 admin.site.register(models.BookmarkFile)
@@ -16,7 +16,7 @@ admin.site.register(models.Tag)
 admin.site.register(models.SimilarityMatrix)
 
 
-admin.site.register(silky_models.Request)
-admin.site.register(silky_models.Response)
-admin.site.register(silky_models.SQLQuery)
-admin.site.register(silky_models.Profile)
+# admin.site.register(silky_models.Request)
+# admin.site.register(silky_models.Response)
+# admin.site.register(silky_models.SQLQuery)
+# admin.site.register(silky_models.Profile)

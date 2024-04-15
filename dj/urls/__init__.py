@@ -18,7 +18,7 @@ if settings.DEBUG:
 
         # monitoring
         path('', include('django_prometheus.urls')),
-        path('silk/', include('silk.urls', namespace='silk')),
+        # path('silk/', include('silk.urls', namespace='silk')),
         path('__debug__/', include('debug_toolbar.urls')),
 
         *swagger_urls,
