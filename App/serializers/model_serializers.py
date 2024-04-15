@@ -1,5 +1,23 @@
 from rest_framework import serializers
 from App import models
+ 
+from django.core.cache import cache
+from functools import wraps
+
+def cache_serializer(timeout=60*60*24*3):  # 3 days
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            # Creating a unique key based on the function name and parameters
+            key = f'{func.__name__}_{args}_{kwargs}'
+            if cached_result := cache.get(key):
+                return cached_result
+            result = func(self, *args, **kwargs)
+            cache.set(key, result, timeout)
+            return result
+        return wrapper
+    return decorator
+
 
 
 class BookmarkFileSerializer(serializers.ModelSerializer):
@@ -99,15 +117,13 @@ class ClusterSerializer(serializers.ModelSerializer):
         bookmarks = serializers.SerializerMethodField()
         url = serializers.CharField(source='get_absolute_url', read_only=True)
 
+        @cache_serializer()
         def get_tags(self, obj):
-            tags = []
-            for bm in obj.bookmarks.all()[:10]:
-                tags.extend(TagSerializer.TagList(
-                    bm.tags.all()[:3], many=True).data)
+            serializer_class = TagSerializer.TagList
+            qs = obj.tags.all()[:10] #.order_by('-weight')[:50]
+            return serializer_class(qs, many=True).data
 
-            tags.sort(key=lambda x: x['weight'], reverse=True)
-            return tags[:5]
-
+        @cache_serializer()
         def get_bookmarks(self, obj):
             serializer_class = BookmarkSerializer.BookmarkDetails
             qs = obj.bookmarks.all()[:10]
