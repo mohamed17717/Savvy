@@ -1,6 +1,6 @@
 import math
 
-from django.db.models import Prefetch, QuerySet
+from django.db.models import Prefetch, QuerySet, Count
 
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
@@ -53,9 +53,8 @@ class ClusterAPI(RULViewSet):
         return serializer_class
 
     def _prefetch(self, qs: QuerySet) -> QuerySet:
-        tags_qs = self.request.user.tags.all().order_by('-weight')
-        tags_prefetch = Prefetch('bookmarks__tags', queryset=tags_qs)
-
+        tags_qs = self.request.user.tags.all().annotate(bookmarks_count=Count('bookmarks')).filter(bookmarks_count__gt=2).order_by('-weight')
+        tags_prefetch = Prefetch('tags', queryset=tags_qs)
         return qs.prefetch_related('bookmarks', tags_prefetch)
 
     def get_queryset(self):
