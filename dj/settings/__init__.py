@@ -278,7 +278,9 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = (
     'http://localhost:8000',
     'http://localhost:8080',
-    'http://localhost:5173'
+    'http://localhost:5173',
+    'https://itab1.netlify.app',
+    'http://itab1.netlify.app',
 )
 CORS_ALLOWED_ORIGINS = CORS_ORIGIN_WHITELIST
 CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
