@@ -130,3 +130,5 @@ resources/**/*.txt*
 *.html
 
 *.rdb
+
+*.lock
