@@ -43,29 +43,30 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'django_extensions',
     'debug_toolbar',
-    'silk',
-    'django_prometheus',
+    # 'silk',
+    # 'django_prometheus',
     'corsheaders',
 
 ]
 
 MIDDLEWARE = [
-    'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    # 'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    'django.middleware.gzip.GZipMiddleware',  # This should come first
 
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
 
-    'silk.middleware.SilkyMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    # 'silk.middleware.SilkyMiddleware',
 
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
-    'django_prometheus.middleware.PrometheusAfterMiddleware',
+    # 'django_prometheus.middleware.PrometheusAfterMiddleware',
 
 ]
 
@@ -95,8 +96,8 @@ AUTH_USER_MODEL = 'Users.User'
 DATABASES = {
     'default': {
         # 'ENGINE': 'django.db.backends.postgresql',
-        # 'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'ENGINE': "django_prometheus.db.backends.postgresql",
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        # 'ENGINE': "django_prometheus.db.backends.postgresql",
         'NAME': os.getenv("POSTGRES_DB"),
         'USER': os.getenv("POSTGRES_USER"),
         'PASSWORD': os.getenv("POSTGRES_PASSWORD"),
@@ -125,7 +126,11 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'knox.auth.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+
+    ),
     'DEFAULT_PERMISSION_CLASSES': (
         # make sure user who make action is authenticated and authorized for it
         'rest_framework.permissions.IsAuthenticated',
@@ -173,8 +178,8 @@ CELERY_IGNORE_RESULT = True
 # Caches
 CACHES = {
     "default": {
-        # "BACKEND": "django_redis.cache.RedisCache",
-        "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
+        "BACKEND": "django_redis.cache.RedisCache",
+        # "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
         "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient"
@@ -247,7 +252,7 @@ SWAGGER_SETTINGS = {
             'type': 'apiKey',
             'in': 'header',
             'name': 'Authorization',
-            'value': 'Token 54da3defde81841587f99f04e3d6e7b2e56c69e077e9d4f5bcb853d551763935'
+            'value': 'Token 6170589c02669d3a2736c1cc2b47fdfd12d770246c253db6b35a34a9f76b87d9'
         }
     },
     'USE_SESSION_AUTH': False,
