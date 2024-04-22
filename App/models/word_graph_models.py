@@ -36,7 +36,10 @@ class WordGraphNode(models.Model):
         path = self.path
         if self.path is None:
             path = f'{self.pk}'
-        return cls.objects.filter(path__startswith=path, bookmarks__isnull=False)
+        return cls.objects.filter(path__startswith=path, bookmarks__isnull=False).distinct()
+
+    def keywords(self):
+        return self.tags.all().values_list('name', flat=True)
 
     def get_bookmarks(self):
         from App.models import Bookmark
