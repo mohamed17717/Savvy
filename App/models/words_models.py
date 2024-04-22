@@ -28,7 +28,7 @@ class WordWeight(models.Model):
         return f'{self.word} - {self.weight} <DOC: {self.bookmark}>'
 
     @classmethod
-    def word_vectors(cls, bookmarks) -> dict[int, WordVectorType]:
+    def word_vectors(cls, bookmarks) -> tuple[list[int], list[WordVectorType]]:
         # TODO return vector for each bookmark
         words_qs = cls.objects.filter(bookmark__in=bookmarks, important=True)
         words_qs = words_qs.values_list('bookmark_id', 'word', 'weight')
