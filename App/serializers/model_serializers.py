@@ -2,6 +2,8 @@ from rest_framework import serializers
 from App import models
  
 from django.core.cache import cache
+from django.urls import reverse
+
 from functools import wraps
 
 def cache_serializer(timeout=60*60*24*3):  # 3 days
@@ -123,11 +125,11 @@ class ClusterSerializer(serializers.ModelSerializer):
             qs = obj.tags.all()[:10] #.order_by('-weight')[:50]
             return serializer_class(qs, many=True).data
 
-        @cache_serializer()
+        # @cache_serializer()
         def get_bookmarks(self, obj):
             serializer_class = BookmarkSerializer.BookmarkDetails
             qs = obj.bookmarks.all()[:10]
-            return serializer_class(qs, many=True).data
+            return serializer_class(qs, many=True, context=self.context).data
 
         class Meta:
             model = models.Cluster
@@ -157,7 +159,14 @@ class BookmarkSerializer(serializers.ModelSerializer):
 
     class BookmarkDetails(serializers.ModelSerializer):
         title = serializers.SerializerMethodField()
+        url = serializers.SerializerMethodField()
+        
+        def get_url(self, obj):
+            request = self.context['request']
+            path = reverse('app:bookmark_short_url', kwargs={'uuid': obj.uuid})
 
+            return request.build_absolute_uri(path)
+        
         def get_title(self, obj):
             return (
                 obj.title

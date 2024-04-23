@@ -1,6 +1,7 @@
 import urllib3
 import requests
 import secrets
+import uuid
 from datetime import timedelta
 
 from django.db import models, transaction
@@ -169,6 +170,7 @@ class Bookmark(models.Model):
     # TODO make url and title max length shorter
     # Required
     url = models.URLField(max_length=2048)
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, blank=True, null=True, unique=True, db_index=True)
 
     # Optionals
     title = models.CharField(max_length=2048, blank=True, null=True)

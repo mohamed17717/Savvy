@@ -17,5 +17,7 @@ urlpatterns = [
     path('clusters/all/', views.ClusterFullListAPI.as_view({'get': 'list'}), name='clusters_list'),
     path('tags/list/', views.TagListAPI.as_view(), name='tag_list'),
 
+    path('short/<str:uuid>/', views.BookmarkShortAPI.as_view(), name='bookmark_short_url'),
+
     path('', include(router.urls)),
 ]
