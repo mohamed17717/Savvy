@@ -50,6 +50,7 @@ pyjwt = "*"
 aioredis = "*"
 sse-starlette = "*"
 cairosvg = "*"
+readtime = "*"
 
 [dev-packages]
 
