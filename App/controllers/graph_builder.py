@@ -4,11 +4,15 @@ from App import models
 
 
 class WordGraphBuilder:
-    THRESHOLD = 0.20
-    THRESHOLD_STEP = 0.04
+    THRESHOLD = 20  # avoid float inaccuracy
+    THRESHOLD_STEP = 4  # avoid float inaccuracy
     ACCEPTED_LEAF_LENGTH = 20
+    MAXIMUM_THRESHOLD = 90
 
-    def __init__(self, documents, similarity_matrix, threshold=THRESHOLD, parent=None, user=None):
+    # TODO
+    # reduce depth because keywords repeated between parent and children
+
+    def __init__(self, documents, similarity_matrix, threshold: int = THRESHOLD, parent=None, user=None):
         self.documents = documents
         self.similarity_matrix = similarity_matrix
         self.threshold = threshold
@@ -37,7 +41,7 @@ class WordGraphBuilder:
                     group.append(current)
                     # Consider all documents that are similar enough
                     for neighbor in range(n):
-                        if self.similarity_matrix[current][neighbor] >= self.threshold and not visited[neighbor]:
+                        if self.similarity_matrix[current][neighbor] >= (self.threshold/100) and not visited[neighbor]:
                             stack.append(neighbor)
 
         for doc_index in range(n):
@@ -61,7 +65,7 @@ class WordGraphBuilder:
         node = models.WordGraphNode.objects.create(
             user=self.user,
             parent=self.parent,
-            threshold=self.threshold,
+            threshold=(self.threshold / 100),
             bookmarks_count=len(documents_ids)
         )
 
@@ -86,10 +90,10 @@ class WordGraphBuilder:
 
     def build(self):
         groups = self.find_groups()
-        last_level = self.threshold >= 1
+        last_level = self.threshold >= self.MAXIMUM_THRESHOLD
 
         for group in groups:
-            is_leaf = last_level or len(group) <= self.ACCEPTED_LEAF_LENGTH 
+            is_leaf = last_level or len(group) <= self.ACCEPTED_LEAF_LENGTH
             node = self.store_group(group, is_leaf)
             if not is_leaf:
                 self.graph_group(group, node)
