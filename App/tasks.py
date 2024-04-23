@@ -179,22 +179,16 @@ def cluster_bookmarks_task(user_id):
 def build_word_graph_task(user_id):
     user = User.objects.get(pk=user_id)
 
-    # old graph
-    nodes = user.nodes.all()
-    roots = nodes.filter(parent__isnull=True)
+    # TODO don't delete old graph otherwise update it with new data
+    user.nodes.all().delete()
 
-    # new graph
-    bookmarks = user.bookmarks.filter(nodes__isnull=True)
+    bookmarks = user.bookmarks.all()
     document_ids, vectors = models.WordWeight.word_vectors(bookmarks)
     similarity = types.SimilarityMatrixType(vectors, document_ids)
 
-    builder = controllers.WordGraphBuilder(
+    controllers.WordGraphBuilder(
         similarity.document_ids, similarity.similarity_matrix, user=user
-    )
-    new_roots = builder.build()
-
-    # merge graphs
-    controllers.MergeGraphs(roots, new_roots).merge()
+    ).build()
 
 
 @shared_task(queue='orm')
