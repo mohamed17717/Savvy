@@ -414,6 +414,16 @@ class Bookmark(models.Model):
         return clusters_objects
 
 
+class BookmarkHistory(models.Model):
+    bookmark = models.ForeignKey(
+        'App.Bookmark', on_delete=models.CASCADE, related_name='history'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
 class ScrapyResponseLog(models.Model):
     # Relations
     bookmark = models.ForeignKey(
