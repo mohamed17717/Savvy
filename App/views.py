@@ -1,9 +1,13 @@
 import math
 
 from django.db.models import Prefetch, QuerySet, Count
+from django.shortcuts import get_object_or_404
+from django.http import HttpResponseRedirect
 
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
+from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
 
 from App import serializers, filters, models
 
@@ -168,3 +172,13 @@ class TagListAPI(ListAPIView):
         if self.request.user.is_anonymous:
             return models.Tag.objects.none()
         return self.request.user.tags.all()
+
+
+class BookmarkShortAPI(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, uuid):
+        # TODO store history
+        # TODO make status for the bookmark to open
+        bookmark = get_object_or_404(models.Bookmark.objects.all(), uuid=uuid)
+        return HttpResponseRedirect(bookmark.url)
