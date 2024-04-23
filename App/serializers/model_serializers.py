@@ -160,7 +160,11 @@ class BookmarkSerializer(serializers.ModelSerializer):
     class BookmarkDetails(serializers.ModelSerializer):
         title = serializers.SerializerMethodField()
         url = serializers.SerializerMethodField()
-        
+        opened = serializers.SerializerMethodField()
+
+        def get_opened(self, obj):
+            return obj.history.exists()
+
         def get_url(self, obj):
             request = self.context['request']
             path = reverse('app:bookmark_short_url', kwargs={'uuid': obj.uuid})

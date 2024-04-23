@@ -178,7 +178,6 @@ class BookmarkShortAPI(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, uuid):
-        # TODO store history
-        # TODO make status for the bookmark to open
         bookmark = get_object_or_404(models.Bookmark.objects.all(), uuid=uuid)
+        models.BookmarkHistory.objects.create(bookmark=bookmark)
         return HttpResponseRedirect(bookmark.url)
