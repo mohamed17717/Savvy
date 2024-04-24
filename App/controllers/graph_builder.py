@@ -90,10 +90,23 @@ class WordGraphBuilder:
 
     def build(self):
         groups = self.find_groups()
+        first_level = self.parent is None
         last_level = self.threshold >= self.MAXIMUM_THRESHOLD
 
-        for group in groups:
-            is_leaf = last_level or len(group) <= self.ACCEPTED_LEAF_LENGTH
-            node = self.store_group(group, is_leaf)
+        # if clusters are too small don't nest new level and increase threshold
+        is_leaf_array = [
+            last_level or len(group) <= self.ACCEPTED_LEAF_LENGTH
+            for group in groups
+        ]
+        nodes_count = is_leaf_array.count(False)
+        is_there_enough_nodes = first_level or last_level or nodes_count >= 2
+
+        for is_leaf, group in zip(is_leaf_array, groups):
+            if is_leaf or is_there_enough_nodes:
+                node = self.store_group(group, is_leaf)
+            else:
+                # re-split on the same node
+                node = self.parent
+
             if not is_leaf:
                 self.graph_group(group, node)
