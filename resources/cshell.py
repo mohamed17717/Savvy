@@ -3,8 +3,6 @@ from App import models, types
 from django.db.models import Count
 from django.db import models as dj_models
 from App.controllers.graph_builder import WordGraphBuilder
-from time import time
-from django.db.models import Count
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
