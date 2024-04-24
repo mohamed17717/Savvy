@@ -78,20 +78,20 @@ def analyze_graph():
         bookmarks__isnull=False).distinct().count()
     thresholds = sorted(
         set(models.WordGraphNode.objects.values_list('threshold', flat=True)))
-    paths = list(models.WordGraphNode.objects.values_list('path', flat=True))
+    # paths = list(models.WordGraphNode.objects.values_list('path', flat=True))
     bookmarks_on_leafs = list(models.WordGraphNode.objects.filter(
         bookmarks__isnull=False).distinct().values_list('bookmarks_count', flat=True))
-    children_count = sorted(models.WordGraphNode.objects.annotate(
-        children_count=Count('children')).values_list('children_count', flat=True))
+    # children_count = sorted(models.WordGraphNode.objects.annotate(
+    #     children_count=Count('children')).values_list('children_count', flat=True))
 
     print(f'{bookmark_nodes_count=}')
     print(f'{nodes_count=}')
     print(f'{roots_count=}')
     print(f'{leafs_count=}')
     print(f'{thresholds=}')
-    print(f'{paths=}')
+    # print(f'{paths=}')
     print(f'{bookmarks_on_leafs=}')
-    print(f'{children_count=}')
+    # print(f'{children_count=}')
 
 
 def similarity_between_nodes():
