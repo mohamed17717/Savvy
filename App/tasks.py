@@ -180,6 +180,7 @@ def build_word_graph_task(user_id):
     user = User.objects.get(pk=user_id)
 
     # TODO don't delete old graph otherwise update it with new data
+    # NOTE cosine similarity re-calculated / graph builder also re-calculated
     user.nodes.all().delete()
 
     bookmarks = user.bookmarks.all()
@@ -295,7 +296,7 @@ def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iter
             bookmark.store_word_vector()
 
         store_tags_task.apply_async(kwargs={'user_id': user_id})
-        cluster_bookmarks_task.apply_async(kwargs={'user_id': user_id})
+        # cluster_bookmarks_task.apply_async(kwargs={'user_id': user_id})
         build_word_graph_task.apply_async(kwargs={'user_id': user_id})
     else:
         cluster_checker_task.apply_async(
