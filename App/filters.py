@@ -7,6 +7,8 @@ class TagFilter(filters.FilterSet):
     name = filters.CharFilter('name', lookup_expr='icontains')
     bookmark = filters.NumberFilter('bookmarks__id')
 
+    node = filters.NumberFilter('nodes__id')
+
     exclude = filters.CharFilter(method='filter_exclude')
 
     def filter_exclude(self, queryset, name, value):
@@ -47,6 +49,8 @@ class BookmarkFilter(filters.FilterSet):
     tag_name = filters.CharFilter('tags__name', lookup_expr='icontains')
 
     cluster = filters.NumberFilter('clusters__id')
+
+    node = filters.NumberFilter('nodes__path', lookup_expr='icontains')
 
     exclude = filters.CharFilter(method='filter_exclude')
 
