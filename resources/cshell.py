@@ -55,7 +55,7 @@ def delete_everything():
 
 
 def build_graph():
-    models.WordGraphNode.objects.all().delete()
+    models.GraphNode.objects.all().delete()
 
     bookmarks = models.Bookmark.objects.all()
     document_ids, vectors = models.WordWeight.word_vectors(bookmarks)
@@ -69,17 +69,17 @@ def build_graph():
 def analyze_graph():
     bookmark_nodes_count = set(models.Bookmark.objects.annotate(
         nodes_count=Count('nodes')).values_list('nodes_count', flat=True))
-    nodes_count = models.WordGraphNode.objects.all().count()
-    roots_count = models.WordGraphNode.objects.filter(
+    nodes_count = models.GraphNode.objects.all().count()
+    roots_count = models.GraphNode.objects.filter(
         parent__isnull=True).count()
-    leafs_count = models.WordGraphNode.objects.filter(
+    leafs_count = models.GraphNode.objects.filter(
         bookmarks__isnull=False).distinct().count()
     thresholds = sorted(
-        set(models.WordGraphNode.objects.values_list('threshold', flat=True)))
-    # paths = list(models.WordGraphNode.objects.values_list('path', flat=True))
-    bookmarks_on_leafs = list(models.WordGraphNode.objects.filter(
+        set(models.GraphNode.objects.values_list('threshold', flat=True)))
+    # paths = list(models.GraphNode.objects.values_list('path', flat=True))
+    bookmarks_on_leafs = list(models.GraphNode.objects.filter(
         bookmarks__isnull=False).distinct().values_list('bookmarks_count', flat=True))
-    # children_count = sorted(models.WordGraphNode.objects.annotate(
+    # children_count = sorted(models.GraphNode.objects.annotate(
     #     children_count=Count('children')).values_list('children_count', flat=True))
 
     print(f'{bookmark_nodes_count=}')
@@ -93,7 +93,7 @@ def analyze_graph():
 
 
 def similarity_between_nodes():
-    parent = models.WordGraphNode.objects.all()[0]
+    parent = models.GraphNode.objects.all()[0]
     children = parent.leafs
     node1, node2 = children[0], children[1]
 

@@ -14,7 +14,7 @@ admin.site.register(models.WordWeight)
 admin.site.register(models.Cluster)
 admin.site.register(models.Tag)
 admin.site.register(models.SimilarityMatrix)
-admin.site.register(models.WordGraphNode)
+admin.site.register(models.GraphNode)
 
 
 # admin.site.register(silky_models.Request)
