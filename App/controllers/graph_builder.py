@@ -62,11 +62,12 @@ class WordGraphBuilder:
         from App.models import Bookmark, Tag
 
         documents_ids = self.group_to_documents(group)
-        node = models.WordGraphNode.objects.create(
+        node = models.GraphNode.objects.create(
             user=self.user,
             parent=self.parent,
             threshold=(self.threshold / 100),
-            bookmarks_count=len(documents_ids)
+            bookmarks_count=len(documents_ids),
+            is_leaf=is_leaf
         )
 
         bookmarks = Bookmark.objects.filter(pk__in=documents_ids)
@@ -110,3 +111,15 @@ class WordGraphBuilder:
 
             if not is_leaf:
                 self.graph_group(group, node)
+
+
+# class GraphModifier:
+#     def __init__(self, documents, new_documents, similarity_matrix):
+#         self.documents = documents
+#         self.new_documents = new_documents
+#         self.similarity_matrix = similarity_matrix
+
+    
+
+#     def build(self):
+#         pass

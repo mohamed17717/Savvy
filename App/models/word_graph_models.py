@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 
 
-class WordGraphNode(models.Model):
+class GraphNode(models.Model):
     user = models.ForeignKey(
         get_user_model(), on_delete=models.CASCADE, related_name='nodes')
     parent = models.ForeignKey(
@@ -16,6 +16,8 @@ class WordGraphNode(models.Model):
     path = models.CharField(max_length=1024, blank=True,
                             null=True, db_index=True)
     threshold = models.FloatField(blank=True, null=True)
+
+    is_leaf = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
