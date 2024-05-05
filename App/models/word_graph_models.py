@@ -18,6 +18,7 @@ class GraphNode(models.Model):
     threshold = models.FloatField(blank=True, null=True)
 
     is_leaf = models.BooleanField(default=False)
+    similarity_matrix = models.JSONField(blank=True, null=True) # only for leafs
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
