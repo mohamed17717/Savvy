@@ -4,6 +4,8 @@ import copy
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
+from common.utils.matrix_utils import extend_matrix
+
 
 class WordVectorType(dict):
     """This class type represent a dict of `word` to its `weight`"""
@@ -82,21 +84,13 @@ class SimilarityMatrixType:
         )
 
         similarity_matrix = copy.deepcopy(self.similarity_matrix)
-        similarity_matrix = np.vstack(
-            (similarity_matrix, intersect_similarity))
-
-        intersect_similarity = np.rot90(intersect_similarity, k=1)[::-1]
-        intersect_similarity = np.vstack(
-            (intersect_similarity, other.similarity_matrix))
-
-        similarity_matrix = np.hstack(
-            (similarity_matrix, intersect_similarity))
 
         return SimilarityMatrixType(
             vectors=[*self.vectors, *other.vectors],
             document_ids=[*self.document_ids, *other.document_ids],
             unique_words=unique_words,
-            similarity_matrix=similarity_matrix
+            similarity_matrix=extend_matrix(
+                similarity_matrix, other.similarity_matrix, intersect_similarity)
         )
 
     def store(self, path: str) -> str:
