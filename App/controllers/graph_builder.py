@@ -4,6 +4,8 @@ from django.db.models import Q
 
 from App import models
 
+from common.utils.matrix_utils import extend_matrix
+
 
 class WordGraphBuilder:
     THRESHOLD = 20  # avoid float inaccuracy
@@ -172,6 +174,9 @@ class GraphNewNodes:
     def group_to_documents(self, group: list[int]) -> list[str]:
         return [self.documents[index] for index in group]
 
+    def documents_to_group(self, documents: list[str]) -> list[int]:
+        return [self.documents.index(doc) for doc in documents]
+
     def group_to_sub_matrix(self, group: list[int]) -> list[list[float]]:
         return self.similarity_matrix[np.ix_(group, group)]
 
@@ -246,8 +251,15 @@ class GraphNewNodes:
                 pass
 
             leaf, created = self.locate_leaf(doc, old_docs)
-            # TODO update similarity matrix
+
             leaf.bookmarks.add(models.Bookmark.objects.get(pk=doc))
+
+            leaf_documents = leaf.bookmarks.all().values_list('id', flat=True)
+            leaf_documents_indexes = self.documents_to_group(leaf_documents)
+            intersected_group = similarities[np.ix_(leaf_documents_indexes)]
+            leaf.similarity_matrix = extend_matrix(leaf.similarity_matrix, [[1]], intersected_group)
+            leaf.save(update_fields=['similarity_matrix'])
+            
         for direct_doc in direct_documents:
             direct_idx = documents_ids.index(direct_doc)
             for indirect_doc in indirect_documents:
@@ -256,8 +268,15 @@ class GraphNewNodes:
                 if similarity > 0.2:
                     leaf, created = self.locate_leaf(
                         doc, [(direct_doc, similarity)])
-                    # TODO update similarity matrix
+
                     leaf.bookmarks.add(models.Bookmark.objects.get(pk=doc))
+
+                    leaf_documents = leaf.bookmarks.all().values_list('id', flat=True)
+                    leaf_documents_indexes = self.documents_to_group(leaf_documents)
+                    intersected_group = intersected_similarity[np.ix_(indirect_idx, leaf_documents_indexes)]
+                    leaf.similarity_matrix = extend_matrix(leaf.similarity_matrix, [[1]], intersected_group)
+                    leaf.save(update_fields=['similarity_matrix'])
+
                     indirect_documents.remove(indirect_doc)
                     break
 
