@@ -220,8 +220,7 @@ class GraphNewNodes:
         # TODO make sure order of the group is correct
         documents_ids = self.group_to_documents(group)
         similarity_matrix = self.group_to_sub_matrix(group)
-        intersected_similarity = self.intersected_similarity[np.ix_(
-            group, group)]
+        intersected_similarity = [self.intersected_similarity[i] for i in group]
         leaf_nodes = self.user.nodes.filter(
             is_leaf=True, bookmarks__isnull=False)
 
@@ -229,6 +228,9 @@ class GraphNewNodes:
         direct_documents = []
         # documents related to old graph
         for doc, similarities in zip(documents_ids, intersected_similarity):
+            if models.GraphNode.objects.filter(bookmarks__id=doc).exists():
+                continue
+
             old_docs = list(filter(lambda x: x[1] >= 0.2, zip(
                 self.old_documents, similarities)))
 
@@ -253,14 +255,17 @@ class GraphNewNodes:
 
             leaf, created = self.locate_leaf(doc, old_docs)
 
-            leaf.bookmarks.add(models.Bookmark.objects.get(pk=doc))
-
             leaf_documents = leaf.bookmarks.all().values_list('id', flat=True)
-            leaf_documents_indexes = self.documents_to_group(leaf_documents)
-            intersected_group = similarities[np.ix_(leaf_documents_indexes)]
-            leaf.similarity_matrix = extend_matrix(
-                leaf.similarity_matrix, [[1]], intersected_group)
+            leaf_documents_indexes = [self.old_documents.index(doc) if doc in self.old_documents else 0 for doc in leaf_documents]
+            intersected_group = [similarities[i] for i in leaf_documents_indexes]
+            if not leaf_documents:
+                leaf.similarity_matrix = [[1]]
+            else:
+                leaf.similarity_matrix = extend_matrix(
+                    leaf.similarity_matrix, [[1]], [intersected_group]).tolist()
             leaf.save(update_fields=['similarity_matrix'])
+            
+            leaf.bookmarks.add(models.Bookmark.objects.get(pk=doc))
 
         for direct_doc in direct_documents:
             direct_idx = documents_ids.index(direct_doc)
@@ -268,19 +273,20 @@ class GraphNewNodes:
                 indirect_idx = documents_ids.index(indirect_doc)
                 similarity = similarity_matrix[direct_idx][indirect_idx]
                 if similarity > 0.2:
-                    leaf, created = self.locate_leaf(
-                        doc, [(direct_doc, similarity)])
-
-                    leaf.bookmarks.add(models.Bookmark.objects.get(pk=doc))
+                    leaf, created = self.locate_leaf(doc, [(direct_doc, similarity)])
 
                     leaf_documents = leaf.bookmarks.all().values_list('id', flat=True)
-                    leaf_documents_indexes = self.documents_to_group(
-                        leaf_documents)
-                    intersected_group = intersected_similarity[np.ix_(
-                        indirect_idx, leaf_documents_indexes)]
-                    leaf.similarity_matrix = extend_matrix(
-                        leaf.similarity_matrix, [[1]], intersected_group)
+                    leaf_documents_indexes = [self.old_documents.index(doc) if doc in self.old_documents else 0 for doc in leaf_documents]
+                    similarities = self.intersected_similarity[self.documents.index(indirect_doc)]
+                    intersected_group = [similarities[i] for i in leaf_documents_indexes]
+                    if not leaf_documents:
+                        leaf.similarity_matrix = [[1]]
+                    else:
+                        leaf.similarity_matrix = extend_matrix(
+                            leaf.similarity_matrix, [[1]], [intersected_group]).tolist()
                     leaf.save(update_fields=['similarity_matrix'])
+
+                    leaf.bookmarks.add(models.Bookmark.objects.get(pk=doc))
 
                     indirect_documents.remove(indirect_doc)
                     break
