@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def filter_row_length_in_matrix(mx, gt=None, lt=None, gte=None, lte=None, eq=None):
     conditions = (
         (gt, lambda row: len(row) > gt),
