@@ -1,3 +1,4 @@
+import threading
 from datetime import date
 
 from django.db import transaction
@@ -57,3 +58,88 @@ def bulk_clone(qs, changes: dict):
         instances.append(instance)
 
     return model.objects.bulk_create(instances)
+
+
+class CentralizedBulkCreator:
+    def __init__(self, model, m2m_fields: list[str]):
+        self.model = model
+        self.m2m_fields = m2m_fields
+        self.m2m_models = {
+            m2m_field: getattr(self.model, m2m_field).through for m2m_field in m2m_fields
+        }
+        self.data = {
+            'objects': [],
+            'm2m_objects': []  # [{bookmarks: [], tags: []}, ...]
+        }
+        # max objects
+        self.max_objects = 500
+
+        # time handling
+        self.max_time = 10
+        self.lock = threading.Lock()
+        self.timer = None
+
+    def __del__(self):
+        self.flush()
+
+    def add(self, obj, m2m_objects: dict = {}):
+        with self.lock:
+            self.data['objects'].append(obj)
+            self.data['m2m_objects'].append(m2m_objects)
+
+        if len(self.data['objects']) >= self.max_objects:
+            self.flush()
+
+        self.reset_timer()
+
+    def cancel_timer(self):
+        if self.timer:
+            self.timer.cancel()
+            self.timer = None
+
+    def reset_timer(self):
+        self.cancel_timer()
+
+        self.timer = threading.Timer(self.max_time, self.flush)
+        self.timer.start()
+
+    def reset_data(self):
+        self.data = {
+            'objects': [],
+            'm2m_objects': []  # [{bookmarks: [], tags: []}, ...]
+        }
+
+    def bulk_create_m2m(self, objects):
+        m2m_bulk_data = {
+            m2m_field: [] for m2m_field in self.m2m_fields}
+
+        for obj, m2m_objects in zip(objects, self.data['m2m_objects']):
+            for m2m_field, m2m_data_array in m2m_objects.items():
+                m2m_model = self.m2m_models[m2m_field]
+                m2m_model_fields = map(
+                    lambda i: i.name + '_id', m2m_model._meta.fields)
+                _, instance_field_name, related_field_name = list(
+                    m2m_model_fields)
+
+                for m2m_object in m2m_data_array:
+                    m2m_object_kwargs = {
+                        instance_field_name: obj.id,
+                        related_field_name: m2m_object.id
+                    }
+                    m2m_bulk_data[m2m_field].append(m2m_model(**m2m_object_kwargs))
+
+        for field, data in m2m_bulk_data.items():
+            self.m2m_models[field].objects.bulk_create(data, batch_size=500)
+
+    def flush(self) -> None:
+        with self.lock:
+            objects = self.data['objects']
+
+            if not objects:
+                return
+
+            objects = self.model.objects.bulk_create(objects, batch_size=500)
+
+            self.bulk_create_m2m(objects)
+            self.reset_data()
+            self.cancel_timer()
