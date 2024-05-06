@@ -60,27 +60,28 @@ class WordGraphBuilder:
         return self.similarity_matrix[np.ix_(group, group)]
 
     def store_group(self, group: list[int], is_leaf=True):
-        from App.models import Bookmark, Tag
-
-        documents_ids = self.group_to_documents(group)
-        node = models.GraphNode.objects.create(
-            user=self.user,
-            parent=self.parent,
-            threshold=(self.threshold / 100),
-            bookmarks_count=len(documents_ids),
-            is_leaf=is_leaf
-        )
-
-        bookmarks = Bookmark.objects.filter(pk__in=documents_ids)
-        tags = Tag.objects.filter(bookmarks__in=bookmarks)
-        tags = tags.order_by('-weight').distinct()[:10]
-
-        node.tags.set(tags)
+        node_kwargs = {
+            'user': self.user,
+            'parent': self.parent,
+            'threshold': (self.threshold / 100),
+            'bookmarks_count': len(group),
+            'is_leaf': is_leaf
+        }
+        
         if is_leaf:
-            node.bookmarks.set(bookmarks)
-            node.similarity_matrix = self.group_to_sub_matrix(group).tolist()
-            node.save(update_fields=['similarity_matrix'])
+            documents_ids = self.group_to_documents(group)
+            bookmarks = models.Bookmark.objects.filter(pk__in=documents_ids)
+            tags = models.Tag.objects.filter(bookmarks__in=bookmarks).distinct().order_by('-weight')[:10]
 
+            m2m_data = {'tags': tags}
+            node_kwargs['similarity_matrix'] = self.group_to_sub_matrix(group).tolist()
+            m2m_data['bookmarks'] = bookmarks
+
+            node = models.GraphNode(**node_kwargs)
+
+            models.GraphNode.centralized_creator().add(node, m2m_data)
+        else:
+            node = models.GraphNode.objects.create(**node_kwargs)
         return node
 
     def graph_group(self, group, node):
