@@ -18,10 +18,13 @@ class GraphNode(models.Model):
     threshold = models.FloatField(blank=True, null=True)
 
     is_leaf = models.BooleanField(default=False)
-    similarity_matrix = models.JSONField(blank=True, null=True) # only for leafs
+    similarity_matrix = models.JSONField(
+        blank=True, null=True)  # only for leafs
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    CREATOR = None
 
     def save(self, *args, **kwargs) -> None:
         if self.pk is None and self.parent:
@@ -53,3 +56,10 @@ class GraphNode(models.Model):
             bookmarks = Bookmark.objects.filter(
                 nodes__in=self.leafs).distinct()
         return bookmarks
+
+    @classmethod
+    def centralized_creator(cls):
+        from common.utils.model_utils import CentralizedBulkCreator
+        if cls.CREATOR is None:
+            cls.CREATOR = CentralizedBulkCreator(cls, ['bookmarks', 'tags'])
+        return cls.CREATOR
