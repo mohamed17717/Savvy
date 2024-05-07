@@ -255,15 +255,15 @@ class GraphNewNodes:
 
             leaf, created = self.locate_leaf(doc, old_docs)
 
-            leaf_documents = leaf.bookmarks.all().values_list('id', flat=True)
-            leaf_documents_indexes = [self.old_documents.index(doc) if doc in self.old_documents else 0 for doc in leaf_documents]
-            intersected_group = [similarities[i] for i in leaf_documents_indexes]
-            if not leaf_documents:
-                leaf.similarity_matrix = [[1]]
-            else:
-                leaf.similarity_matrix = extend_matrix(
-                    leaf.similarity_matrix, [[1]], [intersected_group]).tolist()
-            leaf.save(update_fields=['similarity_matrix'])
+            # leaf_documents = leaf.bookmarks.all().values_list('id', flat=True)
+            # leaf_documents_indexes = [self.old_documents.index(doc) if doc in self.old_documents else 0 for doc in leaf_documents]
+            # intersected_group = [similarities[i] for i in leaf_documents_indexes]
+            # if not leaf_documents:
+            #     leaf.similarity_matrix = [[1]]
+            # else:
+            #     leaf.similarity_matrix = extend_matrix(
+            #         leaf.similarity_matrix, [[1]], [intersected_group]).tolist()
+            # leaf.save(update_fields=['similarity_matrix'])
             
             leaf.bookmarks.add(models.Bookmark.objects.get(pk=doc))
 
@@ -275,16 +275,16 @@ class GraphNewNodes:
                 if similarity > 0.2:
                     leaf, created = self.locate_leaf(doc, [(direct_doc, similarity)])
 
-                    leaf_documents = leaf.bookmarks.all().values_list('id', flat=True)
-                    leaf_documents_indexes = [self.old_documents.index(doc) if doc in self.old_documents else 0 for doc in leaf_documents]
-                    similarities = self.intersected_similarity[self.documents.index(indirect_doc)]
-                    intersected_group = [similarities[i] for i in leaf_documents_indexes]
-                    if not leaf_documents:
-                        leaf.similarity_matrix = [[1]]
-                    else:
-                        leaf.similarity_matrix = extend_matrix(
-                            leaf.similarity_matrix, [[1]], [intersected_group]).tolist()
-                    leaf.save(update_fields=['similarity_matrix'])
+                    # leaf_documents = leaf.bookmarks.all().values_list('id', flat=True)
+                    # leaf_documents_indexes = [self.old_documents.index(doc) if doc in self.old_documents else 0 for doc in leaf_documents]
+                    # similarities = self.intersected_similarity[self.documents.index(indirect_doc)]
+                    # intersected_group = [similarities[i] for i in leaf_documents_indexes]
+                    # if not leaf_documents:
+                    #     leaf.similarity_matrix = [[1]]
+                    # else:
+                    #     leaf.similarity_matrix = extend_matrix(
+                    #         leaf.similarity_matrix, [[1]], [intersected_group]).tolist()
+                    # leaf.save(update_fields=['similarity_matrix'])
 
                     leaf.bookmarks.add(models.Bookmark.objects.get(pk=doc))
 
