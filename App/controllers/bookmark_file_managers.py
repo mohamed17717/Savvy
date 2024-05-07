@@ -1,4 +1,3 @@
-import re
 import json
 import validators
 
@@ -101,9 +100,9 @@ class BookmarkJSONFileManager(BookmarkFileManager):
     def validate(self, raise_exception=False):
         required = [
             # its an array
-            lambda: type(self.data) is list,
+            lambda: isinstance(self.data, list),
             # all items are str
-            lambda: all([type(i) is str for i in self.data]),
+            lambda: all([isinstance(i, str) for i in self.data]),
             # all items are urls
             lambda: all([bool(validators.url(i)) for i in self.data]),
         ]

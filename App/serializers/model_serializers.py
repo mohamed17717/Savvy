@@ -186,3 +186,19 @@ class BookmarkSerializer(serializers.ModelSerializer):
         class Meta:
             model = models.Bookmark
             fields = ['user_status']
+
+
+class GraphNodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.GraphNode
+        fields = '__all__'
+
+    class NodeDetails(serializers.ModelSerializer):
+        class Meta:
+            model = models.GraphNode
+            exclude = ['bookmarks', 'tags']
+            # fields = '__all__'
+
+
+
+

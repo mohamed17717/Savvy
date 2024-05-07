@@ -10,7 +10,7 @@ from celery import shared_task, current_app, chord
 from celery.signals import after_task_publish
 from celery.result import allow_join_result
 
-from App import models
+from App import models, controllers, types
 
 from common.utils.array_utils import window_list
 from common.utils.html_utils import extract_image_from_meta
@@ -176,6 +176,23 @@ def cluster_bookmarks_task(user_id):
 
 
 @shared_task(queue='orm')
+def build_word_graph_task(user_id):
+    user = User.objects.get(pk=user_id)
+
+    # TODO don't delete old graph otherwise update it with new data
+    # NOTE cosine similarity re-calculated / graph builder also re-calculated
+    user.nodes.all().delete()
+
+    bookmarks = user.bookmarks.all()
+    document_ids, vectors = models.WordWeight.word_vectors(bookmarks)
+    similarity = types.SimilarityMatrixType(vectors, document_ids)
+
+    controllers.WordGraphBuilder(
+        similarity.document_ids, similarity.similarity_matrix, user=user
+    ).build()
+
+
+@shared_task(queue='orm')
 def store_bookmark_file_analytics_task(parent_id):
     parent = models.BookmarkFile.objects.get(id=parent_id)
 
@@ -207,7 +224,8 @@ def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
 
     store_bookmark_file_analytics_task.delay(parent.id)
     # cluster_checker_task.delay(user_id, bookmark_ids, 0)
-    cluster_checker_task.delay(user_id=user_id, bookmark_ids=bookmark_ids, iteration=0)
+    cluster_checker_task.delay(
+        user_id=user_id, bookmark_ids=bookmark_ids, iteration=0)
 
 
 @shared_task(queue='orm')
@@ -278,7 +296,8 @@ def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iter
             bookmark.store_word_vector()
 
         store_tags_task.apply_async(kwargs={'user_id': user_id})
-        cluster_bookmarks_task.apply_async(kwargs={'user_id': user_id})
+        # cluster_bookmarks_task.apply_async(kwargs={'user_id': user_id})
+        build_word_graph_task.apply_async(kwargs={'user_id': user_id})
     else:
         cluster_checker_task.apply_async(
             kwargs={

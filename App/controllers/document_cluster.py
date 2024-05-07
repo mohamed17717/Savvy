@@ -85,7 +85,7 @@ class ClusterMaker:
             self.documents.pop(index)
             self.similarity_mx = np.delete(self.similarity_mx, index, axis=0)
             self.similarity_mx = np.delete(self.similarity_mx, index, axis=1)
-        except:
+        except ValueError:
             pass
 
     ### ALGORITHMS ###

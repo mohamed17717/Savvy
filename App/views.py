@@ -1,6 +1,6 @@
 import math
 
-from django.db.models import Prefetch, QuerySet, Count
+from django.db.models import Prefetch, QuerySet, Count, Q
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 
@@ -8,6 +8,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
+from rest_framework.response import Response
 
 from App import serializers, filters, models
 
@@ -57,7 +58,8 @@ class ClusterAPI(RULViewSet):
         return serializer_class
 
     def _prefetch(self, qs: QuerySet) -> QuerySet:
-        tags_qs = self.request.user.tags.all().annotate(bookmarks_count=Count('bookmarks')).filter(bookmarks_count__gt=2).order_by('-weight')
+        tags_qs = self.request.user.tags.all().annotate(bookmarks_count=Count(
+            'bookmarks')).filter(bookmarks_count__gt=2).order_by('-weight')
         tags_prefetch = Prefetch('tags', queryset=tags_qs)
         return qs.prefetch_related('bookmarks', tags_prefetch)
 
@@ -181,3 +183,25 @@ class BookmarkShortAPI(APIView):
         bookmark = get_object_or_404(models.Bookmark.objects.all(), uuid=uuid)
         models.BookmarkHistory.objects.create(bookmark=bookmark)
         return HttpResponseRedirect(bookmark.url)
+
+
+class WordGraphNodeAPI(APIView):
+    serializer_class = serializers.GraphNodeSerializer.NodeDetails
+
+    def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return models.GraphNode.objects.none()
+
+        return self.request.user.nodes.all()
+
+    def get(self, request):
+        parent = request.query_params.get('parent', None)
+        search_query = Q(parent__isnull=True)
+        if parent is not None:
+            search_query = Q(parent=parent)
+
+        qs = self.get_queryset()
+        parent = get_object_or_404(qs, search_query)
+        serializer = self.serializer_class(parent.children.all(), many=True)
+
+        return Response(serializer.data)
