@@ -170,12 +170,6 @@ def store_tags_task(user_id):
 
 
 @shared_task(queue='orm')
-def cluster_bookmarks_task(user_id):
-    user = User.objects.get(pk=user_id)
-    models.Bookmark.make_clusters(user)
-
-
-@shared_task(queue='orm')
 def build_word_graph_task(user_id):
     user = User.objects.get(pk=user_id)
 
@@ -223,9 +217,7 @@ def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
     user_id = parent.user.id
 
     store_bookmark_file_analytics_task.delay(parent.id)
-    # cluster_checker_task.delay(user_id, bookmark_ids, 0)
-    cluster_checker_task.delay(
-        user_id=user_id, bookmark_ids=bookmark_ids, iteration=0)
+    cluster_checker_task.delay(user_id=user_id, bookmark_ids=bookmark_ids, iteration=0)
 
 
 @shared_task(queue='orm')
@@ -296,7 +288,6 @@ def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iter
             bookmark.store_word_vector()
 
         store_tags_task.apply_async(kwargs={'user_id': user_id})
-        # cluster_bookmarks_task.apply_async(kwargs={'user_id': user_id})
         build_word_graph_task.apply_async(kwargs={'user_id': user_id})
     else:
         cluster_checker_task.apply_async(

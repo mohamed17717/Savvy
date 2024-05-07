@@ -1,6 +1,6 @@
 import math
 
-from django.db.models import Prefetch, QuerySet, Count, Q
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 
@@ -35,61 +35,6 @@ class BookmarkFileAPI(CRDLViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-
-
-class ClusterAPI(RULViewSet):
-    serializer_class = serializers.ClusterSerializer
-
-    filterset_class = filters.ClusterFilter
-    search_fields = ['@name']
-    ordering_fields = ['correlation', 'id']
-    ordering = ['-bookmarks_count', '-correlation']
-
-    def get_serializer_class(self):
-        serializer_class = self.serializer_class
-
-        if self.action == 'update' or self.action == 'partial_update':
-            serializer_class = serializers.ClusterSerializer.ClusterUpdate
-        elif self.action == 'list':
-            serializer_class = serializers.ClusterSerializer.ClusterDetails
-        elif self.action == 'retrieve':
-            serializer_class = serializers.ClusterSerializer.ClusterDetails
-
-        return serializer_class
-
-    def _prefetch(self, qs: QuerySet) -> QuerySet:
-        tags_qs = self.request.user.tags.all().annotate(bookmarks_count=Count(
-            'bookmarks')).filter(bookmarks_count__gt=2).order_by('-weight')
-        tags_prefetch = Prefetch('tags', queryset=tags_qs)
-        return qs.prefetch_related('bookmarks', tags_prefetch)
-
-    def get_queryset(self):
-        if self.request.user.is_anonymous:
-            return models.Cluster.objects.none()
-
-        qs = self.request.user.clusters.all()
-
-        if self.action == 'update' or self.action == 'partial_update':
-            pass
-        elif self.action == 'list':
-            qs = self._prefetch(qs)
-        elif self.action == 'retrieve':
-            qs = self._prefetch(qs)
-
-        return qs
-
-
-class ClusterFullListAPI(ClusterAPI):
-    serializer_class = serializers.ClusterSerializer.ClusterFullDetails
-    pagination_class = None
-    ordering = None
-
-    def get_serializer_class(self):
-        return self.serializer_class
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        return qs.order_by('-bookmarks_count')
 
 
 class BookmarkAPI(RULViewSet):

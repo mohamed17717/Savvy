@@ -109,49 +109,6 @@ class TagSerializer(serializers.ModelSerializer):
             }
 
 
-class ClusterSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Cluster
-        fields = '__all__'
-
-    class ClusterDetails(serializers.ModelSerializer):
-        tags = serializers.SerializerMethodField()
-        bookmarks = serializers.SerializerMethodField()
-        url = serializers.CharField(source='get_absolute_url', read_only=True)
-
-        @cache_serializer()
-        def get_tags(self, obj):
-            serializer_class = TagSerializer.TagList
-            qs = obj.tags.all()[:10] #.order_by('-weight')[:50]
-            return serializer_class(qs, many=True).data
-
-        # @cache_serializer()
-        def get_bookmarks(self, obj):
-            serializer_class = BookmarkSerializer.BookmarkDetails
-            qs = obj.bookmarks.all()[:10]
-            return serializer_class(qs, many=True, context=self.context).data
-
-        class Meta:
-            model = models.Cluster
-            fields = '__all__'
-
-    class ClusterFullDetails(ClusterDetails):
-        def get_tags(self, obj):
-            tags = models.Tag.objects.filter(
-                bookmarks__in=obj.bookmarks.all()).distinct().order_by('-weight')
-            return TagSerializer.TagList(tags, many=True).data
-
-        def get_bookmarks(self, obj):
-            serializer_class = BookmarkSerializer.BookmarkDetails
-            qs = obj.bookmarks.all()
-            return serializer_class(qs, many=True).data
-
-    class ClusterUpdate(serializers.ModelSerializer):
-        class Meta:
-            model = models.Cluster
-            fields = ['name']
-
-
 class BookmarkSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Bookmark
