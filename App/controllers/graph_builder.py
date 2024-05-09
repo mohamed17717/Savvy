@@ -95,7 +95,7 @@ class WordGraphBuilder:
         first_level = self.parent is None
         last_level = self.threshold >= self.MAXIMUM_THRESHOLD
 
-        # if clusters are too small don't nest new level and increase threshold
+        # if groups are too small don't nest new level and increase threshold
         is_leaf_array = [
             last_level or len(group) <= self.ACCEPTED_LEAF_LENGTH
             for group in groups

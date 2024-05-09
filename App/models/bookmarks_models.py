@@ -20,7 +20,7 @@ from common.utils.image_utils import compress_image, resize_image, download_imag
 from common.utils.array_utils import unique_dicts_in_list
 from common.utils.url_utils import url_builder
 
-from App import choices, controllers, types, managers, flows
+from App import choices, controllers, managers, flows
 
 from realtime.common.redis_utils import RedisPubSub
 
@@ -380,38 +380,6 @@ class Bookmark(models.Model):
             'bookmark_id': self.id,
             'status': new_status
         })
-
-    @classmethod
-    def make_clusters(cls, user):
-        from . import SimilarityMatrix, WordWeight
-
-        with transaction.atomic():
-            user.clusters.all().delete()
-
-            # Get similarity with old ones in mind
-            bookmarks = user.bookmarks.filter(
-                words_weights__isnull=False).distinct()
-            document_ids, vectors = WordWeight.word_vectors(bookmarks)
-
-            similarity_object = SimilarityMatrix.get_object(user)
-            old_similarity = similarity_object.to_type
-            similarity = types.SimilarityMatrixType(vectors, document_ids)
-
-            if old_similarity is not None:
-                similarity += old_similarity
-                del old_similarity
-
-            # Clustering
-            clusters_objects = controllers.ClusterMaker(
-                similarity.document_ids, similarity.similarity_matrix
-            ).make()
-
-            # update similarity file and make bookmarks to done
-            bookmarks.update_process_status(cls.ProcessStatus.CLUSTERED.value)
-            similarity_object.update_matrix(
-                similarity.similarity_matrix, similarity.document_ids)
-
-        return clusters_objects
 
 
 class BookmarkHistory(models.Model):
