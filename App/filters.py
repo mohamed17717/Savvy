@@ -39,8 +39,6 @@ class BookmarkFilter(filters.FilterSet):
 
     node = filters.NumberFilter('nodes__path', lookup_expr='icontains')
 
-    exclude = filters.CharFilter(method='filter_exclude')
-
     websites = ListFilter(field_name='website_id', lookup_expr='in')
     exclude_websites = ListFilter(
         field_name='website_id', lookup_expr='in', exclude=True)
@@ -57,11 +55,6 @@ class BookmarkFilter(filters.FilterSet):
         if value:
             return queryset.exclude(query)
         return queryset.filter(query)
-
-    def filter_exclude(self, queryset, name, value):
-        return queryset.exclude(
-            words_weights__word__icontains=value
-        )
 
     class Meta:
         model = models.Bookmark
