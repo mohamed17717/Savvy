@@ -67,7 +67,7 @@ def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
     models.Website.objects.bulk_create(
         website_objects, batch_size=250, ignore_conflicts=True)
 
-    website_relation_map = {w.domain: w for w in parent.user.websites.all()}
+    website_relation_map = {w.domain: w for w in parent.user.websites.filter(domain__in=domains)}
     for b in bookmarks:
         b.website = website_relation_map[b.domain]
 
