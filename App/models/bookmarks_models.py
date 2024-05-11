@@ -411,6 +411,9 @@ class Website(models.Model):
         ordering = ['-created_at']
         unique_together = ('user', 'domain')
 
+    def __str__(self):
+        return f'{self.id} - {self.domain}'
+
 
 class ScrapyResponseLog(models.Model):
     # Relations
