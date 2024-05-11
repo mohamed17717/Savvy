@@ -59,6 +59,20 @@ def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
     bookmarks = tuple(map(parent.init_bookmark, bookmarks_data))
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
 
+    domains = set([b.domain for b in bookmarks])
+    website_objects = []
+    for domain in domains:
+        website_objects.append(models.Website(user=parent.user, domain=domain))
+
+    models.Website.objects.bulk_create(
+        website_objects, batch_size=250, ignore_conflicts=True)
+
+    website_relation_map = {w.domain: w for w in parent.user.websites.all()}
+    for b in bookmarks:
+        b.website = website_relation_map[b.domain]
+
+    models.Bookmark.objects.bulk_update(bookmarks, ['website'], batch_size=250)
+
     batch_bookmarks_to_tasks.delay([b.id for b in bookmarks])
 
 
@@ -217,7 +231,8 @@ def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
     user_id = parent.user.id
 
     store_bookmark_file_analytics_task.delay(parent.id)
-    cluster_checker_task.delay(user_id=user_id, bookmark_ids=bookmark_ids, iteration=0)
+    cluster_checker_task.delay(
+        user_id=user_id, bookmark_ids=bookmark_ids, iteration=0)
 
 
 @shared_task(queue='orm')
