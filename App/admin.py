@@ -13,6 +13,7 @@ admin.site.register(models.WebpageHeader)
 admin.site.register(models.WordWeight)
 admin.site.register(models.Tag)
 admin.site.register(models.GraphNode)
+admin.site.register(models.Website)
 
 
 # admin.site.register(silky_models.Request)
