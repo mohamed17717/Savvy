@@ -27,7 +27,7 @@ class FullTextSearchFilter(SearchFilter):
         if query:
             return SearchQuery(' '.join(query))
 
-    def filter_queryset(self, request, queryset, view):
+    def filter_queryset(self, request, queryset, view, distinct=True):
         search_fields = self.get_search_fields(view, request)
         search_terms = self.get_search_terms(request)
         exclude_terms = self.get_exclude_terms(request)
@@ -42,4 +42,6 @@ class FullTextSearchFilter(SearchFilter):
         elif exclude_terms:
             queryset = queryset.exclude(search=exclude_terms)
 
-        return queryset.distinct('id')
+        if distinct:
+            return queryset.distinct('id')
+        return queryset
