@@ -1,6 +1,6 @@
 import math
 
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 
@@ -150,3 +150,33 @@ class WordGraphNodeAPI(APIView):
         serializer = self.serializer_class(parent.children.all(), many=True)
 
         return Response(serializer.data)
+
+
+class BookmarkFilterChoices:
+    class Base(APIView):
+        def get_filtered_bookmarks(self, request):
+            from common.utils.drf.filters import FullTextSearchFilter
+
+            bookmarks = request.user.bookmarks.all()
+            bookmarks = filters.BookmarkFilter(
+                request.GET, queryset=bookmarks).qs
+            bookmarks = FullTextSearchFilter().filter_queryset(
+                request, bookmarks, BookmarkAPI, distinct=False)
+
+            return bookmarks
+
+        def get_choices(self, request, group_by):
+            bookmarks = self.get_filtered_bookmarks(request)
+            data = bookmarks.values(
+                *group_by).annotate(bookmarks_count=Count('id', distinct=True))
+            return data
+
+        def get(self, request):
+            data = self.get_choices(request, self.group_by)
+            return Response(data)
+
+    class Website(Base):
+        group_by = ['website_id', 'website__domain']
+
+    class Topic(Base):
+        group_by = ['tags__id', 'tags__name']
