@@ -52,7 +52,7 @@ class FullTextSearchFilter(SearchFilter):
         queryset = queryset.annotate(search=vector)
         if search_terms:
             queryset = queryset.filter(search=search_terms)
-        elif exclude_terms:
+        if exclude_terms:
             queryset = queryset.exclude(search=exclude_terms)
 
         if distinct:
