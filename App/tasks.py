@@ -67,10 +67,16 @@ def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
     models.Website.objects.bulk_create(
         website_objects, batch_size=250, ignore_conflicts=True)
 
-    website_relation_map = {w.domain: w for w in parent.user.websites.filter(domain__in=domains)}
+    website_relation_map = {
+        w.domain: w for w in parent.user.websites.filter(domain__in=domains)}
+    websites = []
     for b in bookmarks:
-        b.website = website_relation_map[b.domain]
+        website = website_relation_map[b.domain]
+        b.website = website
+        website.favicon = b.more_data.get('icon')
+        websites.append(website)
 
+    models.Website.objects.bulk_update(websites, ['favicon'], batch_size=250)
     models.Bookmark.objects.bulk_update(bookmarks, ['website'], batch_size=250)
 
     batch_bookmarks_to_tasks.delay([b.id for b in bookmarks])
