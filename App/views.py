@@ -176,7 +176,7 @@ class BookmarkFilterChoices:
             return Response(data)
 
     class Website(Base):
-        group_by = ['website_id', 'website__domain']
+        group_by = ['website_id', 'website__domain', 'website__favicon']
 
     class Topic(Base):
         group_by = ['tags__id', 'tags__name']
