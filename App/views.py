@@ -168,7 +168,7 @@ class BookmarkFilterChoices:
         def get_choices(self, request, group_by):
             bookmarks = self.get_filtered_bookmarks(request)
             data = bookmarks.values(
-                *group_by).annotate(bookmarks_count=Count('id', distinct=True))
+                *group_by).annotate(bookmarks_count=Count('id', distinct=True)).order_by('-bookmarks_count')
             return data
 
         def get(self, request):
