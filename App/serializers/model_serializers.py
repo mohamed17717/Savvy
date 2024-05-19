@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from App import models
- 
+
 from django.core.cache import cache
 from django.urls import reverse
 
@@ -19,7 +19,6 @@ def cache_serializer(timeout=60*60*24*3):  # 3 days
             return result
         return wrapper
     return decorator
-
 
 
 class BookmarkFileSerializer(serializers.ModelSerializer):
@@ -127,7 +126,7 @@ class BookmarkSerializer(serializers.ModelSerializer):
             path = reverse('app:bookmark_short_url', kwargs={'uuid': obj.uuid})
 
             return request.build_absolute_uri(path)
-        
+
         def get_title(self, obj):
             return (
                 obj.title
@@ -151,11 +150,11 @@ class GraphNodeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     class NodeDetails(serializers.ModelSerializer):
+        children = serializers.SerializerMethodField()
+
+        def get_children(self, obj):
+            return GraphNodeSerializer.NodeDetails(obj.children.all(), many=True).data
+
         class Meta:
             model = models.GraphNode
-            exclude = ['bookmarks', 'tags']
-            # fields = '__all__'
-
-
-
-
+            exclude = ['bookmarks', 'tags', 'similarity_matrix', 'created_at', 'updated_at', 'user', 'parent']
