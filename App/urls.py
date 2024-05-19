@@ -14,6 +14,7 @@ app_name = 'app'
 
 urlpatterns = [
     path('tags/list/', views.TagListAPI.as_view(), name='tag_list'),
+    path('graph/', views.WordGraphNodeAPI.as_view(), name='node_graph'),
 
     path('short/<str:uuid>/', views.BookmarkShortAPI.as_view(), name='bookmark_short_url'),
 
