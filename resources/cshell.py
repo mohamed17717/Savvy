@@ -64,6 +64,7 @@ def build_graph():
     maker = WordGraphBuilder(similarity.document_ids,
                              similarity.similarity_matrix)
     maker.build()
+    models.GraphNode.centralized_creator().flush()
 
 
 def analyze_graph():
