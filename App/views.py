@@ -158,13 +158,17 @@ class WordGraphNodeAPI(APIView):
         if self.request.user.is_anonymous:
             return models.GraphNode.objects.none()
 
-        return self.request.user.nodes.filter(parent__isnull=True)
+        return self.request.user.nodes.all().prefetch_related('children')
 
-    @cache_per_user(60 * 15)
-    def get(self, request):
+    def get(self, request, parent=None):
         qs = self.get_queryset()
-        serializer = self.serializer_class(qs, many=True)
 
+        if parent is None:
+            qs = qs.filter(parent__isnull=True)
+        else:
+            qs = qs.filter(parent_id=parent)
+
+        serializer = self.serializer_class(qs, many=True)
         return Response(serializer.data)
 
 
