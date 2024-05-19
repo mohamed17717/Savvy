@@ -6,6 +6,7 @@ from django.urls import reverse
 
 from functools import wraps
 
+
 def cache_serializer(timeout=60*60*24*3):  # 3 days
     def decorator(func):
         @wraps(func)
@@ -150,11 +151,14 @@ class GraphNodeSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     class NodeDetails(serializers.ModelSerializer):
-        children = serializers.SerializerMethodField()
+        children_count = serializers.SerializerMethodField()
 
-        def get_children(self, obj):
-            return GraphNodeSerializer.NodeDetails(obj.children.all(), many=True).data
+        def get_children_count(self, obj):
+            return obj.children.count()
 
         class Meta:
             model = models.GraphNode
-            exclude = ['bookmarks', 'tags', 'similarity_matrix', 'created_at', 'updated_at', 'user', 'parent']
+            exclude = [
+                'bookmarks', 'tags', 'similarity_matrix', 
+                'created_at', 'updated_at', 'user', 'parent',
+            ]
