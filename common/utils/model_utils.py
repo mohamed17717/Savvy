@@ -71,6 +71,7 @@ class CentralizedBulkCreator:
             'objects': [],
             'm2m_objects': []  # [{bookmarks: [], tags: []}, ...]
         }
+        self.has_pre_calculation = hasattr(model, 'pre_create')
         # max objects
         self.max_objects = 500
 
@@ -137,6 +138,10 @@ class CentralizedBulkCreator:
 
             if not objects:
                 return
+
+            if self.has_pre_calculation:
+                for obj in objects:
+                    obj.pre_create()
 
             objects = self.model.objects.bulk_create(objects, batch_size=500)
 
