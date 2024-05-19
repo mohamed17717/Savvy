@@ -1,8 +1,9 @@
 import math
 
-from django.db.models import Q, Count
+from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
+from django.shortcuts import resolve_url
 
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
@@ -15,6 +16,23 @@ from App import serializers, filters, models
 from common.utils.drf.viewsets import CRDLViewSet, RULViewSet
 from common.utils.math_utils import minmax
 from realtime.common.jwt_utils import JwtManager
+
+from django.core.cache import cache
+
+
+def cache_per_user(timeout):
+    def decorator(view_func):
+        def _wrapped_view(self, request, *args, **kwargs):
+            cache_key = f"{request.user.id}-{request.path}"
+            response = cache.get(cache_key)
+            if not response:
+                response = view_func(self, request, *args, **kwargs)
+                cache.set(cache_key, response.data, timeout)
+            else:
+                response = Response(response)
+            return response
+        return _wrapped_view
+    return decorator
 
 
 class BookmarkFileAPI(CRDLViewSet):
@@ -35,6 +53,9 @@ class BookmarkFileAPI(CRDLViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+        # delete cached graph tree
+        cache_key = f"{self.request.user.id}-{resolve_url('app:node_graph')}"
+        cache.delete(cache_key)
 
 
 class BookmarkAPI(RULViewSet):
@@ -137,17 +158,12 @@ class WordGraphNodeAPI(APIView):
         if self.request.user.is_anonymous:
             return models.GraphNode.objects.none()
 
-        return self.request.user.nodes.all()
+        return self.request.user.nodes.filter(parent__isnull=True)
 
+    @cache_per_user(60 * 15)
     def get(self, request):
-        parent = request.query_params.get('parent', None)
-        search_query = Q(parent__isnull=True)
-        if parent is not None:
-            search_query = Q(parent=parent)
-
         qs = self.get_queryset()
-        parent = get_object_or_404(qs, search_query)
-        serializer = self.serializer_class(parent.children.all(), many=True)
+        serializer = self.serializer_class(qs, many=True)
 
         return Response(serializer.data)
 
