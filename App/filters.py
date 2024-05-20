@@ -37,7 +37,7 @@ class BookmarkFilter(filters.FilterSet):
     tag = filters.NumberFilter('tags__id')
     tag_name = filters.CharFilter('tags__name', lookup_expr='icontains')
 
-    node = filters.NumberFilter('nodes__path', lookup_expr='icontains')
+    node = filters.NumberFilter('nodes__path', lookup_expr='contains')
 
     websites = ListFilter(field_name='website_id', lookup_expr='in')
     exclude_websites = ListFilter(
