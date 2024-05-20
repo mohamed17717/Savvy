@@ -17,8 +17,9 @@ class GraphNode(models.Model):
                             null=True, db_index=True)
     threshold = models.FloatField(blank=True, null=True)
 
-    is_leaf = models.BooleanField(default=False) # has no children
-    is_sharded_islands = models.BooleanField(default=False) # merged of small nodes that contain only 1, 2 or 3 bookmarks
+    is_leaf = models.BooleanField(default=False)  # has no children
+    # merged of small nodes that contain only 1, 2 or 3 bookmarks
+    is_sharded_islands = models.BooleanField(default=False)
     similarity_matrix = models.JSONField(
         blank=True, null=True)  # only for leafs
 
@@ -27,24 +28,26 @@ class GraphNode(models.Model):
 
     CREATOR = None
 
-    def calculate_path(self):
+    def calculate_path(self) -> list[str]:
+        path = f'{self.pk}'
         if self.parent:
-            path_list = []
-            if self.parent.path:
-                path_list.append(self.parent.path)
-            path_list.append(self.parent.pk)
+            path = self.parent.path + '.' + path
 
-            self.path = '.'.join(map(str, path_list))
+        self.path = path
+        return ['path']
 
-    def pre_create(self):
-        if self.pk:
-            return
-        
-        self.calculate_path()
+    def post_create(self):
+        return self.calculate_path()
 
     def save(self, *args, **kwargs) -> None:
-        self.pre_create()
-        return super().save(*args, **kwargs)
+        created = not self.pk
+
+        result = super().save(*args, **kwargs)
+
+        if created:
+            self.post_create()
+
+        return result
 
     @property
     def leafs(self):

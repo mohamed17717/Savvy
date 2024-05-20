@@ -71,7 +71,7 @@ class CentralizedBulkCreator:
             'objects': [],
             'm2m_objects': []  # [{bookmarks: [], tags: []}, ...]
         }
-        self.has_pre_calculation = hasattr(model, 'pre_create')
+        self.has_post_calculation = hasattr(model, 'post_create')
         # max objects
         self.max_objects = 500
 
@@ -127,7 +127,8 @@ class CentralizedBulkCreator:
                         instance_field_name: obj.id,
                         related_field_name: m2m_object.id
                     }
-                    m2m_bulk_data[m2m_field].append(m2m_model(**m2m_object_kwargs))
+                    m2m_bulk_data[m2m_field].append(
+                        m2m_model(**m2m_object_kwargs))
 
         for field, data in m2m_bulk_data.items():
             self.m2m_models[field].objects.bulk_create(data, batch_size=500)
@@ -139,11 +140,13 @@ class CentralizedBulkCreator:
             if not objects:
                 return
 
-            if self.has_pre_calculation:
-                for obj in objects:
-                    obj.pre_create()
-
             objects = self.model.objects.bulk_create(objects, batch_size=500)
+
+            if self.has_post_calculation:
+                updated_fields = set()
+                for obj in objects:
+                    updated_fields.add(*obj.post_create())
+                self.model.objects.bulk_update(objects, updated_fields)
 
             self.bulk_create_m2m(objects)
             self.reset_data()
