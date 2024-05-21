@@ -45,7 +45,8 @@ class GraphNode(models.Model):
         result = super().save(*args, **kwargs)
 
         if created:
-            self.post_create()
+            update_fields = self.post_create()
+            self.save(update_fields=update_fields)
 
         return result
 
