@@ -20,7 +20,7 @@ from common.utils.image_utils import compress_image, resize_image, download_imag
 from common.utils.array_utils import unique_dicts_in_list
 from common.utils.url_utils import url_builder
 
-from App import choices, controllers, managers, flows
+from App import choices, controllers, managers, flows, tasks
 
 from realtime.common.redis_utils import RedisPubSub
 
@@ -132,8 +132,9 @@ class BookmarkFile(models.Model):
             other_users_bookmarks.values_list('url', flat=True))
         bookmarks = [b for b in bookmarks if b['url'] not in other_users_urls]
 
-        for bookmark in other_users_bookmarks:
-            bookmark.deep_clone(self.user, self)
+        # clone bookmarks
+        tasks.deep_clone_bookmarks_task(
+            [b.id for b in other_users_bookmarks], self.user.id, self.id)
 
         return bookmarks
 
