@@ -146,6 +146,7 @@ def deep_clone_bookmarks_task(bookmark_ids, user_id, file_id):
     bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
     user = User.objects.get(pk=user_id)
 
+    # TODO This is make too much operations in database so bulk doing them
     for bookmark in bookmarks:
         bookmark.deep_clone(user, bookmarks_file)
 
