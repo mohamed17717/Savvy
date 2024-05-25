@@ -140,6 +140,16 @@ def store_webpage_task(bookmark_id, page_title, meta_tags, headers):
         models.WebpageHeader.bulk_create(webpage, headers)
 
 
+@shared_task(queue='orm')
+def deep_clone_bookmarks_task(bookmark_ids, user_id, file_id):
+    bookmarks_file = models.BookmarkFile.objects.get(id=file_id)
+    bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
+    user = User.objects.get(pk=user_id)
+
+    for bookmark in bookmarks:
+        bookmark.deep_clone(user, bookmarks_file)
+
+
 @shared_task(queue='download_images')
 def store_bookmark_image_task(bookmark_id, meta_tags=None, image_url=None):
     bookmark = models.Bookmark.objects.get(id=bookmark_id)
