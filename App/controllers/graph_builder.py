@@ -5,7 +5,7 @@ from App import models
 class WordGraphBuilder:
     THRESHOLD = 20  # avoid float inaccuracy
     THRESHOLD_STEP = 4  # avoid float inaccuracy
-    ACCEPTED_LEAF_LENGTH = 20
+    ACCEPTED_LEAF_LENGTH = 10
     MAXIMUM_THRESHOLD = 90
 
     def __init__(self, documents, similarity_matrix, threshold: int = THRESHOLD, parent=None, user=None):
