@@ -72,7 +72,7 @@ class BookmarkAPI(RULViewSet):
         if self.action == 'update' or self.action == 'partial_update':
             serializer_class = serializers.BookmarkSerializer.BookmarkUpdate
         elif self.action == 'list':
-            pass
+            serializer_class = serializers.BookmarkSerializer.BookmarkDetails
         elif self.action == 'retrieve':
             serializer_class = serializers.BookmarkSerializer.BookmarkDetails
 
