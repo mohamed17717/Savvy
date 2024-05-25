@@ -19,6 +19,7 @@ class RedisPubSub:
     class MessageTypes:
         FILE_UPLOAD = 1
         BOOKMARK_CHANGE = 2
+        FINISH = 3
 
     class FileUploadData(BaseModel, extra='allow'):
         user_id: int
@@ -33,6 +34,11 @@ class RedisPubSub:
         type: int = Field(
             default_factory=lambda: RedisPubSub.MessageTypes.BOOKMARK_CHANGE)
 
+    class FinishData(BaseModel, extra='allow'):
+        user_id: int
+        type: int = Field(
+            default_factory=lambda: RedisPubSub.MessageTypes.FINISH)
+
     @classmethod
     def __validate_data(cls, data: dict) -> dict:
         _type = data.get('type')
@@ -42,6 +48,8 @@ class RedisPubSub:
             data = cls.FileUploadData(**data)
         elif _type == cls.MessageTypes.BOOKMARK_CHANGE:
             data = cls.BookmarkChangeData(**data)
+        elif _type == cls.MessageTypes.FINISH:
+            data = cls.FinishData(**data)
         else:
             raise ValueError('invalid type')
 
