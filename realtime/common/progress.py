@@ -51,10 +51,11 @@ class UserProgressSingleton:
             status = data['status']
             self.individual_progress[bookmark_id] = status
             self.message = f'bookmark {bookmark_id} status: {status/80*100}%'
-        # elif data['type'] == 3:
-            # TODO django should send this type
+        elif data['type'] == RedisPubSub.MessageTypes.FINISH:
+            self.DONE = True
+        else:
+            self.DONE = self.progress >= 100
 
-        self.DONE = self.progress >= 100
         if self.DONE:
             self.message = 'All bookmarks are uploaded'
 
@@ -97,9 +98,9 @@ class ProgressSSE:
         })
 
     async def event_loop(self, request: Request):
-        force_break_time = datetime.utcnow() + timedelta(hours=3)
+        force_break_time = datetime.now() + timedelta(hours=1)
 
-        while datetime.utcnow() < force_break_time:
+        while datetime.now() < force_break_time:
             if await request.is_disconnected():
                 break
 
