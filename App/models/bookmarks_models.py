@@ -347,9 +347,7 @@ class Bookmark(models.Model):
             - status to PENDING
         """
         with transaction.atomic():
-            # make clone know about unique fields 
-            new_bookmark = clone(self, uuid=None)
-            
+            new_bookmark = clone(self, uuid=uuid.uuid4().hex)
             new_bookmark.user = user
             new_bookmark.parent_file = parent_file
             new_bookmark.user_status = self.UserStatus.PENDING.value
