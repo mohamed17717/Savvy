@@ -15,6 +15,8 @@ from App import models, controllers, types
 from common.utils.array_utils import window_list
 from common.utils.html_utils import extract_image_from_meta
 
+from realtime.common.redis_utils import RedisPubSub
+
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -106,9 +108,7 @@ def batch_bookmarks_to_tasks(bookmark_ids: list[int]):
 
 @shared_task(queue='scrapy')
 def crawl_bookmarks_task(bookmark_ids: list[int]):
-    models.Bookmark.objects.filter(id__in=bookmark_ids).update_process_status(
-        models.Bookmark.ProcessStatus.START_CRAWL.value
-    )
+    models.Bookmark.objects.filter(id__in=bookmark_ids).start_crawl()
 
     ids = json.dumps(bookmark_ids)
     command = ['python', 'manage.py', 'crawl_bookmarks', ids]
@@ -172,7 +172,6 @@ def store_weights_task(bookmark_id):
         bookmark = models.Bookmark.objects.filter(
             id=bookmark_id,
             words_weights__isnull=True,
-            # process_status__lt=Status.START_TEXT_PROCESSING.value
         ).first()
         if bookmark:
             bookmark.update_process_status(Status.START_TEXT_PROCESSING.value)
@@ -190,7 +189,7 @@ def store_tags_task(user_id):
 
 
 @shared_task(queue='orm')
-def build_word_graph_task(user_id):
+def build_word_graph_task(user_id, callback=None):
     user = User.objects.get(pk=user_id)
 
     # TODO don't delete old graph otherwise update it with new data
@@ -204,6 +203,9 @@ def build_word_graph_task(user_id):
     controllers.WordGraphBuilder(
         similarity.document_ids, similarity.similarity_matrix, user=user
     ).build()
+
+    if callback:
+        callback()
 
 
 @shared_task(queue='orm')
@@ -230,8 +232,7 @@ def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
     for hook_method, hook_group in batches:
         hook_method(hook_group)
 
-    bookmark_status = models.Bookmark.ProcessStatus.CRAWLED.value
-    bookmarks.update_process_status(bookmark_status)
+    bookmarks.crawled()
 
     parent = models.Bookmark.objects.get(id=bookmark_ids[0]).parent_file
     user_id = parent.user.id
@@ -300,16 +301,24 @@ def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iter
     ])
 
     if accepted:
-        models.Bookmark.objects.filter(id__in=bookmark_ids).update_process_status(
-            models.Bookmark.ProcessStatus.START_CLUSTER.value)
+        models.Bookmark.objects.filter(id__in=bookmark_ids).start_cluster()
         uncompleted_bookmarks = models.Bookmark.objects.filter(
             user_id=user_id, words_weights__isnull=True
         )
         for bookmark in uncompleted_bookmarks:
             bookmark.store_word_vector()
 
+        def graph_callback():
+            models.Bookmark.objects.filter(id__in=bookmark_ids).clustered()
+            RedisPubSub.pub({
+                'type': RedisPubSub.MessageTypes.FINISH,
+                'user_id': user_id,
+            })
+
         store_tags_task.apply_async(kwargs={'user_id': user_id})
-        build_word_graph_task.apply_async(kwargs={'user_id': user_id})
+        build_word_graph_task.apply_async(kwargs={
+            'user_id': user_id, 'callback': graph_callback
+        })
     else:
         cluster_checker_task.apply_async(
             kwargs={
