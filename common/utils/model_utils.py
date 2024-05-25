@@ -41,8 +41,10 @@ def concurrent_get_or_create(model, **kwargs):
             return obj, False
 
 
-def clone(instance):
+def clone(instance, **kwargs):
     instance.pk = None
+    for field, value in kwargs.items():
+        setattr(instance, field, value)
     instance.save()
 
     return instance
