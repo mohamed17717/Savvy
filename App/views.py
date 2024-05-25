@@ -3,7 +3,6 @@ import math
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
-from django.shortcuts import resolve_url
 
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
@@ -53,9 +52,6 @@ class BookmarkFileAPI(CRDLViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-        # delete cached graph tree
-        cache_key = f"{self.request.user.id}-{resolve_url('app:node_graph')}"
-        cache.delete(cache_key)
 
 
 class BookmarkAPI(RULViewSet):
