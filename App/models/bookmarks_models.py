@@ -157,7 +157,6 @@ class Bookmark(models.Model):
         - CUD operations happened internally -- just (R)ead
     """
     ProcessStatus = choices.BookmarkProcessStatusChoices
-    UserStatus = choices.BookmarkUserStatusChoices
 
     # Relations
     user = models.ForeignKey(
@@ -190,15 +189,18 @@ class Bookmark(models.Model):
     process_status = models.PositiveSmallIntegerField(
         default=ProcessStatus.CREATED.value,
         choices=ProcessStatus.choices)
-    user_status = models.PositiveSmallIntegerField(
-        default=UserStatus.PENDING.value,
-        choices=UserStatus.choices)
+
+    favorite = models.BooleanField(default=False)
+    hidden = models.BooleanField(default=False)
+    delete_scheduled_at = models.DateTimeField(blank=True, null=True)
+    added_at = models.DateTimeField(blank=True, null=True)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     objects = managers.BookmarkQuerySet.as_manager()
+    hidden_objects = managers.BookmarkHiddenQuerySet.as_manager()
 
     def __str__(self) -> str:
         return f'{self.id} - {self.url}'
@@ -351,9 +353,14 @@ class Bookmark(models.Model):
             new_bookmark = clone(self, uuid=uuid.uuid4().hex)
             new_bookmark.user = user
             new_bookmark.parent_file = parent_file
-            new_bookmark.user_status = self.UserStatus.PENDING.value
+
+            new_bookmark.favorite = False
+            new_bookmark.hidden = False
+            new_bookmark.delete_scheduled_at = None
+            new_bookmark.added_at = None
+
             new_bookmark.save(
-                update_fields=['user', 'parent_file', 'user_status'])
+                update_fields=['user', 'parent_file', 'favorite', 'hidden', 'delete_scheduled_at', 'added_at'])
 
             new_bookmark.update_process_status(self.ProcessStatus.CLONED.value)
 
@@ -368,7 +375,8 @@ class Bookmark(models.Model):
                            {'webpage': new_webpage})
 
             if self.website:
-                new_website, _ = Website.objects.get_or_create(user=user, domain=self.website.domain, defaults={'favicon': self.website.favicon})
+                new_website, _ = Website.objects.get_or_create(
+                    user=user, domain=self.website.domain, defaults={'favicon': self.website.favicon})
                 new_bookmark.website = new_website
                 new_webpage.save(update_fields=['website'])
 
