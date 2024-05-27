@@ -5,6 +5,7 @@ import logging
 from django.db import transaction
 from django.db.models import Q
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from celery import shared_task, current_app, chord
 from celery.signals import after_task_publish
@@ -339,3 +340,9 @@ def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iter
                 'uncompleted_bookmarks_history': uncompleted_bookmarks_history
             }, countdown=wait_time
         )
+
+
+@shared_task(queue='orm')
+def delete_bookmarks_beat_task():
+    today = timezone.now().date()
+    models.Bookmark.hidden_objects.filter(delete_scheduled_at__date__lte=today).delete()
