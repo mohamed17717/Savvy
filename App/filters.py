@@ -29,7 +29,6 @@ class ListFilter(BaseInFilter, filters.CharFilter):
 
 
 class BookmarkFilter(filters.FilterSet):
-    status = filters.NumberFilter('user_status')
     process_status = filters.NumberFilter('process_status')
 
     file = filters.NumberFilter('parent_file_id')
@@ -58,4 +57,4 @@ class BookmarkFilter(filters.FilterSet):
 
     class Meta:
         model = models.Bookmark
-        fields = ['user_status', 'process_status', 'tags', 'parent_file']
+        fields = ['process_status', 'tags', 'parent_file']
