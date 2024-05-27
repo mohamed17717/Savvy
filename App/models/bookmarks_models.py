@@ -367,6 +367,11 @@ class Bookmark(models.Model):
                 bulk_clone(self.webpage.headers.all(),
                            {'webpage': new_webpage})
 
+            if self.website:
+                new_website, _ = Website.objects.get_or_create(user=user, domain=self.website.domain, defaults={'favicon': self.website.favicon})
+                new_bookmark.website = new_website
+                new_webpage.save(update_fields=['website'])
+
             bulk_clone(self.words_weights.all(), {'bookmark': new_bookmark})
 
             new_bookmark.store_tags()
