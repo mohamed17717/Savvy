@@ -39,6 +39,9 @@ class BulkSignalsQuerySet(models.QuerySet):
 
 
 class BookmarkQuerySet(models.QuerySet):
+    def get_queryset(self):
+        return super().filter(hidden=False)
+    
     def bulk_create(self, objs, **kwargs):
         result = super().bulk_create(objs, **kwargs)
 
@@ -96,3 +99,8 @@ class BookmarkQuerySet(models.QuerySet):
     def crawled(self) -> int:
         from App.models import Bookmark
         return self.update_process_status(Bookmark.ProcessStatus.CRAWLED.value)
+
+
+class BookmarkHiddenQuerySet(BookmarkQuerySet):
+    def get_queryset(self):
+        return super().filter(hidden=True)
