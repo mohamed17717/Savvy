@@ -142,7 +142,7 @@ class BookmarkSerializer(serializers.ModelSerializer):
     class BookmarkUpdate(serializers.ModelSerializer):
         class Meta:
             model = models.Bookmark
-            fields = ['user_status']
+            fields = ['favorite', 'hidden']
 
 
 class GraphNodeSerializer(serializers.ModelSerializer):
