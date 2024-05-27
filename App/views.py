@@ -3,6 +3,7 @@ import math
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
+from django.core.cache import cache
 
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
@@ -15,8 +16,6 @@ from App import serializers, filters, models
 from common.utils.drf.viewsets import CRDLViewSet, RULViewSet
 from common.utils.math_utils import minmax
 from realtime.common.jwt_utils import JwtManager
-
-from django.core.cache import cache
 
 
 def cache_per_user(timeout):
@@ -164,8 +163,9 @@ class WordGraphNodeAPI(APIView):
         else:
             qs = qs.filter(parent_id=parent)
 
-        serializer = self.serializer_class(qs, many=True)
-        return Response(serializer.data)
+        serializer = self.serializer_class(
+            qs, many=True, context={'request': request})
+        return Response([i for i in serializer.data if i['bookmarks_count'] > 0])
 
 
 class BookmarkFilterChoices:
