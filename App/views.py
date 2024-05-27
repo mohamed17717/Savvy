@@ -1,9 +1,11 @@
 import math
+from datetime import timedelta
 
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponseRedirect
 from django.core.cache import cache
+from django.utils import timezone
 
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.generics import ListAPIView
@@ -13,7 +15,7 @@ from rest_framework.response import Response
 
 from App import serializers, filters, models
 
-from common.utils.drf.viewsets import CRDLViewSet, RULViewSet
+from common.utils.drf.viewsets import CRDLViewSet, RULViewSet, RUDLViewSet
 from common.utils.math_utils import minmax
 from realtime.common.jwt_utils import JwtManager
 
@@ -53,7 +55,7 @@ class BookmarkFileAPI(CRDLViewSet):
         serializer.save(user=self.request.user)
 
 
-class BookmarkAPI(RULViewSet):
+class BookmarkAPI(RUDLViewSet):
     serializer_class = serializers.BookmarkSerializer
 
     filterset_class = filters.BookmarkFilter
@@ -87,6 +89,11 @@ class BookmarkAPI(RULViewSet):
             pass
 
         return qs
+
+    def perform_destroy(self, instance):
+        instance.hidden = True
+        instance.delete_scheduled_at = timezone.now() + timedelta(days=14)
+        instance.save(update_fields=['hidden', 'delete_scheduled_at'])
 
 
 class TagAPI(RULViewSet):
