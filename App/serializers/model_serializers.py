@@ -152,19 +152,53 @@ class GraphNodeSerializer(serializers.ModelSerializer):
 
     class NodeDetails(serializers.ModelSerializer):
         children_count = serializers.SerializerMethodField()
+        bookmarks_count = serializers.SerializerMethodField()
         name = serializers.SerializerMethodField()
 
         def get_children_count(self, obj):
             return obj.children.count()
 
+        def get_bookmarks_count(self, obj):
+            from common.utils.drf.filters import FullTextSearchFilter
+            from App import filters, views
+
+            request = self.context['request']
+
+            bookmarks = request.user.bookmarks.all()
+            bookmarks = filters.BookmarkFilter(
+                request.GET, queryset=bookmarks).qs
+            bookmarks = FullTextSearchFilter().filter_queryset(
+                request, bookmarks, views.BookmarkAPI, distinct=False)
+
+            return bookmarks.filter(nodes__path__contains=obj.id).distinct().count()
+
         def get_name(self, obj):
-            if obj.tags.exists():
-                name = ', '.join(obj.tags.all().values_list('name', flat=True))
-            else:
-                leafs_tags = models.Tag.objects.filter(
-                    bookmarks__nodes__in=obj.leafs.all()).distinct().order_by('-weight')
-                name = ', '.join(leafs_tags.values_list(
-                    'name', flat=True)[:5]) + '.....'
+            # if obj.tags.exists():
+            #     name = ', '.join(obj.tags.all().values_list('name', flat=True))
+            # else:
+            #     leafs_tags = models.Tag.objects.filter(
+            #         bookmarks__nodes__in=obj.leafs.all()).distinct().order_by('-weight')
+            #     name = ', '.join(leafs_tags.values_list(
+            #         'name', flat=True)[:5]) + '.....'
+
+            from common.utils.drf.filters import FullTextSearchFilter
+            from App import filters, views
+
+            request = self.context['request']
+
+            bookmarks = request.user.bookmarks.all()
+            bookmarks = filters.BookmarkFilter(
+                request.GET, queryset=bookmarks).qs
+            bookmarks = FullTextSearchFilter().filter_queryset(
+                request, bookmarks, views.BookmarkAPI, distinct=False)
+
+            bookmarks = bookmarks.filter(
+                nodes__path__contains=obj.id).distinct()
+
+            leafs_tags = models.Tag.objects.filter(
+                bookmarks__in=bookmarks).distinct().order_by('-weight')
+            name = ', '.join(leafs_tags.values_list(
+                'name', flat=True)[:5]) + '.....'
 
             return name
 
