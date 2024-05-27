@@ -28,9 +28,9 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
 app.conf.beat_schedule = {
-    # 'delete_temp_files_after_day': {
-    #     'task': 'Applicants.tasks.delete_temp_files_after_day',
-    #     'schedule': timedelta(days=1),
-    #     'args': ()
-    # },
+    'delete_bookmarks': {
+        'task': 'App.tasks.delete_bookmarks_beat_task',
+        'schedule': timedelta(days=1),
+        'args': ()
+    }
 }
