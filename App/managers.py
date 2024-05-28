@@ -39,9 +39,9 @@ class BulkSignalsQuerySet(models.QuerySet):
 
 
 class BookmarkQuerySet(models.QuerySet):
-    def get_queryset(self):
-        return super().filter(hidden=False)
-    
+    def by_user(self, user):
+        return self.filter(user=user)
+
     def bulk_create(self, objs, **kwargs):
         result = super().bulk_create(objs, **kwargs)
 
@@ -101,6 +101,16 @@ class BookmarkQuerySet(models.QuerySet):
         return self.update_process_status(Bookmark.ProcessStatus.CRAWLED.value)
 
 
-class BookmarkHiddenQuerySet(BookmarkQuerySet):
+class BookmarkManager(models.Manager):
     def get_queryset(self):
-        return super().filter(hidden=True)
+        return BookmarkQuerySet(self.model, using=self._db).filter(hidden=False)
+
+
+class BookmarkHiddenManager(models.Manager):
+    def get_queryset(self):
+        return BookmarkQuerySet(self.model, using=self._db).filter(hidden=True)
+
+
+class AllBookmarkManager(models.Manager):
+    def get_queryset(self):
+        return BookmarkQuerySet(self.model, using=self._db)
