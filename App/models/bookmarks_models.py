@@ -199,8 +199,9 @@ class Bookmark(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    objects = managers.BookmarkQuerySet.as_manager()
-    hidden_objects = managers.BookmarkHiddenQuerySet.as_manager()
+    objects = managers.BookmarkManager()
+    hidden_objects = managers.BookmarkHiddenManager()
+    all_objects = managers.AllBookmarkManager()
 
     def __str__(self) -> str:
         return f'{self.id} - {self.url}'
