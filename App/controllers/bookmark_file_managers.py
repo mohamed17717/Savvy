@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 
 from django.db.models.fields.files import FieldFile
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 
 class BookmarkFileManager(ABC):
@@ -69,6 +70,7 @@ class BookmarkHTMLFileManager(BookmarkFileManager):
 
             attrs['url'] = attrs.pop('href')
             attrs['title'] = item.text
+            attrs['added_at'] = timezone.datetime.fromtimestamp(int(attrs.pop('add_date')))
 
             links.append(attrs)
         return links
