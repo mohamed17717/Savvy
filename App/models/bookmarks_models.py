@@ -45,7 +45,7 @@ class BookmarkFile(models.Model):
     location = models.FileField(
         upload_to='users/bookmarks/',
         validators=[
-            FileExtensionValidator(['html', 'json']), FileSizeValidator(5)
+            FileExtensionValidator(['html', 'json']), FileSizeValidator(20)
         ]
     )
 
@@ -141,11 +141,16 @@ class BookmarkFile(models.Model):
     def init_bookmark(self, data):
         url = data.pop('url')
         title = data.pop('title', None)
+        added_at = data.pop('added_at', None)
+        if added_at:
+            added_at = timezone.datetime.fromtimestamp(int(added_at))
+
         data = data or None
 
         return Bookmark(
             user=self.user, parent_file=self,
-            url=url, title=title, more_data=data
+            url=url, title=title, more_data=data,
+            added_at=added_at
         )
 
 
