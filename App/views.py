@@ -63,8 +63,8 @@ class BookmarkAPI(RUDLViewSet):
 
     filterset_class = filters.BookmarkFilter
     search_fields = ['words_weights__word', 'title', 'url']
-    ordering_fields = ['parent_file_id', 'id']
-    ordering = ['nodes__id', 'id']
+    ordering_fields = ['nodes__id', 'parent_file_id', 'id', 'added_at']
+    ordering = ['nodes__id', 'added_at', 'id']
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
