@@ -86,10 +86,20 @@ class BookmarkAPI(RUDLViewSet):
 
         qs = self.request.user.bookmarks.all()
 
-        archive_actions = [
-            'permanent_delete', 'restore', 'archived_destroy', 'archived_list', 'deleted_list']
+        archive_actions = ['permanent_delete', 'restore', 'archived_destroy']
         all_actions = ['open_url']
-        if self.action in archive_actions:
+
+        if self.action == 'archived_list':
+            qs = models.Bookmark.hidden_objects.all().by_user(self.request.user)
+            qs = qs.filter(delete_scheduled_at__isnull=True)
+        elif self.action == 'deleted_list':
+            qs = models.Bookmark.hidden_objects.all().by_user(self.request.user)
+            qs = qs.filter(delete_scheduled_at__isnull=False)
+        elif self.action == 'favorite_list':
+            qs = self.request.user.bookmarks.all()
+            qs = qs.filter(favorite=True)
+
+        elif self.action in archive_actions:
             qs = models.Bookmark.hidden_objects.all().by_user(self.request.user)
         elif self.action in all_actions:
             qs = models.Bookmark.all_objects.all().by_user(self.request.user)
@@ -101,18 +111,21 @@ class BookmarkAPI(RUDLViewSet):
         instance.delete_scheduled_at = timezone.now() + timedelta(days=14)
         instance.save(update_fields=['hidden', 'delete_scheduled_at'])
 
+    def perform_restore(self, instance):
+        instance.hidden = False
+        instance.delete_scheduled_at = None
+        instance.save(update_fields=['hidden', 'delete_scheduled_at'])
+
     @action(methods=['delete'], detail=False, url_path=r'(?P<pk>[\d]+)/permanent-delete')
     def permanent_delete(self, request, pk):
-        instance = get_object_or_404(self.get_queryset(), pk=pk)
+        instance = self.get_object()
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['get'], detail=False, url_path=r'(?P<pk>[\d]+)/restore')
     def restore(self, request, pk):
-        instance = get_object_or_404(self.get_queryset(), pk=pk)
-        instance.hidden = False
-        instance.delete_scheduled_at = None
-        instance.save(update_fields=['hidden', 'delete_scheduled_at'])
+        instance = self.get_object()
+        self.perform_restore(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['delete'], detail=False, url_path=r'(?P<pk>[\d]+)/archived-delete$')
@@ -129,27 +142,15 @@ class BookmarkAPI(RUDLViewSet):
 
     @action(methods=['get'], detail=False, url_path='archived-list')
     def archived_list(self, request):
-        qs = self.get_queryset()
-        qs = qs.filter(delete_scheduled_at__isnull=True)
-        serializer_class = self.get_serializer_class()
-        data = serializer_class(qs, many=True).data
-        return Response(data)
+        return super().list(request)
 
     @action(methods=['get'], detail=False, url_path='deleted-list')
     def deleted_list(self, request):
-        qs = self.get_queryset()
-        qs = qs.filter(delete_scheduled_at__isnull=False)
-        serializer_class = self.get_serializer_class()
-        data = serializer_class(qs, many=True).data
-        return Response(data)
+        return super().list(request)
 
     @action(methods=['get'], detail=False, url_path='favorite-list')
     def favorite_list(self, request):
-        qs = self.get_queryset()
-        qs = qs.filter(favorite=True)
-        serializer_class = self.get_serializer_class()
-        data = serializer_class(qs, many=True).data
-        return Response(data)
+        return super().list(request)
 
 
 class TagAPI(RULViewSet):
