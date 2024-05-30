@@ -124,7 +124,7 @@ class BookmarkSerializer(serializers.ModelSerializer):
 
         def get_url(self, obj):
             request = self.context['request']
-            path = reverse('app:bookmark_open_url', kwargs={'uuid': obj.uuid})
+            path = reverse('app:bookmark-open-url', kwargs={'uuid': obj.uuid})
 
             return request.build_absolute_uri(path)
 
