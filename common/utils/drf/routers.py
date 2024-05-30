@@ -1,8 +1,4 @@
-from functools import partial
-from rest_framework.routers import DefaultRouter
-from rest_framework.routers import Route as RestRoute
-
-Route = partial(RestRoute, detail=False, initkwargs={})
+from rest_framework.routers import DefaultRouter, Route
 
 
 class CustomSuffixRouter(DefaultRouter):
@@ -13,11 +9,15 @@ class CustomSuffixRouter(DefaultRouter):
             url=r'^{prefix}/create{trailing_slash}$',
             mapping={'post': 'create'},
             name='{basename}-create',
+            detail=False,
+            initkwargs={}
         )
         list_route = Route(
             url=r'^{prefix}/list{trailing_slash}$',
             mapping={'get': 'list'},
             name='{basename}-list',
+            detail=False,
+            initkwargs={}
         )
 
-        return [*routes, create_route, list_route]
+        return [create_route, list_route, *routes]
