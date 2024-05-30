@@ -5,6 +5,7 @@ import uuid
 from datetime import timedelta
 
 from django.db import models, transaction
+from django.db.models import Max
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
@@ -17,7 +18,6 @@ from crawler import settings as scrapy_settings
 from common.utils.model_utils import FileSizeValidator, clone, bulk_clone
 from common.utils.file_utils import hash_file, random_filename
 from common.utils.image_utils import compress_image, resize_image, download_image
-from common.utils.array_utils import unique_dicts_in_list
 from common.utils.url_utils import url_builder
 
 from App import choices, controllers, managers, flows, tasks
@@ -117,26 +117,45 @@ class BookmarkFile(models.Model):
 
     def cleaned_bookmarks_links(self) -> list[dict]:
         # remove duplication from bookmarks (unique on url)
-        bookmarks = unique_dicts_in_list(self.bookmarks_links, 'url')
+        # bookmarks = unique_dicts_in_list(self.bookmarks_links, 'url')
+        new_bookmarks_map = {b['url']: b for b in self.bookmarks_links}
+        new_urls = set(new_bookmarks_map.keys())
+
         # get only new bookmarks for this user
-        stored_bookmarks = set(
-            self.user.bookmarks.all().values_list('url', flat=True))
-        bookmarks = [b for b in bookmarks if b['url'] not in stored_bookmarks]
+        stored_urls = self.user.bookmarks.all().values_list('url', flat=True)
+        stored_urls = set(stored_urls)
+        
+        new_urls -= stored_urls
+        del stored_urls
+        
         # clone from other users if any of those bookmarks are exist and fresh to save time
-        other_users_bookmarks = Bookmark.objects.exclude(user=self.user).filter(
-            url__in=[b['url'] for b in bookmarks],
-            process_status__gte=Bookmark.ProcessStatus.TEXT_PROCESSED.value,
-            scrapes__created_at__gte=timezone.now() - timedelta(days=100),
-        ).distinct('url')
-        other_users_urls = set(
-            other_users_bookmarks.values_list('url', flat=True))
-        bookmarks = [b for b in bookmarks if b['url'] not in other_users_urls]
+        others_bookmarks = (
+            Bookmark.objects
+                .exclude(user=self.user)
+                .filter(
+                    url__in=new_urls,
+                    process_status__gte=Bookmark.ProcessStatus.TEXT_PROCESSED.value
+                )
+                .values('url', 'scrapes__created_at')
+                .annotate(max_created_at=Max('scrapes__created_at'))
+                .filter(max_created_at__gte=timezone.now() - timedelta(days=100))
+                .distinct('url')
+        )
+        others_bookmarks_urls = set(others_bookmarks.values_list('url', flat=True))
+
+        new_urls -= others_bookmarks_urls
 
         # clone bookmarks
+        others_ids = []
+        more_data_for_clone = []
+        for others_bookmark in others_bookmarks:
+            others_ids.append(others_bookmark.id)
+            more_data_for_clone.append(new_bookmarks_map[others_bookmark.url])
+            
         tasks.deep_clone_bookmarks_task(
-            [b.id for b in other_users_bookmarks], self.user.id, self.id)
+            others_ids, self.user.id, self.id, more_data_for_clone)
 
-        return bookmarks
+        return list({url: new_bookmarks_map[url] for url in new_urls}.values())
 
     def init_bookmark(self, data):
         url = data.pop('url')
@@ -337,7 +356,7 @@ class Bookmark(models.Model):
         self.image.save(file_name, image, save=True)
         self.save(update_fields=['image_url'])
 
-    def deep_clone(self, user, parent_file=None):
+    def deep_clone(self, user, parent_file=None, **kwargs):
         """Clone bookmark with all relations for new user
         relations are ->
             - webpages -> meta tags / headers
@@ -364,10 +383,11 @@ class Bookmark(models.Model):
             new_bookmark.hidden = False
             new_bookmark.delete_scheduled_at = None
             new_bookmark.added_at = None
+            
+            for k, v in kwargs.items():
+                setattr(new_bookmark, k, v)
 
-            new_bookmark.save(
-                update_fields=['user', 'parent_file', 'favorite', 'hidden', 'delete_scheduled_at', 'added_at'])
-
+            new_bookmark.save()
             new_bookmark.update_process_status(self.ProcessStatus.CLONED.value)
 
             if self.webpage:

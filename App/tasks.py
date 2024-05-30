@@ -142,14 +142,20 @@ def store_webpage_task(bookmark_id, page_title, meta_tags, headers):
 
 
 @shared_task(queue='orm')
-def deep_clone_bookmarks_task(bookmark_ids, user_id, file_id):
+def deep_clone_bookmarks_task(bookmark_ids, user_id, file_id, more_data=[]):
     bookmarks_file = models.BookmarkFile.objects.get(id=file_id)
     bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
     user = User.objects.get(pk=user_id)
 
+    id_to_more_data = dict(zip(bookmark_ids, more_data))
     # TODO This is make too much operations in database so bulk doing them
     for bookmark in bookmarks:
-        bookmark.deep_clone(user, bookmarks_file)
+        data = id_to_more_data[bookmark.id]
+        added_at = data.pop('added_at', None)
+        if added_at:
+            added_at = timezone.datetime.fromtimestamp(int(added_at))
+
+        bookmark.deep_clone(user, bookmarks_file, added_at=added_at)
 
 
 @shared_task(queue='download_images')
