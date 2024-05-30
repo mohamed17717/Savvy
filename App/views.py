@@ -101,13 +101,13 @@ class BookmarkAPI(RUDLViewSet):
         instance.delete_scheduled_at = timezone.now() + timedelta(days=14)
         instance.save(update_fields=['hidden', 'delete_scheduled_at'])
 
-    @action(methods=['delete'], detail=False, url_path=r'(?P<pk>[^/.]+)/permanent-delete')
+    @action(methods=['delete'], detail=False, url_path=r'(?P<pk>[\d]+)/permanent-delete')
     def permanent_delete(self, request, pk):
         instance = get_object_or_404(self.get_queryset(), pk=pk)
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=['get'], detail=False, url_path=r'(?P<pk>[^/.]+)/restore')
+    @action(methods=['get'], detail=False, url_path=r'(?P<pk>[\d]+)/restore')
     def restore(self, request, pk):
         instance = get_object_or_404(self.get_queryset(), pk=pk)
         instance.hidden = False
@@ -115,13 +115,13 @@ class BookmarkAPI(RUDLViewSet):
         instance.save(update_fields=['hidden', 'delete_scheduled_at'])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=['delete'], detail=False, url_path=r'(?P<pk>[^/.]+)/archived-delete$')
+    @action(methods=['delete'], detail=False, url_path=r'(?P<pk>[\d]+)/archived-delete$')
     def archived_destroy(self, request, pk):
         instance = get_object_or_404(self.get_queryset(), pk=pk)
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=['get'], detail=False, url_path=r'(?P<uuid>[^/.]+)/open', permission_classes=[AllowAny])
+    @action(methods=['get'], detail=False, url_path=r'(?P<uuid>[\w-]+)/open', permission_classes=[AllowAny])
     def open_url(self, request, uuid):
         bookmark = get_object_or_404(models.Bookmark.objects.all(), uuid=uuid)
         models.BookmarkHistory.objects.create(bookmark=bookmark)
