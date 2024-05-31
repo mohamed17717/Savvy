@@ -15,6 +15,7 @@ from App import models, controllers, types
 
 from common.utils.array_utils import window_list
 from common.utils.html_utils import extract_image_from_meta
+from common.utils.time_utils import fromtimestamp
 
 from realtime.common.redis_utils import RedisPubSub
 
@@ -153,7 +154,7 @@ def deep_clone_bookmarks_task(bookmark_ids, user_id, file_id, more_data=[]):
         data = id_to_more_data[bookmark.id]
         added_at = data.pop('added_at', None)
         if added_at:
-            added_at = timezone.datetime.fromtimestamp(int(added_at))
+            added_at = fromtimestamp(added_at)
 
         bookmark.deep_clone(user, bookmarks_file, added_at=added_at)
 
@@ -207,7 +208,7 @@ def store_tags_task(user_id):
 
 
 @shared_task(queue='orm')
-def build_word_graph_task(user_id, callback=None):
+def build_word_graph_task(user_id, bookmark_ids=None):
     user = User.objects.get(pk=user_id)
 
     # TODO don't delete old graph otherwise update it with new data
@@ -222,8 +223,12 @@ def build_word_graph_task(user_id, callback=None):
         similarity.document_ids, similarity.similarity_matrix, user=user
     ).build()
 
-    if callback:
-        callback()
+    if bookmark_ids:
+        models.Bookmark.objects.filter(id__in=bookmark_ids).clustered()
+        RedisPubSub.pub({
+            'type': RedisPubSub.MessageTypes.FINISH,
+            'user_id': user_id,
+        })
 
 
 @shared_task(queue='orm')
@@ -326,16 +331,9 @@ def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iter
         for bookmark in uncompleted_bookmarks:
             bookmark.store_word_vector()
 
-        def graph_callback():
-            models.Bookmark.objects.filter(id__in=bookmark_ids).clustered()
-            RedisPubSub.pub({
-                'type': RedisPubSub.MessageTypes.FINISH,
-                'user_id': user_id,
-            })
-
         store_tags_task.apply_async(kwargs={'user_id': user_id})
         build_word_graph_task.apply_async(kwargs={
-            'user_id': user_id, 'callback': graph_callback
+            'user_id': user_id, 'bookmark_ids': bookmark_ids
         })
     else:
         cluster_checker_task.apply_async(
@@ -351,4 +349,5 @@ def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iter
 @shared_task(queue='orm')
 def delete_bookmarks_beat_task():
     today = timezone.now().date()
-    models.Bookmark.hidden_objects.filter(delete_scheduled_at__date__lte=today).delete()
+    models.Bookmark.hidden_objects.filter(
+        delete_scheduled_at__date__lte=today).delete()
