@@ -31,8 +31,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
-      - static_volume:/usr/src/app/staticfiles
-      - media_volume:/usr/src/app/media
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
     ports:
       - "8000:8000"
     depends_on:
@@ -68,8 +68,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
-      - static_volume:/usr/src/app/staticfiles
-      - media_volume:/usr/src/app/media
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
     depends_on:
       - db
       - redis
@@ -86,8 +86,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
-      - static_volume:/usr/src/app/staticfiles
-      - media_volume:/usr/src/app/media
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
     depends_on:
       - db
       - redis
@@ -104,8 +104,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
-      - static_volume:/usr/src/app/staticfiles
-      - media_volume:/usr/src/app/media
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
     depends_on:
       - db
       - redis
@@ -123,8 +123,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
-      - static_volume:/usr/src/app/staticfiles
-      - media_volume:/usr/src/app/media
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
     depends_on:
       - db
       - redis
@@ -141,8 +141,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
-      - static_volume:/usr/src/app/staticfiles
-      - media_volume:/usr/src/app/media
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
     depends_on:
       - db
       - redis
@@ -163,8 +163,8 @@ services:
   nginx:
     build: ./nginx
     volumes:
-      - static_volume:/usr/src/app/staticfiles
-      - media_volume:/usr/src/app/media
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
     ports:
       - "80:80"
     depends_on:
@@ -202,5 +202,3 @@ volumes:
   grafana_data:
   prometheus_data:
   redis_data:
-  static_volume:
-  media_volume:
