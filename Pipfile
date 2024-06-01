@@ -51,6 +51,7 @@ aioredis = "*"
 sse-starlette = "*"
 cairosvg = "*"
 readtime = "*"
+unidecode = "*"
 
 [dev-packages]
 
