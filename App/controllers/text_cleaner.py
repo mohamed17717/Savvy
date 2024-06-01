@@ -1,6 +1,7 @@
 import re
 import spacy
 import nltk
+import unidecode
 
 from nltk.stem import PorterStemmer, SnowballStemmer
 from nltk.stem.wordnet import WordNetLemmatizer
@@ -110,6 +111,10 @@ class TextCleaner:
 
     def double_spaces(self) -> 'TextCleaner':
         self.text = re.sub(r' {2,}', ' ', self.text).strip()
+        return self
+
+    def non_english(self) -> 'TextCleaner':
+        self.text = unidecode.unidecode(self.text)
         return self
 
     def stemming(self, lang='english', method='stem') -> 'TextCleaner':
