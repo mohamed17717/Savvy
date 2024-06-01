@@ -104,7 +104,7 @@ class BookmarkAPI(RUDLViewSet):
         elif self.action in all_actions:
             qs = models.Bookmark.all_objects.all().by_user(self.request.user)
 
-        return qs
+        return qs.prefetch_related('history')
 
     def perform_destroy(self, instance):
         instance.hidden = True
