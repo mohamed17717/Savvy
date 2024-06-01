@@ -173,14 +173,6 @@ class GraphNodeSerializer(serializers.ModelSerializer):
             return bookmarks.filter(nodes__path__contains=obj.id).distinct().count()
 
         def get_name(self, obj):
-            # if obj.tags.exists():
-            #     name = ', '.join(obj.tags.all().values_list('name', flat=True))
-            # else:
-            #     leafs_tags = models.Tag.objects.filter(
-            #         bookmarks__nodes__in=obj.leafs.all()).distinct().order_by('-weight')
-            #     name = ', '.join(leafs_tags.values_list(
-            #         'name', flat=True)[:5]) + '.....'
-
             from common.utils.drf.filters import FullTextSearchFilter
             from App import filters, views
 
