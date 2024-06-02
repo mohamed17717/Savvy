@@ -1,3 +1,4 @@
+import re
 import json
 import validators
 
@@ -12,8 +13,17 @@ class BookmarkFileManager(ABC):
     def __init__(self, file_field: FieldFile) -> None:
         super().__init__()
 
+    @property
+    def is_valid(self):
+        if self._is_valid is None:
+            raise ValidationError('Validate first before access the data')
+        elif self._is_valid is False:
+            raise ValidationError('Invalid data')
+
+        return self._is_valid
+
     @abstractmethod
-    def validate(self, raise_exception: bool = False) -> bool:
+    def validate(self) -> bool:
         pass
 
     @abstractmethod
@@ -23,48 +33,40 @@ class BookmarkFileManager(ABC):
 
 class BookmarkHTMLFileManager(BookmarkFileManager):
     def __init__(self, file_field: FieldFile):
-        self.src = file_field.read().decode('utf8')
-        self.soup = None
-        self.is_valid = None
+        self.file = file_field
 
-    # --getters--
-    def __get_soup(self):
-        self.soup = self.soup or BeautifulSoup(self.src, 'lxml')
-        return self.soup
+        self._is_valid = None
+        self._soup = None
 
-    def __get_is_valid(self):
-        is_valid = self.is_valid
+    @property
+    def soup(self):
+        self.file.seek(0)
+        self._soup = self._soup or BeautifulSoup(self.get_src(), 'lxml')
+        return self._soup
 
-        if is_valid is None:
-            raise ValidationError('Validate first before access the data')
-        elif is_valid is False:
-            raise ValidationError('Invalid data')
+    def get_src(self, length: int = None):
+        self.file.seek(0)
+        content = self.file.read(length)
+        return content.decode('utf8')
 
-        return is_valid
+    def validate(self):
+        def contain_links():
+            regex = r'<a\s+?href=[\"\']http[s]{0,1}://.+?[\"\']'
+            regex = re.compile(regex, re.IGNORECASE)
+            match = re.search(regex, self.get_src(3000))
+            return bool(match)
 
-    # --validation--
-    def __validate_contain_links(self):
-        soup = self.__get_soup()
-        contain_links = soup.select_one('a[href]')
-        return bool(contain_links)
-
-    def validate(self, raise_exception=False):
-        # TODO keep only absolute links -- should have a schema too
-        required = [self.__validate_contain_links()]
-
-        self.is_valid = all(required)
-
-        if not self.is_valid and raise_exception:
-            raise ValidationError('Not valid html file.')
+        checks = [contain_links]
+        if self._is_valid is None:
+            self._is_valid = all([check() for check in checks])
 
         return self.is_valid
 
-    # --generate links--
-    def __extract(self):
-        soup = self.__get_soup()
+    def get_links(self):
+        self.validate()
 
         links = []
-        for item in soup.select('a'):
+        for item in self.soup.select('a'):
             attrs = item.attrs.copy()
 
             attrs['url'] = attrs.pop('href')
@@ -74,54 +76,30 @@ class BookmarkHTMLFileManager(BookmarkFileManager):
             links.append(attrs)
         return links
 
-    def get_links(self):
-        is_valid = self.__get_is_valid()
-        if is_valid:
-            return self.__extract()
-
 
 class BookmarkJSONFileManager(BookmarkFileManager):
     def __init__(self, file_field: FieldFile):
-        # TODO validate is valid json format or not
         self.data = json.loads(file_field.read().decode('utf8'))
-        self.is_valid = None
+        self._is_valid = None
 
-    # --getters--
-    def __get_is_valid(self):
-        is_valid = self.is_valid
+    def validate(self):
+        def data_is_list():
+            return isinstance(self.data, list)
 
-        if is_valid is None:
-            raise ValidationError('Validate first before access the data')
-        elif is_valid is False:
-            raise ValidationError('Invalid data')
+        def items_are_str():
+            return all([isinstance(i, str) for i in self.data])
 
-        return is_valid
+        def items_are_links():
+            return all([bool(validators.url(i)) for i in self.data])
 
-    # --validation--
-    def validate(self, raise_exception=False):
-        required = [
-            # its an array
-            lambda: isinstance(self.data, list),
-            # all items are str
-            lambda: all([isinstance(i, str) for i in self.data]),
-            # all items are urls
-            lambda: all([bool(validators.url(i)) for i in self.data]),
+        checks = [
+            data_is_list, items_are_str, items_are_links
         ]
-        # lazy execute
-        self.is_valid = all([func() for func in required])
-
-        if not self.is_valid and raise_exception:
-            raise ValidationError('Not valid html file.')
+        if self._is_valid is None:
+            self._is_valid = all([check() for check in checks])
 
         return self.is_valid
 
-    # --generate links--
-    def __build_link(self, link):
-        """This function make sure output from both get_links are same structure"""
-        return {'url': link}
-
     def get_links(self):
-        is_valid = self.__get_is_valid()
-        if is_valid:
-            links = map(self.__build_link, self.data)
-            return list(links)
+        self.validate()
+        return [{'url': url} for url in self.data]
