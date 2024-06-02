@@ -57,8 +57,16 @@ def update_sent_state(sender=None, headers=None, **kwargs):
 
 
 @shared_task(queue='orm')
-def store_bookmarks_task(parent_id: int, bookmarks_data: list[dict]):
+def store_bookmarks_task(parent_id: int):
     parent = models.BookmarkFile.objects.get(id=parent_id)
+    bookmarks_data = parent.cleaned_bookmarks_links()
+
+    RedisPubSub.pub({
+        'type': RedisPubSub.MessageTypes.FILE_UPLOAD,
+        'user_id': parent.user.id,
+        'total_bookmarks': len(bookmarks_data),
+    })
+
 
     bookmarks = tuple(map(parent.init_bookmark, bookmarks_data))
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
