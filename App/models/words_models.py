@@ -8,14 +8,11 @@ User = get_user_model()
 
 class WordWeight(models.Model):
     # Relations
-    # TODO in future -> this field become generic relation
-    # to relate with (bookmark / youtube / linkedin / etc...)
     bookmark = models.ForeignKey(
         'App.Bookmark', on_delete=models.CASCADE, related_name='words_weights')
 
     # Required
-    # TODO make it 64 when cleaner work fine
-    word = models.CharField(max_length=2048)
+    word = models.CharField(max_length=64, db_index=True)
     weight = models.PositiveSmallIntegerField()
 
     important = models.BooleanField(default=False)
