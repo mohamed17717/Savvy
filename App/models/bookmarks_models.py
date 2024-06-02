@@ -106,13 +106,10 @@ class BookmarkFile(models.Model):
     @property
     def bookmarks_links(self) -> list[dict]:
         file_obj = self.file_obj
-        file_obj.validate(raise_exception=True)
-
         return file_obj.get_links()
 
     def cleaned_bookmarks_links(self) -> list[dict]:
         # remove duplication from bookmarks (unique on url)
-        # bookmarks = unique_dicts_in_list(self.bookmarks_links, 'url')
         new_bookmarks_map = {b['url']: b for b in self.bookmarks_links}
         new_urls = set(new_bookmarks_map.keys())
 
@@ -150,7 +147,6 @@ class BookmarkFile(models.Model):
 
         tasks.deep_clone_bookmarks_task(
             others_ids, self.user.id, self.id, more_data_for_clone)
-
         return list({url: new_bookmarks_map[url] for url in new_urls}.values())
 
     def init_bookmark(self, data):
