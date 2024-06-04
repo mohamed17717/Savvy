@@ -42,7 +42,9 @@ class UserProgressSingleton:
         self.total += total
 
     def change(self, data):
-        if data['type'] == RedisPubSub.MessageTypes.FILE_UPLOAD:
+        if data['type'] == RedisPubSub.MessageTypes.INIT_UPLOAD:
+            self.message = 'Start Uploading'
+        elif data['type'] == RedisPubSub.MessageTypes.FILE_UPLOAD:
             total = data['total_bookmarks']
             self.set_total(total)
             self.message = f'new uploaded bookmarks: {total}'
