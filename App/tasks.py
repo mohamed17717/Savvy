@@ -67,18 +67,19 @@ def store_bookmarks_task(parent_id: int):
         'total_bookmarks': len(bookmarks_data),
     })
 
-
     bookmarks = tuple(map(parent.init_bookmark, bookmarks_data))
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
 
+    # TODO refactor creating website and move it to another task
     domains = set([b.domain for b in bookmarks])
-    website_objects = []
-    for domain in domains:
-        website_objects.append(models.Website(user=parent.user, domain=domain))
-
+    website_objects = [
+        models.Website(user=parent.user, domain=domain)
+        for domain in domains
+    ]
     models.Website.objects.bulk_create(
         website_objects, batch_size=250, ignore_conflicts=True)
 
+    # Add relation between bookmark and website & store favicon to website
     website_relation_map = {
         w.domain: w for w in parent.user.websites.filter(domain__in=domains)}
     websites = []
@@ -92,6 +93,8 @@ def store_bookmarks_task(parent_id: int):
     models.Bookmark.objects.bulk_update(bookmarks, ['website'], batch_size=250)
 
     batch_bookmarks_to_tasks.delay([b.id for b in bookmarks])
+
+    return f'BookmarkFile<{parent_id}> [Created] {len(bookmarks_data)} Bookmarks'
 
 
 @shared_task(queue='orm')
@@ -114,6 +117,8 @@ def batch_bookmarks_to_tasks(bookmark_ids: list[int]):
     with allow_join_result():
         job.get()
 
+    return f'[Batched ({len(bookmark_ids)})] {bookmark_ids}'
+
 
 @shared_task(queue='scrapy')
 def crawl_bookmarks_task(bookmark_ids: list[int]):
@@ -122,6 +127,8 @@ def crawl_bookmarks_task(bookmark_ids: list[int]):
     ids = json.dumps(bookmark_ids)
     command = ['python', 'manage.py', 'crawl_bookmarks', ids]
     subprocess.run(command, capture_output=True, text=True, check=True)
+
+    return f'[Crawled ({len(bookmark_ids)})] {bookmark_ids}'
 
 
 @shared_task(queue='orm')
@@ -135,18 +142,21 @@ def bulk_store_weights_task(bookmark_ids: list[int]):
     if words_weights:
         models.WordWeight.objects.bulk_create(words_weights, batch_size=1000)
 
+    return f'[BulkStoreWeights ({len(bookmark_ids)})] {bookmark_ids}'
+
 
 @shared_task(queue='orm')
 def store_webpage_task(bookmark_id, page_title, meta_tags, headers):
     with transaction.atomic():
         bookmark = models.Bookmark.objects.get(id=bookmark_id)
+        # TODO make title way shorter
         webpage = models.BookmarkWebpage.objects.create(
-            bookmark=bookmark, title=page_title[:2048]
-        )
-
-        store_bookmark_image_task.delay(bookmark_id, meta_tags)
+            bookmark=bookmark, title=page_title[:2048])
         models.WebpageMetaTag.bulk_create(webpage, meta_tags)
         models.WebpageHeader.bulk_create(webpage, headers)
+
+    store_bookmark_image_task.delay(bookmark_id, meta_tags)
+    return f'[StoreWebpage] Bookmark<{bookmark_id}> Meta<{len(meta_tags)}> Header<{len(headers)}>'
 
 
 @shared_task(queue='orm')
@@ -165,6 +175,8 @@ def deep_clone_bookmarks_task(bookmark_ids, user_id, file_id, more_data=[]):
 
         bookmark.deep_clone(user, bookmarks_file, added_at=added_at)
 
+    return f'[DeepClone ({len(bookmark_ids)})] {bookmark_ids}'
+
 
 @shared_task(queue='download_images')
 def store_bookmark_image_task(bookmark_id, meta_tags=None, image_url=None):
@@ -180,6 +192,8 @@ def store_bookmark_image_task(bookmark_id, meta_tags=None, image_url=None):
                 'store_bookmark_image_task(%s, %s)' % (bookmark_id, image_url))
             raise e
 
+    return f'[StoreImage] Bookmark<{bookmark_id}>'
+
 
 @shared_task(queue='download_images')
 def schedule_store_bookmark_image_task(bookmark_id, image_url):
@@ -188,6 +202,8 @@ def schedule_store_bookmark_image_task(bookmark_id, image_url):
         'bookmark_id': bookmark_id,
         'image_url': image_url
     }, countdown=wait_time)
+
+    return f'[ScheduleStoreImage] Bookmark<{bookmark_id}>'
 
 
 @shared_task(queue='orm')
@@ -205,6 +221,8 @@ def store_weights_task(bookmark_id):
             bookmark.store_word_vector()
             bookmark.update_process_status(Status.TEXT_PROCESSED.value)
 
+    return f'[StoreWeights] Bookmark<{bookmark_id}>'
+
 
 @shared_task(queue='orm')
 def store_tags_task(user_id):
@@ -212,6 +230,8 @@ def store_tags_task(user_id):
     bookmark_ids = user.bookmarks.filter(
         tags__isnull=True).distinct().values_list('id', flat=True)
     models.Tag.update_tags_with_new_bookmarks(list(bookmark_ids))
+
+    return f'[StoreTags] User<{user_id}> Bookmarks<{len(bookmark_ids)}> {bookmark_ids}'
 
 
 @shared_task(queue='orm')
@@ -237,6 +257,8 @@ def build_word_graph_task(user_id, bookmark_ids=None):
             'user_id': user_id,
         })
 
+    return f'[BuildGraph] User<{user_id}> Bookmarks<{len(bookmark_ids)}> {bookmark_ids}'
+
 
 @shared_task(queue='orm')
 def store_bookmark_file_analytics_task(parent_id):
@@ -249,6 +271,8 @@ def store_bookmark_file_analytics_task(parent_id):
     ).count()
     parent.failed_links_count = parent.total_links_count - parent.succeeded_links_count
     parent.save()
+
+    return f'StoreFileAnalytics<{parent_id}>'
 
 
 @shared_task(queue='orm')
@@ -270,6 +294,8 @@ def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
     store_bookmark_file_analytics_task.delay(parent.id)
     cluster_checker_task.delay(
         user_id=user_id, bookmark_ids=bookmark_ids, iteration=0)
+
+    return f'[PostBatched ({len(bookmark_ids)})] {bookmark_ids}'
 
 
 @shared_task(queue='orm')
@@ -352,9 +378,16 @@ def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iter
             }, countdown=wait_time
         )
 
+        return f'[ClusterChecker] (failed) Bookmarks<{len(bookmark_ids)}> {bookmark_ids}'
+
+    return f'[ClusterChecker] (succeed) Bookmarks<{len(bookmark_ids)}> {bookmark_ids}'
+
 
 @shared_task(queue='orm')
 def delete_bookmarks_beat_task():
     today = timezone.now().date()
-    models.Bookmark.hidden_objects.filter(
-        delete_scheduled_at__date__lte=today).delete()
+    bookmarks = models.Bookmark.hidden_objects.filter(
+        delete_scheduled_at__date__lte=today)
+    bookmarks.delete()
+
+    return f'[DeleteBookmarks {today}] ({len(bookmarks)})'
