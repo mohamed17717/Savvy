@@ -17,9 +17,15 @@ class RedisPubSub:
     }
 
     class MessageTypes:
+        INIT_UPLOAD = 0
         FILE_UPLOAD = 1
         BOOKMARK_CHANGE = 2
         FINISH = 3
+
+    class InitUploadData(BaseModel, extra='allow'):
+        user_id: int
+        type: int = Field(
+            default_factory=lambda: RedisPubSub.MessageTypes.INIT_UPLOAD)
 
     class FileUploadData(BaseModel, extra='allow'):
         user_id: int
@@ -44,6 +50,8 @@ class RedisPubSub:
         _type = data.get('type')
         if _type is None:
             raise ValueError('type is required')
+        elif _type == cls.MessageTypes.INIT_UPLOAD:
+            data = cls.InitUploadData(**data)
         elif _type == cls.MessageTypes.FILE_UPLOAD:
             data = cls.FileUploadData(**data)
         elif _type == cls.MessageTypes.BOOKMARK_CHANGE:
