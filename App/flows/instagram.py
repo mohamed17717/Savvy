@@ -23,7 +23,7 @@ class InstagramBookmarkHooks(BookmarkHooks):
             from App import tasks
 
             batch_size = 30
-            id_groups = window_list(bookmark_ids, batch_size, batch_size)
+            id_groups = window_list(bookmark_ids, batch_size)
 
             for group in id_groups:
                 tasks.crawl_bookmarks_task.delay(group)

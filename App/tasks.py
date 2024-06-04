@@ -103,9 +103,8 @@ def batch_bookmarks_to_tasks(bookmark_ids: list[int]):
 
     tasks = []
     for hook_method, hook_group in batches:
-        id_groups = window_list(hook_group, batch_size, batch_size)
+        id_groups = window_list(hook_group, batch_size)
         tasks.extend([hook_method.s(group) for group in id_groups])
-        # .set(queue='scrapy')
 
     callback = (
         post_batch_bookmarks_task.s(bookmark_ids=bookmark_ids).set(queue='orm')

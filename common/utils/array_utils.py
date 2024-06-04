@@ -1,11 +1,14 @@
 from typing import Generator
 
 
-def window_list(data: list, size: int, step: int = 1) -> Generator[list, None, None]:
+def window_list(data: list, size: int) -> Generator[list, None, None]:
+    if size == 0:
+        raise ZeroDivisionError
+
     length = len(data)
     if length < size:
         size = length
-    for i in range(0, length-size+1, step):
+    for i in range(0, length, size):
         yield data[i: i + size]
 
 
