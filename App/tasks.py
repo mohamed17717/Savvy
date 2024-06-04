@@ -17,7 +17,7 @@ from common.utils.array_utils import window_list
 from common.utils.html_utils import extract_image_from_meta
 from common.utils.time_utils import fromtimestamp
 
-from realtime.common.redis_utils import RedisPubSub
+from realtime.common.redis_utils import Publish
 
 
 logger = logging.getLogger(__name__)
@@ -61,11 +61,7 @@ def store_bookmarks_task(parent_id: int):
     parent = models.BookmarkFile.objects.get(id=parent_id)
     bookmarks_data = parent.cleaned_bookmarks_links()
 
-    RedisPubSub.pub({
-        'type': RedisPubSub.MessageTypes.FILE_UPLOAD,
-        'user_id': parent.user.id,
-        'total_bookmarks': len(bookmarks_data),
-    })
+    Publish.start_file(parent.user.id, len(bookmarks_data))
 
     bookmarks = tuple(map(parent.init_bookmark, bookmarks_data))
     models.Bookmark.objects.bulk_create(bookmarks, batch_size=250)
@@ -252,10 +248,7 @@ def build_word_graph_task(user_id, bookmark_ids=None):
 
     if bookmark_ids:
         models.Bookmark.objects.filter(id__in=bookmark_ids).clustered()
-        RedisPubSub.pub({
-            'type': RedisPubSub.MessageTypes.FINISH,
-            'user_id': user_id,
-        })
+        Publish.finish_upload(user_id)
 
     return f'[BuildGraph] User<{user_id}> Bookmarks<{len(bookmark_ids)}> {bookmark_ids}'
 

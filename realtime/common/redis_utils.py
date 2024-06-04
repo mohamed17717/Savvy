@@ -78,3 +78,38 @@ class RedisPubSub:
             message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
             if message and message['type'] == 'message':
                 await callback(json.loads(message['data']))
+
+
+class Publish:
+    """Work as shortcut for publish messages"""
+
+    @staticmethod
+    def init_upload(user_id: int):
+        RedisPubSub.pub({
+            'type': RedisPubSub.MessageTypes.INIT_UPLOAD,
+            'user_id': user_id,
+        })
+
+    @staticmethod
+    def start_file(user_id, total_bookmarks):
+        RedisPubSub.pub({
+            'type': RedisPubSub.MessageTypes.FILE_UPLOAD,
+            'user_id': user_id,
+            'total_bookmarks': total_bookmarks,
+        })
+
+    @staticmethod
+    def finish_upload(user_id: int):
+        RedisPubSub.pub({
+            'type': RedisPubSub.MessageTypes.FINISH,
+            'user_id': user_id,
+        })
+
+    @staticmethod
+    def update_status(user_id, bookmark_id, status):
+        RedisPubSub.pub({
+            'type': RedisPubSub.MessageTypes.BOOKMARK_CHANGE,
+            'user_id': user_id,
+            'bookmark_id': bookmark_id,
+            'status': status
+        })

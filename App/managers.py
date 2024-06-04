@@ -1,7 +1,7 @@
 from django.db import models
 from django.db.models.signals import post_save, pre_save
 
-from realtime.common.redis_utils import RedisPubSub
+from realtime.common.redis_utils import Publish
 
 
 class BulkSignalsQuerySet(models.QuerySet):
@@ -48,12 +48,7 @@ class BookmarkQuerySet(models.QuerySet):
         if result:
             user = result[0].user
             for obj in result:
-                RedisPubSub.pub({
-                    'type': RedisPubSub.MessageTypes.BOOKMARK_CHANGE,
-                    'user_id': user.id,
-                    'bookmark_id': obj.id,
-                    'status': obj.process_status
-                })
+                Publish.update_status(user.id, obj.id, obj.process_status)
 
         return result
 
@@ -67,12 +62,7 @@ class BookmarkQuerySet(models.QuerySet):
             if obj.process_status >= new_status:
                 continue
             obj.process_status = new_status
-            RedisPubSub.pub({
-                'type': RedisPubSub.MessageTypes.BOOKMARK_CHANGE,
-                'user_id': user_id,
-                'bookmark_id': obj.id,
-                'status': new_status
-            })
+            Publish.update_status(user_id, obj.id, new_status)
 
         return self.bulk_update(objs, ['process_status'])
 

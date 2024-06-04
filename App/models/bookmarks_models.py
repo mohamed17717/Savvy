@@ -17,7 +17,7 @@ from common.utils.time_utils import fromtimestamp
 
 from App import choices, controllers, managers, flows, tasks
 
-from realtime.common.redis_utils import RedisPubSub
+from realtime.common.redis_utils import Publish
 
 User = get_user_model()
 
@@ -411,12 +411,7 @@ class Bookmark(models.Model):
         self.process_status = new_status
         self.save(update_fields=['process_status'])
 
-        RedisPubSub.pub({
-            'type': RedisPubSub.MessageTypes.BOOKMARK_CHANGE,
-            'user_id': self.user.id,
-            'bookmark_id': self.id,
-            'status': new_status
-        })
+        Publish.update_status(self.user.id, self.id, new_status)
 
 
 class BookmarkHistory(models.Model):
