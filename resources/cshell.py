@@ -1,4 +1,9 @@
 
+import os
+import glob
+import shutil
+
+
 from App import models, types
 from django.db.models import Count
 from django.db import models as dj_models
@@ -52,6 +57,28 @@ def delete_everything():
                 model.objects.all().delete()
         except Exception:
             pass
+
+def system_zero():
+    for f in glob.glob("./logs/*.log"):
+        print('[remove] ', f)
+        os.remove(f)
+    for d in glob.glob('./media/*'):
+        print('[remove] ', d)
+        shutil.rmtree(d)
+    print('delete database')
+    delete_everything()
+
+
+def export_services_logs():
+    # not work from shell
+    services = [
+        'django', 
+        'celery_orm_worker', 
+        'celery_scrapy_worker',
+        'celery_download_images_worker',
+    ]
+    for s in services:
+        os.system(f'docker-compose logs {s} > {s}.log')
 
 
 def build_graph():
