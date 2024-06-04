@@ -4,14 +4,23 @@ from django.dispatch import receiver
 
 from App import models, tasks
 
+from realtime.common.redis_utils import RedisPubSub
+
 
 @receiver(post_save, sender=models.BookmarkFile)
 def on_create_bookmark_file_extract_urls(sender, instance, created, **kwargs):
     if not created:
         return
 
-    transaction.on_commit(
-        lambda: tasks.store_bookmarks_task.delay(instance.id))
+    def event():
+        tasks.store_bookmarks_task.delay(instance.id)
+
+        RedisPubSub.pub({
+            'type': RedisPubSub.MessageTypes.INIT_UPLOAD,
+            'user_id': instance.user.id,
+        })
+
+    transaction.on_commit(event)
 
 
 @receiver(pre_save, sender=models.BookmarkFile)
