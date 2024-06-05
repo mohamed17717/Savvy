@@ -3,7 +3,7 @@ import spacy
 import nltk
 import unidecode
 
-from nltk.stem import PorterStemmer, SnowballStemmer
+from nltk.stem import SnowballStemmer # PorterStemmer,
 from nltk.stem.wordnet import WordNetLemmatizer
 
 import arabicstopwords.arabicstopwords as ar_stops

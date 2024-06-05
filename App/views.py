@@ -15,7 +15,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-
 from App import serializers, filters, models
 
 from common.utils.drf.viewsets import CRDLViewSet, RULViewSet, RUDLViewSet
