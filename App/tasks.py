@@ -6,12 +6,13 @@ from django.db import transaction
 from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+from django.contrib.postgres.search import SearchVector
 
 from celery import shared_task, current_app, chord
 from celery.signals import after_task_publish
 from celery.result import allow_join_result
 
-from App import models, controllers, types
+from App import models, controllers, types, views
 
 from common.utils.array_utils import window_list
 from common.utils.html_utils import extract_image_from_meta
@@ -276,6 +277,22 @@ def store_bookmark_file_analytics_task(parent_id):
 
 
 @shared_task(queue='orm')
+def index_search_vector_task(bookmark_ids):
+    search_fields = views.BookmarkAPI.search_fields
+    bookmarks = (
+        models.Bookmark.objects.filter(id__in=bookmark_ids)
+        .annotate(inline_search_vector=SearchVector(*search_fields))
+    )
+    for bm in bookmarks:
+        bm.search_vector = bm.inline_search_vector
+
+    models.Bookmark.objects.bulk_update(
+        bookmarks, ['search_vector'], batch_size=250)
+
+    return f'[IndexedSearchVector ({len(bookmark_ids)})] {bookmark_ids}'
+
+
+@shared_task(queue='orm')
 def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
     if not bookmark_ids:
         return
@@ -368,6 +385,8 @@ def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iter
         build_word_graph_task.apply_async(kwargs={
             'user_id': user_id, 'bookmark_ids': bookmark_ids
         })
+        index_search_vector_task.apply_async(
+            kwargs={'bookmark_ids': bookmark_ids})
     else:
         cluster_checker_task.apply_async(
             kwargs={
