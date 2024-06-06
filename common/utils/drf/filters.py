@@ -48,13 +48,15 @@ class FullTextSearchFilter(SearchFilter):
         if not search_fields or (not search_terms and not exclude_terms):
             return queryset
 
-        vector = SearchVector(*search_fields)
-        queryset = queryset.annotate(search=vector)
+        if not hasattr(queryset.model, 'search_vector'):
+            vector = SearchVector(*search_fields)
+            queryset = queryset.annotate(search_vector=vector)
+
         if search_terms:
-            queryset = queryset.filter(search=search_terms)
+            queryset = queryset.filter(search_vector=search_terms)
         if exclude_terms:
-            queryset = queryset.exclude(search=exclude_terms)
+            queryset = queryset.exclude(search_vector=exclude_terms)
 
         if distinct:
-            return queryset.distinct('id')
+            return queryset.distinct()
         return queryset
