@@ -5,6 +5,8 @@ import uuid
 
 from django.db import models, transaction
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.search import SearchVectorField
+from django.contrib.postgres.indexes import GinIndex
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
 from django.core.exceptions import ValidationError
 from django.core.files.base import ContentFile
@@ -211,6 +213,8 @@ class Bookmark(models.Model):
     delete_scheduled_at = models.DateTimeField(blank=True, null=True)
     added_at = models.DateTimeField(blank=True, null=True)
 
+    search_vector = SearchVectorField(blank=True, null=True)
+
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -218,6 +222,11 @@ class Bookmark(models.Model):
     objects = managers.BookmarkManager()
     hidden_objects = managers.BookmarkHiddenManager()
     all_objects = managers.AllBookmarkManager()
+
+    class Meta:
+        indexes = [
+            GinIndex(fields=['search_vector'])
+        ]
 
     def __str__(self) -> str:
         return f'{self.id} - {self.url}'
