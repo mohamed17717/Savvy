@@ -2,6 +2,8 @@ import re
 
 
 def url_builder(url, domain):
+    if url.startswith('data:image'):
+        return url
     if url.startswith('://'):
         url = 'https' + url
     if not url.startswith('http') and not url.startswith('/'):
