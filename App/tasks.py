@@ -12,7 +12,7 @@ from celery import shared_task, current_app, chord
 from celery.signals import after_task_publish
 from celery.result import allow_join_result
 
-from App import models, controllers, types, views
+from App import models, controllers, types
 
 from common.utils.array_utils import window_list
 from common.utils.html_utils import extract_image_from_meta
@@ -278,6 +278,7 @@ def store_bookmark_file_analytics_task(parent_id):
 
 @shared_task(queue='orm')
 def index_search_vector_task(bookmark_ids):
+    from App import views
     search_fields = views.BookmarkAPI.search_fields
     bookmarks = (
         models.Bookmark.objects.filter(id__in=bookmark_ids)
