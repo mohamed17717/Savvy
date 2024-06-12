@@ -71,7 +71,6 @@ class BookmarkAPI(RUDLViewSet):
             return ['-history__created_at']
         return ['nodes__id', 'added_at']  # 'id',
 
-
     def get_serializer_class(self):
         serializer_class = self.serializer_class
 
@@ -94,6 +93,7 @@ class BookmarkAPI(RUDLViewSet):
 
         archive_actions = ['permanent_delete', 'restore', 'archived_destroy']
         all_actions = ['open_url']
+        print(f'{self.action=}')
 
         if self.action == 'archived_list':
             qs = models.Bookmark.hidden_objects.all().by_user(self.request.user)
@@ -110,6 +110,7 @@ class BookmarkAPI(RUDLViewSet):
 
         elif self.action in archive_actions:
             qs = models.Bookmark.hidden_objects.all().by_user(self.request.user)
+            print('archive_actions', list(qs.values_list('id', flat=True)))
         elif self.action in all_actions:
             qs = models.Bookmark.all_objects.all().by_user(self.request.user)
 
@@ -137,7 +138,7 @@ class BookmarkAPI(RUDLViewSet):
         self.perform_restore(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=['delete'], detail=False, url_path=r'(?P<pk>[\d]+)/archived-delete$')
+    @action(methods=['delete'], detail=False, url_path=r'(?P<pk>[\d]+)/archived-delete')
     def archived_destroy(self, request, pk):
         instance = get_object_or_404(self.get_queryset(), pk=pk)
         self.perform_destroy(instance)
