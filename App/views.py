@@ -93,7 +93,6 @@ class BookmarkAPI(RUDLViewSet):
 
         archive_actions = ['permanent_delete', 'restore', 'archived_destroy']
         all_actions = ['open_url']
-        print(f'{self.action=}')
 
         if self.action == 'archived_list':
             qs = models.Bookmark.hidden_objects.all().by_user(self.request.user)
@@ -110,7 +109,6 @@ class BookmarkAPI(RUDLViewSet):
 
         elif self.action in archive_actions:
             qs = models.Bookmark.hidden_objects.all().by_user(self.request.user)
-            print('archive_actions', list(qs.values_list('id', flat=True)))
         elif self.action in all_actions:
             qs = models.Bookmark.all_objects.all().by_user(self.request.user)
 
