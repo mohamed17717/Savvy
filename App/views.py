@@ -64,13 +64,19 @@ class BookmarkAPI(RUDLViewSet):
     filterset_class = filters.BookmarkFilter
     search_fields = ['words_weights__word', 'title', 'url']
     ordering_fields = ['id', 'parent_file_id']
-    ordering = ['nodes__id', 'added_at'] # 'id', 
+
+    @property
+    def ordering(self):
+        if self.action == 'history_list':
+            return ['-history__created_at']
+        return ['nodes__id', 'added_at']  # 'id',
+
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
 
         list_actions = [
-            'list', 'archived_list', 'deleted_list', 'favorite_list', 'retrieve'
+            'list', 'archived_list', 'deleted_list', 'favorite_list', 'retrieve', 'history_list'
         ]
 
         if self.action == 'update' or self.action == 'partial_update':
@@ -98,6 +104,9 @@ class BookmarkAPI(RUDLViewSet):
         elif self.action == 'favorite_list':
             qs = self.request.user.bookmarks.all()
             qs = qs.filter(favorite=True)
+        elif self.action == 'history_list':
+            qs = self.request.user.bookmarks.all()
+            qs = qs.filter(history__isnull=False)
 
         elif self.action in archive_actions:
             qs = models.Bookmark.hidden_objects.all().by_user(self.request.user)
@@ -150,6 +159,10 @@ class BookmarkAPI(RUDLViewSet):
 
     @action(methods=['get'], detail=False, url_path='favorite-list')
     def favorite_list(self, request):
+        return super().list(request)
+
+    @action(methods=['get'], detail=False, url_path='history-list')
+    def history_list(self, request):
         return super().list(request)
 
 
