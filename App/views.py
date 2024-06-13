@@ -15,7 +15,6 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
-
 from App import serializers, filters, models
 
 from common.utils.drf.viewsets import CRDLViewSet, RULViewSet, RUDLViewSet
@@ -187,9 +186,7 @@ class TagAPI(RULViewSet):
 
         qs = self.request.user.tags.all()
 
-        if self.action == 'update' or self.action == 'partial_update':
-            pass
-        elif self.action == 'list':
+        if self.action == 'list':
             limit = math.ceil(qs.count() * 0.1)
             limit = minmax(limit, 10, 50)
             qs = qs.order_by('-weight')[:limit]
@@ -263,3 +260,83 @@ class BookmarkFilterChoices:
 
     class Topic(Base):
         group_by = ['tags__id', 'tags__name']
+
+
+class TagFilterChoicesListAPI(ListAPIView):
+    serializer_class = serializers.TagSerializer.TagFilterChoicesList
+    ordering = ['-weight']
+    
+    def get_filtered_bookmarks(self, request):
+        from common.utils.drf.filters import FullTextSearchFilter
+
+        bookmarks = request.user.bookmarks.all()
+        bookmarks = filters.BookmarkFilter(
+            request.GET, queryset=bookmarks).qs
+        bookmarks = FullTextSearchFilter().filter_queryset(
+            request, bookmarks, BookmarkAPI, distinct=False)
+
+        return bookmarks
+
+    def get_bookmarks(self):
+        bookmarks = self.get_filtered_bookmarks(self.request)
+        return bookmarks
+
+    def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return models.Tag.objects.none()
+
+        bookmarks = self.get_bookmarks()
+        qs = self.request.user.tags.all().filter(
+            bookmarks__in=bookmarks
+        ).annotate(
+            num_bookmarks=Count('bookmarks')
+        ).filter(
+            num_bookmarks__gt=0
+        )
+
+        search_query = self.request.GET.get('tags_search')
+        if search_query:
+            qs = qs.filter(name__icontains=search_query)
+
+        return qs
+
+
+
+class WebsiteFilterChoicesListAPI(ListAPIView):
+    serializer_class = serializers.WebsiteSerializer.WebsiteFilterChoicesList
+    
+    def get_filtered_bookmarks(self, request):
+        from common.utils.drf.filters import FullTextSearchFilter
+
+        bookmarks = request.user.bookmarks.all()
+        bookmarks = filters.BookmarkFilter(
+            request.GET, queryset=bookmarks).qs
+        bookmarks = FullTextSearchFilter().filter_queryset(
+            request, bookmarks, BookmarkAPI, distinct=False)
+
+        return bookmarks
+
+    def get_bookmarks(self):
+        bookmarks = self.get_filtered_bookmarks(self.request)
+        return bookmarks
+
+    def get_queryset(self):
+        if self.request.user.is_anonymous:
+            return models.Website.objects.none()
+
+        bookmarks = self.get_bookmarks()
+        qs = self.request.user.websites.all().filter(
+            bookmarks__in=bookmarks
+        ).annotate(
+            num_bookmarks=Count('bookmarks')
+        ).filter(
+            num_bookmarks__gt=0
+        )
+
+        search_query = self.request.GET.get('website_search')
+        if search_query:
+            qs = qs.filter(domain__icontains=search_query)
+
+        return qs
+
+
