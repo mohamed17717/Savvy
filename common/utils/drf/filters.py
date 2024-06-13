@@ -42,7 +42,7 @@ class FullTextSearchFilter(SearchFilter):
 
     def filter_queryset(self, request, queryset, view, distinct=True):
         search_fields = self.get_search_fields(view, request)
-        search_terms = self.get_raw_search_terms(request, search_param='search')
+        search_terms = self.get_raw_search_terms(request, search_param=getattr(view, 'search_param', 'search'))
         exclude_terms = self.get_raw_search_terms(request, search_param='exclude')
 
         if not search_fields or (not search_terms and not exclude_terms):
