@@ -233,110 +233,49 @@ class WordGraphNodeAPI(APIView):
 
 
 class BookmarkFilterChoices:
-    class Base(APIView):
-        def get_filtered_bookmarks(self, request):
+    class Base(ListAPIView):
+        def get_bookmarks(self):
             from common.utils.drf.filters import FullTextSearchFilter
 
-            bookmarks = request.user.bookmarks.all()
+            bookmarks = self.request.user.bookmarks.all()
             bookmarks = filters.BookmarkFilter(
-                request.GET, queryset=bookmarks).qs
+                self.request.GET, queryset=bookmarks).qs
             bookmarks = FullTextSearchFilter().filter_queryset(
-                request, bookmarks, BookmarkAPI, distinct=False)
+                self.request, bookmarks, BookmarkAPI, distinct=False)
 
             return bookmarks
 
-        def get_choices(self, request, group_by):
-            bookmarks = self.get_filtered_bookmarks(request)
-            data = bookmarks.values(
-                *group_by).annotate(bookmarks_count=Count('id', distinct=True)).order_by('-bookmarks_count')
-            return data
+        def get_queryset(self):
+            if self.request.user.is_anonymous:
+                return self.model.objects.none()
 
-        def get(self, request):
-            data = self.get_choices(request, self.group_by)
-            return Response(data)
+            bookmarks = self.get_bookmarks()
+            qs = (
+                getattr(self.request.user, self.related_name)
+                .all()
+                .filter(bookmarks__in=bookmarks)
+                .annotate(num_bookmarks=Count('bookmarks'))
+                .filter(num_bookmarks__gt=0)
+            )
+
+            search_query = self.request.GET.get(self.search_param)
+            if search_query:
+                lookup = {f'{self.search_field}__icontains': search_query}
+                qs = qs.filter(**lookup)
+
+            return qs
 
     class Website(Base):
-        group_by = ['website_id', 'website__domain', 'website__favicon']
+        serializer_class = serializers.WebsiteSerializer.WebsiteFilterChoicesList
+        model = models.Website
+        related_name = 'websites'
+        search_param = 'website_search'
+        search_field = 'domain'
 
     class Topic(Base):
-        group_by = ['tags__id', 'tags__name']
-
-
-class TagFilterChoicesListAPI(ListAPIView):
-    serializer_class = serializers.TagSerializer.TagFilterChoicesList
-    ordering = ['-weight']
-    
-    def get_filtered_bookmarks(self, request):
-        from common.utils.drf.filters import FullTextSearchFilter
-
-        bookmarks = request.user.bookmarks.all()
-        bookmarks = filters.BookmarkFilter(
-            request.GET, queryset=bookmarks).qs
-        bookmarks = FullTextSearchFilter().filter_queryset(
-            request, bookmarks, BookmarkAPI, distinct=False)
-
-        return bookmarks
-
-    def get_bookmarks(self):
-        bookmarks = self.get_filtered_bookmarks(self.request)
-        return bookmarks
-
-    def get_queryset(self):
-        if self.request.user.is_anonymous:
-            return models.Tag.objects.none()
-
-        bookmarks = self.get_bookmarks()
-        qs = self.request.user.tags.all().filter(
-            bookmarks__in=bookmarks
-        ).annotate(
-            num_bookmarks=Count('bookmarks')
-        ).filter(
-            num_bookmarks__gt=0
-        )
-
-        search_query = self.request.GET.get('tags_search')
-        if search_query:
-            qs = qs.filter(name__icontains=search_query)
-
-        return qs
-
-
-
-class WebsiteFilterChoicesListAPI(ListAPIView):
-    serializer_class = serializers.WebsiteSerializer.WebsiteFilterChoicesList
-    
-    def get_filtered_bookmarks(self, request):
-        from common.utils.drf.filters import FullTextSearchFilter
-
-        bookmarks = request.user.bookmarks.all()
-        bookmarks = filters.BookmarkFilter(
-            request.GET, queryset=bookmarks).qs
-        bookmarks = FullTextSearchFilter().filter_queryset(
-            request, bookmarks, BookmarkAPI, distinct=False)
-
-        return bookmarks
-
-    def get_bookmarks(self):
-        bookmarks = self.get_filtered_bookmarks(self.request)
-        return bookmarks
-
-    def get_queryset(self):
-        if self.request.user.is_anonymous:
-            return models.Website.objects.none()
-
-        bookmarks = self.get_bookmarks()
-        qs = self.request.user.websites.all().filter(
-            bookmarks__in=bookmarks
-        ).annotate(
-            num_bookmarks=Count('bookmarks')
-        ).filter(
-            num_bookmarks__gt=0
-        )
-
-        search_query = self.request.GET.get('website_search')
-        if search_query:
-            qs = qs.filter(domain__icontains=search_query)
-
-        return qs
-
-
+        serializer_class = serializers.TagSerializer.TagFilterChoicesList
+        ordering = ['-weight']
+        model = models.Tag
+        related_name = 'tags'
+        search_param = 'tags_search'
+        search_field = 'name'

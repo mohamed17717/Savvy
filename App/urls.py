@@ -17,8 +17,8 @@ urlpatterns = [
     path('graph/', views.WordGraphNodeAPI.as_view(), name='node_graph'),
     path('graph/<int:parent>/', views.WordGraphNodeAPI.as_view(), name='node_graph'),
 
-    path('filter/choices/website/', views.WebsiteFilterChoicesListAPI.as_view(), name='filter_bookmark_choices_website'),
-    path('filter/choices/topic/', views.TagFilterChoicesListAPI.as_view(), name='filter_bookmark_choices_topic'),
+    path('filter/choices/website/', views.BookmarkFilterChoices.Website.as_view(), name='filter_bookmark_choices_website'),
+    path('filter/choices/topic/', views.BookmarkFilterChoices.Topic.as_view(), name='filter_bookmark_choices_topic'),
 
     path('', include(router.urls)),
 ]
