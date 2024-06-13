@@ -108,6 +108,32 @@ class TagSerializer(serializers.ModelSerializer):
                 'user': {'read_only': True}
             }
 
+    class TagFilterChoicesList(serializers.ModelSerializer):
+        bookmarks_count = serializers.SerializerMethodField()
+
+        def get_bookmarks_count(self, obj):
+            return obj.num_bookmarks
+
+        class Meta:
+            model = models.Tag
+            fields = ['id', 'name', 'bookmarks_count']
+
+
+class WebsiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Website
+        fields = '__all__'
+
+    class WebsiteFilterChoicesList(serializers.ModelSerializer):
+        bookmarks_count = serializers.SerializerMethodField()
+
+        def get_bookmarks_count(self, obj):
+            return obj.num_bookmarks
+
+        class Meta:
+            model = models.Website
+            fields = ['id', 'domain', 'favicon', 'bookmarks_count']
+
 
 class BookmarkSerializer(serializers.ModelSerializer):
     class Meta:
