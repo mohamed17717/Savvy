@@ -184,7 +184,8 @@ class TagAPI(RULViewSet):
         if self.request.user.is_anonymous:
             return models.Tag.objects.none()
 
-        qs = self.request.user.tags.all()
+        # qs = self.request.user.tags.all()
+        qs = models.Tag.objects.all().by_user(self.request.user)
 
         if self.action == 'list':
             limit = math.ceil(qs.count() * 0.1)
@@ -207,7 +208,7 @@ class TagListAPI(ListAPIView):
     def get_queryset(self):
         if self.request.user.is_anonymous:
             return models.Tag.objects.none()
-        return self.request.user.tags.all()
+        return models.Tag.objects.all().by_user(self.request.user)
 
 
 class WordGraphNodeAPI(APIView):
@@ -251,10 +252,9 @@ class BookmarkFilterChoices:
 
             bookmarks = self.get_bookmarks()
             qs = (
-                getattr(self.request.user, self.related_name)
-                .all()
+                self.get_related_qs()
                 .filter(bookmarks__in=bookmarks)
-                .annotate(num_bookmarks=Count('bookmarks'))
+                .annotate(num_bookmarks=Count('bookmarks', distinct=True))
                 .filter(num_bookmarks__gt=0)
             )
 
@@ -268,14 +268,18 @@ class BookmarkFilterChoices:
     class Website(Base):
         serializer_class = serializers.WebsiteSerializer.WebsiteFilterChoicesList
         model = models.Website
-        related_name = 'websites'
         search_param = 'website_search'
         search_field = 'domain'
+
+        def get_related_qs(self):
+            return self.request.user.websites.all()
 
     class Topic(Base):
         serializer_class = serializers.TagSerializer.TagFilterChoicesList
         ordering = ['-weight']
         model = models.Tag
-        related_name = 'tags'
         search_param = 'tags_search'
         search_field = 'name'
+
+        def get_related_qs(self):
+            return models.Tag.objects.all().by_user(self.request.user)
