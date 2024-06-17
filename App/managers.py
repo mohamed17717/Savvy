@@ -1,3 +1,5 @@
+import math
+
 from django.db import models
 from django.db.models.signals import post_save, pre_save
 
@@ -114,3 +116,22 @@ class BookmarkHiddenManager(models.Manager):
 class AllBookmarkManager(models.Manager):
     def get_queryset(self):
         return BookmarkQuerySet(self.model, using=self._db)
+
+
+class TagQuerySet(models.QuerySet):
+    def by_user(self, user):
+        qs = self.filter(user=user)
+
+        minimum_bookmarks = 5
+        accepted_ratio = 1/134
+        total_bookmarks = user.bookmarks.count()
+        computed_minimum = math.ceil(total_bookmarks * accepted_ratio)
+
+        accepted_bookmarks = max(minimum_bookmarks, computed_minimum)
+
+        return qs.filter(bookmarks_count__gt=accepted_bookmarks)
+
+
+class TagManager(models.Manager):
+    def get_queryset(self):
+        return TagQuerySet(self.model, using=self._db)
