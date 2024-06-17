@@ -4,6 +4,8 @@ from django.contrib.auth import get_user_model
 from django.shortcuts import reverse
 from django.contrib.postgres.aggregates import ArrayAgg
 
+from App import managers
+
 
 class Tag(models.Model):
     '''Tag is a stored operation for words table
@@ -17,6 +19,8 @@ class Tag(models.Model):
     )
     bookmarks = models.ManyToManyField(
         'App.Bookmark', blank=True, related_name='tags')
+    bookmarks_count = models.PositiveSmallIntegerField(
+        default=0, db_index=True)
 
     # Required
     name = models.CharField(max_length=128)
@@ -30,6 +34,8 @@ class Tag(models.Model):
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = managers.TagManager()
 
     class Meta:
         unique_together = ('user', 'name')
@@ -63,6 +69,8 @@ class Tag(models.Model):
         existing_tags = cls.objects.filter(name__in=words)
         for tag in existing_tags:
             tag.weight += words_map[tag.name]['total_weight']
+            tag.bookmarks_count += len(
+                set(words_map[tag.name]['bookmark_ids']))
         cls.objects.bulk_update(existing_tags, ['weight'], batch_size=250)
 
         # Create new tags
@@ -72,7 +80,10 @@ class Tag(models.Model):
         user = Bookmark.objects.filter(pk__in=bookmarks_ids).first().user
 
         new_tags = [
-            cls(name=name, weight=words_map[name]['total_weight'], user=user)
+            cls(
+                name=name, weight=words_map[name]['total_weight'], user=user,
+                bookmarks_count=len(set(words_map[name]['bookmark_ids']))
+            )
             for name in new_tag_names
         ]
         new_tags = cls.objects.bulk_create(new_tags, batch_size=250)
@@ -89,4 +100,5 @@ class Tag(models.Model):
             ])
 
         relation_model.objects.bulk_create(relations, batch_size=250)
+
         return len(all_tags)
