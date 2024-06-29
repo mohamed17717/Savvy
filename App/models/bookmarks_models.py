@@ -236,7 +236,14 @@ class Bookmark(models.Model):
     def domain(self) -> str:
         # domain with subdomains
         url = urllib3.util.parse_url(self.url)
-        return '.'.join(url.host.split('.')[-2:])
+        # return '.'.join(url.host.split('.')[-2:])
+        host = url.host
+        if host.startswith('www.'):
+            host = host[4:]
+        elif host.startswith('m.facebook'):
+            host = host[2:]
+
+        return host
 
     @property
     def site_name(self) -> str:
@@ -261,7 +268,7 @@ class Bookmark(models.Model):
         from App.flows.default import BookmarkHooks
         hook_class = BookmarkHooks
         for h in flows.get_flows():
-            if h.DOMAIN == self.domain:
+            if self.domain.endswith(h.DOMAIN):
                 hook_class = h
                 break
         return hook_class(self)
