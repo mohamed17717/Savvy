@@ -111,7 +111,7 @@ class BookmarkAPI(RUDLViewSet):
         elif self.action in all_actions:
             qs = models.Bookmark.all_objects.all().by_user(self.request.user)
 
-        return qs.prefetch_related('history')
+        return qs.select_related('website').prefetch_related('history')
 
     def perform_destroy(self, instance):
         instance.hidden = True
@@ -184,7 +184,7 @@ class TagAPI(RULViewSet):
         if self.request.user.is_anonymous:
             return models.Tag.objects.none()
 
-        # qs = self.request.user.tags.all()
+        # Using this function from the manager to filtering tags with small amount of bookmarks
         qs = models.Tag.objects.all().by_user(self.request.user)
 
         if self.action == 'list':
