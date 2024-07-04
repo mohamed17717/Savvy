@@ -8,6 +8,10 @@ class WordGraphBuilder:
     ACCEPTED_LEAF_LENGTH = 10
     MAXIMUM_THRESHOLD = 90
 
+    # THRESHOLD = 50  # avoid float inaccuracy
+    # THRESHOLD_STEP = 10  # avoid float inaccuracy
+    # ACCEPTED_LEAF_LENGTH = 50 # 70
+
     def __init__(self, documents, similarity_matrix, threshold: int = THRESHOLD, parent=None, user=None):
         self.documents = documents
         self.similarity_matrix = similarity_matrix
