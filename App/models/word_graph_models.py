@@ -8,6 +8,8 @@ class GraphNode(models.Model):
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, related_name='children')
 
+    name = models.CharField(max_length=256, blank=True, null=True)
+
     tags = models.ManyToManyField('App.Tag', related_name='nodes', blank=True)
     bookmarks = models.ManyToManyField(
         'App.Bookmark', related_name='nodes', blank=True)
