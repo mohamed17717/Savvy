@@ -236,7 +236,7 @@ def store_tags_task(user_id):
 
 
 @shared_task(queue='orm')
-def build_word_graph_task(user_id, bookmark_ids=None):
+def build_word_graph_task(user_id, bookmark_ids=[]):
     user = User.objects.get(pk=user_id)
 
     # TODO don't delete old graph otherwise update it with new data
@@ -247,7 +247,7 @@ def build_word_graph_task(user_id, bookmark_ids=None):
     document_ids, vectors = models.WordWeight.word_vectors(bookmarks)
     similarity = types.SimilarityMatrixType(vectors, document_ids)
 
-    controllers.WordGraphBuilder(
+    controllers.GraphBuilder(
         similarity.document_ids, similarity.similarity_matrix, user=user
     ).build()
 
