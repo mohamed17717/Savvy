@@ -50,10 +50,10 @@ class BookmarkFilter(filters.FilterSet):
     dead = filters.BooleanFilter('scrapes__status_code', method='filter_dead')
 
     def filter_dead(self, queryset, name, value):
-        query = Q(scrapes__isnull=True) | Q(scrapes__status_code=200)
+        query = Q(scrapes__status_code__gt=300) & Q(scrapes__status_code__lt=500)
         if value:
-            return queryset.exclude(query)
-        return queryset.filter(query)
+            return queryset.filter(query)
+        return queryset.exclude(query)
 
     class Meta:
         model = models.Bookmark
