@@ -138,7 +138,7 @@ class WebsiteSerializer(serializers.ModelSerializer):
 class BookmarkSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Bookmark
-        fields = '__all__'
+        exclude = ['search_vector']
 
     class BookmarkDetails(serializers.ModelSerializer):
         title = serializers.SerializerMethodField()
@@ -164,7 +164,7 @@ class BookmarkSerializer(serializers.ModelSerializer):
 
         class Meta:
             model = models.Bookmark
-            fields = '__all__'
+            exclude = ['search_vector']
 
     class BookmarkUpdate(serializers.ModelSerializer):
         class Meta:
