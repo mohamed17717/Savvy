@@ -37,6 +37,7 @@ class BookmarkFilter(filters.FilterSet):
     tag_name = filters.CharFilter('tags__name', lookup_expr='icontains')
 
     node = filters.NumberFilter('nodes__path', lookup_expr='contains')
+    exclude_node = filters.NumberFilter('nodes__path', lookup_expr='contains', exclude=True)
 
     websites = ListFilter(field_name='website_id', lookup_expr='in')
     exclude_websites = ListFilter(
@@ -50,10 +51,12 @@ class BookmarkFilter(filters.FilterSet):
     dead = filters.BooleanFilter('scrapes__status_code', method='filter_dead')
 
     def filter_dead(self, queryset, name, value):
-        query = Q(scrapes__status_code__gt=300) & Q(scrapes__status_code__lt=500)
+        lookup = Q(scrapes__status_code__gt=300) & Q(scrapes__status_code__lt=500)
         if value:
-            return queryset.filter(query)
-        return queryset.exclude(query)
+            return queryset.filter(lookup)
+        
+        ids = queryset.filter(lookup).values_list('id', flat=True)
+        return queryset.filter(~Q(id__in=ids))
 
     class Meta:
         model = models.Bookmark
