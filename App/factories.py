@@ -1,158 +1,237 @@
-import factory
 import random
+import string
+import datetime
+import itertools
 
-from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from App import models
 
-User = get_user_model()
 
-username_prefix = 0
-def generate_username(*args):
-    global username_prefix
+class DataFactory:
+    INCREMENT = itertools.count().__next__
 
-    username_prefix += 1
-    return 'user_' + str(username_prefix)
+    def word(self):
+        space = string.ascii_lowercase
+        length = random.randint(3, 22)
+        letters = random.choices(space, k=length)
+        return ''.join(letters)
 
-def generate_email(*args):
-    global username_prefix
+    def phrase(self):
+        length = random.randint(1, 16)
+        words = [self.word() for _ in range(length)]
+        return ' '.join(words)
 
-    username_prefix += 1
-    return 'user_' + str(username_prefix) + '@example.com'
+    def username(self):
+        word = f'{self.word()}_{self.word()}'
+        return f'{word}_{self.INCREMENT()}'
 
+    def email(self):
+        return self.username() + '@example.com'
 
+    def password(self):
+        length = random.randint(8, 16)
+        space = string.ascii_letters + string.digits
+        letters = random.choices(space, k=length)
+        return ''.join(letters)
 
+    def boolean(self):
+        return random.choice([True, False])
 
-class UserFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = User
+    def url(self):
+        return f'https://{self.word()}.com/{self.word()}/?x={self.word()}'
 
-    username = factory.LazyAttribute(generate_username)
-    email = factory.LazyAttribute(generate_email)
-    password = factory.Faker('password')
+    def domain(self):
+        return f'{self.word()}.com'
 
+    def number(self):
+        return random.randint(0, 100)
 
-class BookmarkFileFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = models.BookmarkFile
+    def decimal(self):
+        return self.number() % 100 / 100
 
-    user = factory.SubFactory(UserFactory)
-    location = factory.django.FileField()
+    def choices(self, choices):
+        return random.choice(choices)
 
-
-class WebsiteFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = models.Website
-
-    user = factory.SubFactory(UserFactory)
-    domain = factory.Faker('url')
-    favicon = factory.Faker('url')
-
-
-class BookmarkFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = models.Bookmark
-
-    user = factory.SubFactory(UserFactory)
-    website = factory.SubFactory(WebsiteFactory)
-
-    url = factory.Faker('url')
-    title = factory.Faker('sentence')
-
-    process_status = factory.Iterator([60,70,80])
-    favorite = factory.Faker('boolean')
-    hidden = factory.Faker('boolean')
-
-    # added_at = factory.Faker('date_time')
+    def date(self):
+        from_how_long = self.number()
+        return timezone.now() - datetime.timedelta(days=from_how_long)
 
 
-class BookmarkHistoryFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = models.BookmarkHistory
-
-    bookmark = factory.SubFactory(BookmarkFactory)
+data = DataFactory()
 
 
-class TagFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = models.Tag
-
-    user = factory.SubFactory(UserFactory)
-    name = factory.Faker('word')
-    bookmarks = factory.RelatedFactory('App.factories.BookmarkFactory', 'tags')
-    weight = factory.Faker('pyint')
+def user():
+    return models.User(
+        username=data.username(),
+        email=data.email(),
+        password=data.password(),
+    )
 
 
-class GraphNodeFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = models.GraphNode
-
-    user = factory.SubFactory(UserFactory)
-    bookmarks = factory.RelatedFactory(
-        'App.factories.BookmarkFactory', 'nodes')
-
-    name = factory.Faker('word')
-    path = factory.Faker('word')
-
-    threshold = factory.Faker('pyfloat')
-    is_leaf = factory.Faker('boolean')
+def website(user):
+    return models.Website(
+        user=user,
+        domain=data.domain(),
+        favicon=data.url(),
+    )
 
 
-class WordWeightFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = models.WordWeight
+def bookmark(user, website_instance=None):
+    if website_instance is None:
+        website_instance = website(user)
+        website_instance.save()
 
-    bookmark = factory.SubFactory('App.factories.BookmarkFactory')
-    word = factory.Faker('word')
-    weight = factory.Faker('pyint')
-    important = factory.Faker('boolean')
-
-
-class ScrapyResponseLogFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = models.ScrapyResponseLog
-
-    bookmark = factory.SubFactory('App.factories.BookmarkFactory')
-    status_code = factory.Iterator([200, 404, 500, 403, 503, 400])
-
-
-USERS_COUNT = 1_00
-MIN_BOOKMARKS_PER_USER = 300
-MAX_BOOKMARKS_PER_USER = 10_000
+    return models.Bookmark(
+        user=user,
+        website=website_instance,
+        url=data.url(),
+        title=data.phrase()[:200],
+        process_status=data.choices([60, 70, 80]),
+        favorite=data.boolean(),
+        hidden=data.boolean(),
+        added_at=data.date()
+    )
 
 
-def create_test_data():
+def history(bookmark):
+    return models.BookmarkHistory(
+        bookmark=bookmark,
+    )
+
+
+def tag(user):
+    return models.Tag(
+        user=user,
+        name=data.word(),
+        weight=data.number(),
+    )
+
+
+def tag_with_bookmarks(user, bookmarks):
+    instance = tag(user)
+
+    # This is closure
+    def _m2m_bookmarks():
+        for b in bookmarks:
+            instance.bookmarks.add(b)
+
+    return instance, _m2m_bookmarks
+
+
+def word_weight(bookmark):
+    return models.WordWeight(
+        bookmark=bookmark,
+        word=data.word(),
+        weight=data.number(),
+        important=data.boolean(),
+    )
+
+
+def scrapy_log(bookmark):
+    return models.ScrapyResponseLog(
+        bookmark=bookmark,
+        status_code=data.choices([200, 404, 500, 403, 503, 400]),
+    )
+
+
+def graph_node(user):
+    return models.GraphNode(
+        user=user,
+        name=data.phrase()[:200],
+        path=data.word(),
+        is_leaf=data.boolean(),
+        threshold=data.decimal(),
+    )
+
+
+def graph_node_with_bookmarks(user, bookmarks):
+    instance = graph_node(user)
+
+    # This is closure
+    def _m2m_bookmarks():
+        for b in bookmarks:
+            instance.bookmarks.add(b)
+
+    return instance, _m2m_bookmarks
+
+
+USERS_COUNT = 100
+MIN_BOOKMARKS = 5000
+MAX_BOOKMARKS = 10_000
+
+
+def store_data():
     for _ in range(USERS_COUNT):
-        try:
-            user = UserFactory.create()
-            print(f'{user=}')
+        histories = []
+        tags = []
+        tags_bookmarks = []
+        words = []
+        scrapy_logs = []
+        nodes = []
+        nodes_bookmarks = []
 
-            bookmarks_count = random.randint(MIN_BOOKMARKS_PER_USER, MAX_BOOKMARKS_PER_USER)
-            bookmarks = BookmarkFactory.create_batch(bookmarks_count, user=user)
-            # tags = BookmarkFactory.create_batch(random.randint(1, 100), user=user)
-            print(f'{bookmarks_count=}')
-            for bookmark in bookmarks:
-                print(f'{bookmark=}')
-                if random.randint(1, 10) == 3:
-                    BookmarkHistoryFactory.create(bookmark=bookmark)
+        user_instance = user()
+        user_instance.save()
 
-                # probability 70% to have tags
-                # if random.randint(1, 10) <= 7:
-                #     # choose random tags from tags list
-                #     tags_count = random.randint(1, 10)
-                #     TagFactory.create(bookmarks=[bookmark],
-                #             tags=random.sample(tags, tags_count))
+        print(f'{_}- {user_instance=}')
 
-                words_count = random.randint(10, 50)
-                WordWeightFactory.create_batch(words_count, bookmark=bookmark)
+        websites_count = random.randint(5, 50)
+        websites = [website(user_instance) for _ in range(websites_count)]
+        models.Website.objects.bulk_create(websites, batch_size=1000)
 
-                ScrapyResponseLogFactory(bookmark=bookmark)
+        bookmarks_count = random.randint(MIN_BOOKMARKS, MAX_BOOKMARKS)
+        bookmarks = [
+            bookmark(user_instance, website_instance=random.choice(websites))
+            for _ in range(bookmarks_count)]
+        models.Bookmark.objects.bulk_create(bookmarks, batch_size=1000)
 
-            print('---'*3)
-        except Exception as e:
-            print(e)
-            continue
+        print(f'will work on {bookmarks_count} bookmarks')
+
+        for b in bookmarks:
+            if random.randint(1, 10) == 1:
+                print('create history')
+                histories.append(history(b))
+
+            print('create words')
+            words_count = random.randint(8, 50)
+            words.extend([
+                word_weight(b) for _ in range(words_count)
+            ])
+
+            scrapy_logs.append(scrapy_log(b))
+        # tag, tag_with_bookmarks
+        tags_count = random.randint(8, 100)
+        avg_bookmarks_for_tag = bookmarks_count // tags_count
+        tags_tuples = [tag_with_bookmarks(
+            user_instance, bookmarks=random.sample(bookmarks, k=avg_bookmarks_for_tag)) for _ in range(tags_count)]
+
+        tags.extend([t[0] for t in tags_tuples])
+        tags_bookmarks.extend([t[1] for t in tags_tuples])
+
+        # graph_node, graph_node_with_bookmarks
+        nodes_count = random.randint(12, 200)
+        avg_bookmarks_for_node = bookmarks_count // nodes_count
+        nodes_tuples = [graph_node_with_bookmarks(
+            user_instance, bookmarks=random.sample(bookmarks, k=avg_bookmarks_for_node)) for _ in range(nodes_count)]
+
+        nodes.extend([t[0] for t in nodes_tuples])
+        nodes_bookmarks.extend([t[1] for t in nodes_tuples])
+
+        print('bulk creates')
+        models.BookmarkHistory.objects.bulk_create(histories, batch_size=1000)
+        models.Tag.objects.bulk_create(tags, batch_size=1000)
+        models.WordWeight.objects.bulk_create(words, batch_size=1000)
+        models.ScrapyResponseLog.objects.bulk_create(
+            scrapy_logs, batch_size=1000)
+        models.GraphNode.objects.bulk_create(nodes, batch_size=1000)
+
+        for save_m2m in tags_bookmarks + nodes_bookmarks:
+            print('m2m2 save')
+            save_m2m()
+        print('------ user done ------')
+
 
 DJANGO_SHELL = 'django.core.management.commands.shell'
 if __name__ in ["__main__", DJANGO_SHELL]:
-    create_test_data()
+    store_data()
