@@ -164,7 +164,7 @@ class BookmarkSerializer(serializers.ModelSerializer):
 
         class Meta:
             model = models.Bookmark
-            exclude = ['search_vector']
+            exclude = ['search_vector', 'more_data', 'delete_scheduled_at', 'image_url']
 
     class BookmarkUpdate(serializers.ModelSerializer):
         class Meta:
