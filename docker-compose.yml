@@ -19,7 +19,7 @@ services:
       - djangonetwork
 
   django:
-    restart: always
+    # restart: always
     build: .
     expose:
       - 8000
@@ -59,7 +59,7 @@ services:
 
   celery_scrapy_worker:
     build: .
-    command: celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=10
+    command: celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=5
     env_file:
       - .env
     volumes:
@@ -77,7 +77,7 @@ services:
 
   celery_orm_worker:
     build: .
-    command: celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=10
+    command: celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=16
     env_file:
       - .env
     volumes:
@@ -95,7 +95,7 @@ services:
 
   celery_download_images_worker:
     build: .
-    command: celery -A dj worker -l INFO -n download_images_worker -Q download_images -E --concurrency=10
+    command: celery -A dj worker -l INFO -n download_images_worker -Q download_images -E --concurrency=4
     env_file:
       - .env
     volumes:
@@ -113,7 +113,7 @@ services:
 
   celery_email_worker:
     build: .
-    command: celery -A dj worker -l INFO -n email_worker -Q email -E --concurrency=4
+    command: celery -A dj worker -l INFO -n email_worker -Q email -E --concurrency=2
     env_file:
       - .env
     volumes:
