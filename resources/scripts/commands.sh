@@ -7,7 +7,8 @@ celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=10
 
 celery -A dj beat -l INFO
 
-autocannon -c 100 -d 5 -p 10 -H Authorization="Token 54da3defde81841587f99f04e3d6e7b2e56c69e077e9d4f5bcb853d551763935"  http://127.0.0.1:8000/bm/bookmark/list/
+autocannon -c 100 -d 5 -p 10 -H Authorization="Token 97b7d1e9eb169fef28dd168b6479907f676975c85ec70153553732017ec7bed8"  http://127.0.0.1:8000/bm/bookmark/list/
+wrk -t12 -c400 -d30s -H "Authorization: Token 97b7d1e9eb169fef28dd168b6479907f676975c85ec70153553732017ec7bed8"  http://localhost/bm/bookmark/list/
 # django.db.utils.OperationalError: connection to server at "127.0.0.1", port 5432 failed: FATAL:  sorry, too many clients already
 # connection to server at "127.0.0.1", port 5432 failed: FATAL:  sorry, too many clients already
 
