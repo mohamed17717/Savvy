@@ -37,4 +37,4 @@ RUN chmod +x /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 # CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
-CMD ["gunicorn", "dj.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn",  "--config", "dj/gunicorn.conf.py", "dj.wsgi:application", "--bind", "0.0.0.0:8000", "--capture-output", "--enable-stdio-inheritance", "--workers", "4"]
