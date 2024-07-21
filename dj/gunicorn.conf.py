@@ -9,6 +9,7 @@ access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"
 
 # Configure logging
 logger = logging.getLogger('main')
-handler = RotatingFileHandler('/usr/src/app/logs/gunicorn-error.log', maxBytes=100000, backupCount=10)
+handler = RotatingFileHandler(
+    '/usr/src/app/logs/gunicorn-error.log', maxBytes=100000, backupCount=10)
 logger.addHandler(handler)
 logger.setLevel(logging.ERROR)
