@@ -239,12 +239,16 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'frontend/static')
+]
 
 STATIC_URL = 'static/'
 MEDIA_URL = 'media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
+STATICFILES_STORAGE = 'common.utils.django.custom_storage.CustomStaticFilesStorage'
 
 SWAGGER_SETTINGS = {
     'SECURITY_DEFINITIONS': {
