@@ -152,6 +152,7 @@ services:
     volumes:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
+      - ./frontend:/usr/src/app/frontend
     ports:
       - "80:80"
     depends_on:
