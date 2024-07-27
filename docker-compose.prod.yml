@@ -134,7 +134,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-celery
-    command: celery -A dj beat --loglevel=info
+    command: ./wait-for-it.sh celery -A dj beat --loglevel=info
     env_file:
       - .env
     volumes:
