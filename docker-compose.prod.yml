@@ -1,0 +1,151 @@
+version: "3.8"
+services:
+  db:
+    image: postgres
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: main
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - dokploy-network
+
+  redis:
+    image: "redis:alpine"
+    volumes:
+      - redis_data:/data
+    networks:
+      - dokploy-network
+
+  django:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - .:/usr/src/app
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
+    ports:
+      - "8000"
+    depends_on:
+      - db
+      - redis
+    links:
+      - db:db
+      - redis:redis
+    networks:
+      - dokploy-network
+
+  realtime:
+    build: ./realtime
+    env_file:
+      - .env
+    volumes:
+      - ./realtime:/usr/src/realtime
+    ports:
+      - "8000"
+    depends_on:
+      - redis
+    links:
+      - redis:redis
+    networks:
+      - dokploy-network
+
+  celery_scrapy_worker:
+    build: .
+    command: celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=5
+    env_file:
+      - .env
+    volumes:
+      - .:/usr/src/app
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
+    depends_on:
+      - db
+      - redis
+    links:
+      - db:db
+      - redis:redis
+    networks:
+      - dokploy-network
+
+  celery_orm_worker:
+    build: .
+    command: celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=16
+    env_file:
+      - .env
+    volumes:
+      - .:/usr/src/app
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
+    depends_on:
+      - db
+      - redis
+    links:
+      - db:db
+      - redis:redis
+    networks:
+      - dokploy-network
+
+  celery_download_images_worker:
+    build: .
+    command: celery -A dj worker -l INFO -n download_images_worker -Q download_images -E --concurrency=4
+    env_file:
+      - .env
+    volumes:
+      - .:/usr/src/app
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
+    depends_on:
+      - db
+      - redis
+    links:
+      - db:db
+      - redis:redis
+    networks:
+      - dokploy-network
+
+  celery_email_worker:
+    build: .
+    command: celery -A dj worker -l INFO -n email_worker -Q email -E --concurrency=2
+    env_file:
+      - .env
+    volumes:
+      - .:/usr/src/app
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
+    depends_on:
+      - db
+      - redis
+    links:
+      - db:db
+      - redis:redis
+    networks:
+      - dokploy-network
+
+  celerybeat:
+    build: .
+    command: celery -A dj beat --loglevel=info
+    env_file:
+      - .env
+    volumes:
+      - .:/usr/src/app
+      - ./staticfiles:/usr/src/app/staticfiles
+      - ./media:/usr/src/app/media
+    depends_on:
+      - db
+      - redis
+    links:
+      - db:db
+      - redis:redis
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    driver: bridge
+    external: true
+
+volumes:
+  redis_data:
