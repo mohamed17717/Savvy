@@ -19,7 +19,9 @@ services:
       - dokploy-network
 
   django:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-django
     env_file:
       - .env
     volumes:
@@ -53,7 +55,9 @@ services:
       - dokploy-network
 
   celery_scrapy_worker:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
     command: celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=5
     env_file:
       - .env
@@ -62,8 +66,7 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     depends_on:
-      - db
-      - redis
+      - django
     links:
       - db:db
       - redis:redis
@@ -71,7 +74,9 @@ services:
       - dokploy-network
 
   celery_orm_worker:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
     command: celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=16
     env_file:
       - .env
@@ -80,8 +85,7 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     depends_on:
-      - db
-      - redis
+      - django
     links:
       - db:db
       - redis:redis
@@ -89,7 +93,9 @@ services:
       - dokploy-network
 
   celery_download_images_worker:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
     command: celery -A dj worker -l INFO -n download_images_worker -Q download_images -E --concurrency=4
     env_file:
       - .env
@@ -98,8 +104,7 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     depends_on:
-      - db
-      - redis
+      - django
     links:
       - db:db
       - redis:redis
@@ -107,7 +112,9 @@ services:
       - dokploy-network
 
   celery_email_worker:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
     command: celery -A dj worker -l INFO -n email_worker -Q email -E --concurrency=2
     env_file:
       - .env
@@ -116,8 +123,7 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     depends_on:
-      - db
-      - redis
+      - django
     links:
       - db:db
       - redis:redis
@@ -125,7 +131,9 @@ services:
       - dokploy-network
 
   celerybeat:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
     command: celery -A dj beat --loglevel=info
     env_file:
       - .env
@@ -134,8 +142,7 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     depends_on:
-      - db
-      - redis
+      - django
     links:
       - db:db
       - redis:redis
