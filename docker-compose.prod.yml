@@ -30,7 +30,7 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     ports:
-      - "8000"
+      - 8000
     depends_on:
       - db
       - redis
@@ -39,20 +39,12 @@ services:
       - redis:redis
     networks:
       - dokploy-network
-    # lables:
-    #   - "traefik.enable=true"
-    #   - "traefik.docker.network=dokploy-network"
-    #   - "traefik.http.routers.dokploy.rule=Host(`dokploy.localhost`)"
-    #   - "traefik.http.routers.dokploy.service=django"
-    #   - "traefik.http.routers.dokploy.entrypoints=web"
-    #   - "traefik.http.routers.dokploy.tls.certresolver=le"
-    #   - "traefik.http.services.dokploy.loadbalancer.passhostheader=true"
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.django.rule=Host(`itab.ltd`)"
-      - "traefik.http.routers.django.entrypoints=websecure"
-      - "traefik.http.routers.django.tls.certResolver=letsencrypt"
-      - "traefik.http.services.django.loadbalancer.server.port=8000"
+      - traefik.enable=true
+      - traefik.http.routers.django.rule=Host(`itab.ltd`)
+      - traefik.http.routers.django.entrypoints=websecure
+      - traefik.http.routers.django.tls.certResolver=letsencrypt
+      - traefik.http.services.django.loadbalancer.server.port=8000
 
   realtime:
     build: ./realtime
@@ -61,7 +53,7 @@ services:
     volumes:
       - ./realtime:/usr/src/realtime
     ports:
-      - "8000"
+      - 8000
     depends_on:
       - redis
     links:
@@ -166,7 +158,6 @@ services:
 
 networks:
   dokploy-network:
-    driver: bridge
     external: true
 
 volumes:
