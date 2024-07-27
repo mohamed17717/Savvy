@@ -9,20 +9,18 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     networks:
-      - djangonetwork
+      - dokploy-network
 
   redis:
     image: "redis:alpine"
     volumes:
       - redis_data:/data
     networks:
-      - djangonetwork
+      - dokploy-network
 
   django:
     # restart: always
     build: .
-    expose:
-      - 8000
     env_file:
       - .env
     volumes:
@@ -30,7 +28,7 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     ports:
-      - "8000:8000"
+      - "8000"
     depends_on:
       - db
       - redis
@@ -38,24 +36,22 @@ services:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   realtime:
     build: ./realtime
-    expose:
-      - 8001
     env_file:
       - .env
     volumes:
       - ./realtime:/usr/src/realtime
     ports:
-      - "8001:8000" # Expose the service on host port 8001 and container port 8000
+      - "8000"
     depends_on:
       - redis
     links:
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   celery_scrapy_worker:
     build: .
@@ -73,7 +69,7 @@ services:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   celery_orm_worker:
     build: .
@@ -91,7 +87,7 @@ services:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   celery_download_images_worker:
     build: .
@@ -109,7 +105,7 @@ services:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   celery_email_worker:
     build: .
@@ -127,7 +123,7 @@ services:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   celerybeat:
     build: .
@@ -145,7 +141,7 @@ services:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   nginx:
     build: ./nginx
@@ -158,15 +154,12 @@ services:
     depends_on:
       - django
     networks:
-      - djangonetwork
+      - dokploy-network
 
 networks:
-  default:
+  dokploy-network:
     driver: bridge
-  djangonetwork:
-    driver: bridge
+    external: true
 
 volumes:
-  grafana_data:
-  prometheus_data:
   redis_data:
