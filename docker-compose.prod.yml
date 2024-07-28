@@ -39,13 +39,12 @@ services:
       - redis:redis
     networks:
       - dokploy-network
-    deploy:
-      labels:
-        - traefik.enable=true
-        - traefik.http.routers.django.rule=Host(`django.itab.ltd`)
-        - traefik.http.routers.django.entrypoints=websecure
-        - traefik.http.routers.django.tls.certResolver=letsencrypt
-        - traefik.http.services.django.loadbalancer.server.port=8000
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.django.rule=Host(`django.itab.ltd`)
+      - traefik.http.routers.django.entrypoints=websecure
+      - traefik.http.routers.django.tls.certResolver=letsencrypt
+      - traefik.http.services.django.loadbalancer.server.port=8000
 
   realtime:
     build: ./realtime
