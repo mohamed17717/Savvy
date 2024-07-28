@@ -42,7 +42,7 @@ services:
     deploy:
       labels:
         - traefik.enable=true
-        - traefik.http.routers.django.rule=Host(`itab.ltd`)
+        - traefik.http.routers.django.rule=Host(`django.itab.ltd`)
         - traefik.http.routers.django.entrypoints=websecure
         - traefik.http.routers.django.tls.certResolver=letsencrypt
         - traefik.http.services.django.loadbalancer.server.port=8000
