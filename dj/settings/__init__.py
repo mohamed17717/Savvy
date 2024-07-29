@@ -6,20 +6,13 @@ from datetime import timedelta
 
 load_dotenv()
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = os.getenv('DEBUG', '1') == '1'
+
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost').split(',')
-# [
-#     'localhost',
-#     '127.0.0.1',
-#     'django',
-#     'django.itab.ltd'
-# ]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -28,7 +21,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
     'django.contrib.postgres',
 
     # apps
@@ -43,32 +35,19 @@ INSTALLED_APPS = [
     'django_celery_results',
     'django_celery_beat',
     'django_extensions',
-    'debug_toolbar',
-    # 'silk',
-    # 'django_prometheus',
     'corsheaders',
-
 ]
 
 MIDDLEWARE = [
-    # 'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.gzip.GZipMiddleware',  # This should come first
-
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
-    # 'silk.middleware.SilkyMiddleware',
-
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
-    # 'django_prometheus.middleware.PrometheusAfterMiddleware',
-
 ]
 
 ROOT_URLCONF = 'dj.urls'
@@ -93,12 +72,9 @@ WSGI_APPLICATION = 'dj.wsgi.application'
 
 AUTH_USER_MODEL = 'Users.User'
 
-
 DATABASES = {
     'default': {
-        # 'ENGINE': 'django.db.backends.postgresql',
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        # 'ENGINE': "django_prometheus.db.backends.postgresql",
         'NAME': os.getenv("POSTGRES_DB"),
         'USER': os.getenv("POSTGRES_USER"),
         'PASSWORD': os.getenv("POSTGRES_PASSWORD"),
@@ -109,15 +85,12 @@ DATABASES = {
     }
 }
 
-# Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -133,13 +106,11 @@ REST_FRAMEWORK = {
 
     ),
     'DEFAULT_PERMISSION_CLASSES': (
-        # make sure user who make action is authenticated and authorized for it
         'rest_framework.permissions.IsAuthenticated',
         # 'rest_framework.permissions.DjangoModelPermissions',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 20,
-
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
@@ -164,7 +135,7 @@ REST_KNOX = {
 
 REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
 REDIS_PORT = os.getenv('REDIS_PORT', '6379')
-# Celery SETTINGS
+
 CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'
 CELERY_RESULT_BACKEND = f'redis://{REDIS_HOST}:{REDIS_PORT}/0'
 CELERY_TASK_SERIALIZER = 'pickle'
@@ -175,12 +146,9 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 12 * 60 * 60}
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_IGNORE_RESULT = True
 
-
-# Caches
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        # "BACKEND": "django_prometheus.cache.backends.redis.RedisCache",
         "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient"
@@ -189,7 +157,6 @@ CACHES = {
     }
 }
 
-# Log Setup
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -223,7 +190,7 @@ LOGGING = {
             'propagate': True,
             'level': 'INFO'
         },
-        
+
         'celery': {
             'handlers': ['celery_file', 'console'],
             'propagate': True,
@@ -265,18 +232,6 @@ SWAGGER_SETTINGS = {
 }
 
 INTERNAL_IPS = ['127.0.0.1', 'django']
-def show_toolbar(request):
-    return True
-
-
-DEBUG_TOOLBAR_CONFIG = {
-    'SHOW_TOOLBAR_CALLBACK': show_toolbar,
-}
-
-PROMETHEUS_EXPORT_MIGRATIONS = True
-
-SILKY_PYTHON_PROFILER = True
-SILKY_META = True
 
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
@@ -290,7 +245,14 @@ CORS_ORIGIN_WHITELIST = (
 CORS_ALLOWED_ORIGINS = CORS_ORIGIN_WHITELIST
 CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
 
-# Maximum size, in bytes, of a request before it will be streamed to the file system instead of into memory.
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5 MB
-# Maximum size in bytes that a request's body may be before a SuspiciousOperation (RequestDataTooBig) is raised.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5 MB
+
+if DEBUG:
+    INSTALLED_APPS += ['debug_toolbar']
+    MIDDLEWARE.insert(5, 'debug_toolbar.middleware.DebugToolbarMiddleware')
+
+    def show_toolbar(request):
+        return True
+
+    DEBUG_TOOLBAR_CONFIG = {'SHOW_TOOLBAR_CALLBACK': show_toolbar}
