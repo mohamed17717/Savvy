@@ -5,8 +5,8 @@ from django.conf import settings
 
 
 urlpatterns = [
-    path('bm/', include('App.urls', namespace='app')),
-    path('users/', include('Users.urls', namespace='users')),
+    path('api/bm/', include('App.urls', namespace='app')),
+    path('api/users/', include('Users.urls', namespace='users')),
 ]
 
 
