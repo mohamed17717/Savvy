@@ -1,10 +1,10 @@
 class goto {
   static dashboard() {
-    window.location.href = "/f/dashboard";
+    window.location.href = "/dashboard";
   }
 
   static login() {
-    window.location.href = "/f/auth";
+    window.location.href = "/auth";
   }
 }
 
@@ -41,7 +41,6 @@ class auth {
 class Backend {
   constructor(headers = {}) {
     this.BASE_URL = "http://localhost";
-    // this.BASE_URL = "http://62.171.141.141";
     this.headers = headers;
 
     let token = auth.getToken();
@@ -51,6 +50,8 @@ class Backend {
   }
   request(path, method, data) {
     if (!path.startsWith("/")) throw new Error("Path must start with /");
+    if (!path.startsWith("/api"))
+      path = "/api" + path;
 
     let url = this.BASE_URL + path;
 
@@ -335,8 +336,7 @@ function submitBookmarkFile(form) {
   };
 
   return (
-    fetch(`http://localhost/bm/file/create/`, fetchSetup)
-      // return fetch(`http://62.171.141.141/bm/file/create/`, fetchSetup)
+    fetch(`http://localhost/api/bm/file/create/`, fetchSetup)
       .then(async (response) => {
         if (!response.ok) throw new Error((await response.json()).error);
         return response.json();
