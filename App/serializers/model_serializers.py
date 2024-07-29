@@ -145,6 +145,7 @@ class BookmarkSerializer(serializers.ModelSerializer):
         url = serializers.SerializerMethodField()
         opened = serializers.SerializerMethodField()
         domain = serializers.ReadOnlyField(source='website.domain')
+        icon = serializers.ReadOnlyField(source='website.favicon')
 
         def get_opened(self, obj):
             return obj.history.exists()
