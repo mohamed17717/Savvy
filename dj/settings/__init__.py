@@ -236,12 +236,9 @@ INTERNAL_IPS = ['127.0.0.1', 'django']
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_WHITELIST = (
-    'http://localhost:8000',
-    'http://localhost:8080',
-    'http://localhost:5173',
-    'https://itab1.netlify.app',
-    'http://itab1.netlify.app',
-)
+    'http://localhost',
+    'http://localhost:8080'
+) + tuple(map(lambda i: f'https://{i}', ALLOWED_HOSTS))
 CORS_ALLOWED_ORIGINS = CORS_ORIGIN_WHITELIST
 CSRF_TRUSTED_ORIGINS = CORS_ORIGIN_WHITELIST
 
