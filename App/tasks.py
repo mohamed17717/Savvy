@@ -248,7 +248,7 @@ def build_word_graph_task(user_id, bookmark_ids=[]):
     similarity = types.SimilarityMatrixType(vectors, document_ids)
 
     controllers.GraphBuilder(
-        similarity.document_ids, similarity.similarity_matrix, user=user
+        similarity.document_ids, similarity.similarity_matrix
     ).build()
 
     if bookmark_ids:
