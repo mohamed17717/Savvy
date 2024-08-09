@@ -40,7 +40,8 @@ class auth {
 
 class Backend {
   constructor(headers = {}) {
-    this.BASE_URL = "http://localhost";
+    // this.BASE_URL = "http://localhost";
+    this.BASE_URL = "https://itab.ltd";
     this.headers = headers;
 
     let token = auth.getToken();
@@ -336,7 +337,8 @@ function submitBookmarkFile(form) {
   };
 
   return (
-    fetch(`http://localhost/api/bm/file/create/`, fetchSetup)
+    // fetch(`http://localhost/api/bm/file/create/`, fetchSetup)
+    fetch(`https://itab.ltd/api/bm/file/create/`, fetchSetup)
       .then(async (response) => {
         if (!response.ok) throw new Error((await response.json()).error);
         return response.json();

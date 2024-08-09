@@ -7,8 +7,8 @@ class xProgressToastModal {
   }
 
   init() {
-    let eventSource = new EventSource("http://localhost/fast/progress", {
-      // let eventSource = new EventSource("http://62.171.141.141/fast/progress", {
+    // let eventSource = new EventSource("http://localhost/fast/progress", {
+    let eventSource = new EventSource("https://itab.ltd/fast/progress", {
       withCredentials: true,
     });
 
