@@ -40,6 +40,10 @@ class JwtManager:
         )
 
     @classmethod
+    def remove_cookie(cls, response: Response) -> None:
+        response.delete_cookie(cls.COOKIE_NAME)
+
+    @classmethod
     def decode_token(cls, token) -> dict:
         data = jwt.decode(token, cls.SECRET_KEY, algorithms=[cls.ALGORITHM])
         if data['exp'] < datetime.utcnow().timestamp():
