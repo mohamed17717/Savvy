@@ -8,12 +8,11 @@ from pydantic import BaseModel, Field
 
 class RedisPubSub:
     CHANNEL_NAME = os.getenv('PUB_SUB_CHANNEL_NAME')
-    HOST = os.getenv('REDIS_HOST')
-    PORT = os.getenv('REDIS_PORT')
+    REDIS_URL = os.getenv('REDIS_URL')
 
     clients = {
-        'sync': redis.Redis(host=HOST, port=PORT, db=0),
-        'async': aioredis.from_url(f'redis://{HOST}:{PORT}', encoding="utf-8", decode_responses=True)
+        'sync': redis.from_url(REDIS_URL),
+        'async': aioredis.from_url(REDIS_URL, encoding="utf-8", decode_responses=True)
     }
 
     class MessageTypes:
