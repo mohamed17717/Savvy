@@ -105,6 +105,8 @@ services:
       - ./frontend:/usr/src/app/frontend
     ports:
       - 80
+    depends_on:
+      - django
     networks:
       - dokploy-network
     labels:
