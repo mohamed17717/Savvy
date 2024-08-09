@@ -21,32 +21,32 @@ class UserProgressSingleton:
         self.user_id = user_id
 
         self.created = datetime.now()
-        self.total = None
+        self._total = 0
         self.individual_progress = {}
         self.individual_limit = 80
         self.message = ''
         self.DONE = False
 
     @property
-    def progress(self) -> float:
-        if self.total in [None, 0]:
-            raise ValueError('Total is not set')
+    def total(self):
+        return self._total
 
+    @total.setter
+    def total(self, value):
+        self._total += value
+
+    @property
+    def progress(self) -> float:
         total_progress = sum(
             self.individual_progress.values()) / self.individual_limit
-        return total_progress / self.total * 100
-
-    def set_total(self, total):
-        if self.total is None:
-            self.total = 0
-        self.total += total
+        return total_progress / (self.total or 1) * 100
 
     def change(self, data):
         if data['type'] == RedisPubSub.MessageTypes.INIT_UPLOAD:
             self.message = 'Start Uploading'
         elif data['type'] == RedisPubSub.MessageTypes.FILE_UPLOAD:
             total = data['total_bookmarks']
-            self.set_total(total)
+            self.total = total
             self.message = f'new uploaded bookmarks: {total}'
         elif data['type'] == RedisPubSub.MessageTypes.BOOKMARK_CHANGE:
             bookmark_id = data['bookmark_id']
