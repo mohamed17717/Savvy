@@ -14,10 +14,9 @@ if settings.DEBUG:
     from .swagger import swagger_urls
 
     urlpatterns += [
-        path('api-auth/', include('rest_framework.urls')),
-        path('admin/', admin.site.urls),
+        path('api/api-auth/', include('rest_framework.urls')),
+        path('api/admin/', admin.site.urls),
 
-        # monitoring
         path('__debug__/', include('debug_toolbar.urls')),
 
         *swagger_urls,
