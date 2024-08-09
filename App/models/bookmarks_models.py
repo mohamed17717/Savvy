@@ -299,7 +299,7 @@ class Bookmark(models.Model):
 
             words_weights = [
                 WordWeight(
-                    bookmark=self, word=word, weight=weight,
+                    bookmark=self, word=word[:64], weight=weight,
                     important=word in important_words
                 )
                 for word, weight in word_vector.items()
