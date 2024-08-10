@@ -408,7 +408,7 @@ class Bookmark(models.Model):
                 bulk_clone(self.webpage.headers.all(),
                            {'webpage': new_webpage})
 
-            if self.website:
+            if self.website and self.webpage:
                 new_website, _ = Website.objects.get_or_create(
                     user=user, domain=self.website.domain, defaults={'favicon': self.website.favicon})
                 new_bookmark.website = new_website
