@@ -132,7 +132,7 @@ class BookmarkFile(models.Model):
                 # TODO created in last 100 day disabled for now
                 # scrapes__created_at__gte=timezone.now() - timedelta(days=100)
             )
-            .values('url')
+            .values('url', 'id')
             .distinct('url')
         )
         others_bookmarks_urls = set(
@@ -144,8 +144,8 @@ class BookmarkFile(models.Model):
         others_ids = []
         more_data_for_clone = []
         for others_bookmark in others_bookmarks:
-            others_ids.append(others_bookmark.id)
-            more_data_for_clone.append(new_bookmarks_map[others_bookmark.url])
+            others_ids.append(others_bookmark['id'])
+            more_data_for_clone.append(new_bookmarks_map[others_bookmark['url']])
 
         tasks.deep_clone_bookmarks_task(
             others_ids, self.user.id, self.id, more_data_for_clone)
