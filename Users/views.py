@@ -103,6 +103,9 @@ class LogoutAPI(knox_views.LogoutView):
 
         return response
 
+    def get(self, request, format=None):
+        return self.post(request, format)
+
 
 class LogoutAllAPI(knox_views.LogoutAllView):
     def post(self, request, format=None):
@@ -110,3 +113,6 @@ class LogoutAllAPI(knox_views.LogoutAllView):
         jwt_utils.JwtManager.remove_cookie(response)
 
         return response
+
+    def get(self, request, format=None):
+        return self.post(request, format)
