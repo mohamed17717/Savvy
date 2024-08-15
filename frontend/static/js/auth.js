@@ -70,6 +70,10 @@ class Backend {
 
     return fetch(url, requestSetup)
       .then((response) => {
+        if (response.status === 401) {
+          logout()
+          throw new Error('Token expired');
+        }
         if (!response.ok) throw new Error(response.statusText);
         if (response.status === 204) return null;
         return response.json();
@@ -248,7 +252,10 @@ function bookmarkFilterTopicChoices(searchQuery) {
 
 function logout() {
   const path = "/users/logout/";
-  return get(path);
+  return get(path).finally(() => {
+    auth.removeToken();
+    goto.login();
+  });
 }
 
 function getCard(bookmarkId) {
@@ -340,6 +347,10 @@ function submitBookmarkFile(form) {
     // fetch(`http://localhost/api/bm/file/create/`, fetchSetup)
     fetch(`https://itab.ltd/api/bm/file/create/`, fetchSetup)
       .then(async (response) => {
+        if (response.status === 401) {
+          logout()
+          throw new Error('Token expired');
+        }
         if (!response.ok) throw new Error((await response.json()).error);
         return response.json();
       })

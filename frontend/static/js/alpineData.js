@@ -168,10 +168,6 @@ class xDashboardDetails {
     if (response.next) this.nextPage = urlToPath(response.next);
     else this.nextPage = null;
 
-    setTimeout(() => {
-      document.querySelector("#loadingPage")?.remove();
-    }, 0);
-
     document.addEventListener("scroll", async () => {
       const yAxis = window.scrollY + window.innerHeight;
       if (yAxis >= document.body.scrollHeight - 700) {
