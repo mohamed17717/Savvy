@@ -39,7 +39,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.gzip.GZipMiddleware',  # This should come first
+    # 'django.middleware.gzip.GZipMiddleware',  # This should come first
     'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
