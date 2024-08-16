@@ -346,7 +346,6 @@ class Bookmark(models.Model):
         except requests.exceptions.HTTPError as e:
             if str(e).startswith('429'):
                 # Too many requests error, so schedule for later
-                from App import tasks
                 tasks.schedule_store_bookmark_image_task.delay(self.id, url)
                 return
             raise e
