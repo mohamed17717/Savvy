@@ -116,39 +116,39 @@ class BookmarkFile(models.Model):
         new_urls = set(new_bookmarks_map.keys())
 
         # get only new bookmarks for this user
-        stored_urls = self.user.bookmarks.all().values_list('url', flat=True)
-        stored_urls = set(stored_urls)
+        stored_urls = set(
+            self.user.bookmarks.only('url').values_list('url', flat=True))
 
         new_urls -= stored_urls
         del stored_urls
 
         # clone from other users if any of those bookmarks are exist and fresh to save time
-        others_bookmarks = (
-            Bookmark.objects
-            .exclude(user=self.user)
-            .filter(
-                url__in=new_urls,
-                process_status__gte=Bookmark.ProcessStatus.TEXT_PROCESSED.value,
-                # TODO created in last 100 day disabled for now
-                # scrapes__created_at__gte=timezone.now() - timedelta(days=100)
-            )
-            .values('url', 'id')
-            .distinct('url')
-        )
-        others_bookmarks_urls = set(
-            others_bookmarks.values_list('url', flat=True))
+        # others_bookmarks = (
+        #     Bookmark.objects
+        #     .exclude(user=self.user)
+        #     .filter(
+        #         url__in=new_urls,
+        #         process_status__gte=Bookmark.ProcessStatus.TEXT_PROCESSED.value,
+        #         # TODO created in last 100 day disabled for now
+        #         # scrapes__created_at__gte=timezone.now() - timedelta(days=100)
+        #     )
+        #     .values('url', 'id')
+        #     .distinct('url')
+        # )
+        # others_bookmarks_urls = set(
+        #     others_bookmarks.values_list('url', flat=True))
 
-        new_urls -= others_bookmarks_urls
+        # new_urls -= others_bookmarks_urls
 
         # clone bookmarks
-        others_ids = []
-        more_data_for_clone = []
-        for others_bookmark in others_bookmarks:
-            others_ids.append(others_bookmark['id'])
-            more_data_for_clone.append(new_bookmarks_map[others_bookmark['url']])
+        # others_ids = []
+        # more_data_for_clone = []
+        # for others_bookmark in others_bookmarks:
+        #     others_ids.append(others_bookmark['id'])
+        #     more_data_for_clone.append(new_bookmarks_map[others_bookmark['url']])
 
-        tasks.deep_clone_bookmarks_task(
-            others_ids, self.user.id, self.id, more_data_for_clone)
+        # tasks.deep_clone_bookmarks_task(
+        #     others_ids, self.user.id, self.id, more_data_for_clone)
         return list({url: new_bookmarks_map[url] for url in new_urls}.values())
 
     def init_bookmark(self, data):
@@ -375,11 +375,7 @@ class Bookmark(models.Model):
             - user
             - parent file
 
-        skip relations ->
-            - clusters (because it is not needed for new user)
-
         update field ->
-            - similarity_calculated to False
             - status to PENDING
         """
         with transaction.atomic():
