@@ -37,8 +37,8 @@ class xProgressToastModal {
 
 class xUploadBookmarksModal {
   constructor() {
-    this.loading = false;
     this.progress = { percent: 0, message: "" };
+    this.uploading = false;
   }
 }
 

@@ -332,35 +332,33 @@ function validateSize(input) {
 
 function submitBookmarkFile(form) {
   const headers = {
-    // "Content-Type": "multipart/form-data",
     Authorization: `Token ${auth.getToken()}`,
   };
   const data = new FormData(form);
-  const fetchSetup = {
-    method: "POST",
-    headers: headers,
-    body: data,
-    credentials: "include",
-  };
 
-  return (
-    // fetch(`http://localhost/api/bm/file/create/`, fetchSetup)
-    fetch(`https://itab.ltd/api/bm/file/create/`, fetchSetup)
-      .then(async (response) => {
-        if (response.status === 401) {
-          logout()
-          throw new Error('Token expired');
-        }
-        if (!response.ok) throw new Error((await response.json()).error);
-        return response.json();
-      })
-      .then((data) => data)
-      .catch((error) => {
-        errorToast(error.message);
-        return false;
-      })
-  );
+  return axios.post('https://itab.ltd/api/bm/file/create/', data, {
+    headers: headers,
+    onUploadProgress: (progressEvent) => {
+      const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+      console.log(`Upload progress: ${progress}%`);
+      form.querySelector('button.loading').innerText = `Uploading: ${progress}%`
+    },
+    withCredentials: true,
+  })
+  .then((response) => {
+    return response.data;
+  })
+  .catch((error) => {
+    if (error.response && error.response.status === 401) {
+      logout();
+      errorToast('Token expired');
+      return false;
+    }
+    errorToast(error.message);
+    return false;
+  });
 }
+
 
 function urlToPath(url) {
   if(!url) return url
