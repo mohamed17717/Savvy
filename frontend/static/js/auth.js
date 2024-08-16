@@ -341,7 +341,7 @@ function submitBookmarkFile(form) {
     onUploadProgress: (progressEvent) => {
       const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
       console.log(`Upload progress: ${progress}%`);
-      form.querySelector('button.btn-disabled').innerText = `Uploading: ${progress}%`
+      form.querySelector('button.uploading-btn-loading').innerText = `Uploading: ${progress}%`
     },
     withCredentials: true,
   })
