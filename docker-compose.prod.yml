@@ -115,7 +115,10 @@ services:
       - traefik.http.routers.django.entrypoints=websecure
       - traefik.http.routers.django.tls.certResolver=letsencrypt
       - traefik.http.services.django.loadbalancer.server.port=80
-
+      - traefik.http.middlewares.no-compression.compress.enabled=false
+      - traefik.http.middlewares.custom-timeout.responseTimeout=30s
+      - traefik.http.middlewares.custom-timeout.idleTimeout=10s
+      - traefik.http.middlewares.custom-timeout.requestTimeout=60s
 networks:
   dokploy-network:
     external: true
