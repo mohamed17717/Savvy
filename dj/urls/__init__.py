@@ -7,6 +7,8 @@ from django.conf import settings
 urlpatterns = [
     path('api/bm/', include('App.urls', namespace='app')),
     path('api/users/', include('Users.urls', namespace='users')),
+
+    path('api/admin/', admin.site.urls),
 ]
 
 
@@ -15,7 +17,6 @@ if settings.DEBUG:
 
     urlpatterns += [
         path('api/api-auth/', include('rest_framework.urls')),
-        path('api/admin/', admin.site.urls),
 
         path('__debug__/', include('debug_toolbar.urls')),
 
