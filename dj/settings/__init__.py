@@ -182,7 +182,6 @@ LOGGING = {
             'formatter': 'main_formatter',
         },
     },
-
     'loggers': {
         'django.db.backends': {
             'level': 'DEBUG',
@@ -200,7 +199,6 @@ LOGGING = {
             'level': 'INFO'
         }
     },
-    
     'root': {
         'handlers': ['console'],
     }
