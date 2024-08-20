@@ -114,7 +114,10 @@ class BookmarkAPI(RUDLViewSet):
         elif self.action in all_actions:
             qs = models.Bookmark.all_objects.all().by_user(self.request.user)
 
-        return qs.only(*only_fields(self.get_serializer_class())).select_related('website').prefetch_related('history')
+        is_read_action = self.action.endswith('list')
+        if is_read_action:
+            return qs.only(*only_fields(self.get_serializer_class())).select_related('website').prefetch_related('history')
+        return qs
 
     def perform_destroy(self, instance):
         instance.hidden = True
