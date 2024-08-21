@@ -7,10 +7,14 @@ services:
     env_file:
       - .env
     restart: always
+    # volumes:
+    #   - .:/usr/src/app
+    #   - ./staticfiles:/usr/src/app/staticfiles
+    #   - ./media:/usr/src/app/media
     volumes:
       - .:/usr/src/app
-      - ./staticfiles:/usr/src/app/staticfiles
-      - ./media:/usr/src/app/media
+      - ../files/staticfiles:/usr/src/app/staticfiles
+      - ../files/media:/usr/src/app/media
     ports:
       - 8000
     networks:
@@ -36,8 +40,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
-      - ./staticfiles:/usr/src/app/staticfiles
-      - ./media:/usr/src/app/media
+      - ../files/staticfiles:/usr/src/app/staticfiles
+      - ../files/media:/usr/src/app/media
     networks:
       - dokploy-network
 
@@ -50,8 +54,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
-      - ./staticfiles:/usr/src/app/staticfiles
-      - ./media:/usr/src/app/media
+      - ../files/staticfiles:/usr/src/app/staticfiles
+      - ../files/media:/usr/src/app/media
     networks:
       - dokploy-network
 
@@ -64,8 +68,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
-      - ./staticfiles:/usr/src/app/staticfiles
-      - ./media:/usr/src/app/media
+      - ../files/staticfiles:/usr/src/app/staticfiles
+      - ../files/media:/usr/src/app/media
     networks:
       - dokploy-network
 
@@ -78,8 +82,8 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
-      - ./staticfiles:/usr/src/app/staticfiles
-      - ./media:/usr/src/app/media
+      - ../files/staticfiles:/usr/src/app/staticfiles
+      - ../files/media:/usr/src/app/media
     networks:
       - dokploy-network
 
@@ -92,17 +96,17 @@ services:
       - .env
     volumes:
       - .:/usr/src/app
-      - ./staticfiles:/usr/src/app/staticfiles
-      - ./media:/usr/src/app/media
+      - ../files/staticfiles:/usr/src/app/staticfiles
+      - ../files/media:/usr/src/app/media
     networks:
       - dokploy-network
 
   nginx:
     build: ./nginx
     volumes:
-      - ./staticfiles:/usr/src/app/staticfiles
-      - ./media:/usr/src/app/media
       - ./frontend:/usr/src/app/frontend
+      - ../files/staticfiles:/usr/src/app/staticfiles
+      - ../files/media:/usr/src/app/media
     ports:
       - 80
     depends_on:
