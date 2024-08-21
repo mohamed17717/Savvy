@@ -143,7 +143,7 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_ACCEPT_CONTENT = ['pickle']
 CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 12 * 60 * 60}
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
-CELERY_IGNORE_RESULT = True
+CELERY_IGNORE_RESULT = False
 
 CACHES = {
     "default": {
