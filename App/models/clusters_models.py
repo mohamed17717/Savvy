@@ -50,10 +50,13 @@ class Tag(models.Model):
     def update_tags_with_new_bookmarks(cls, bookmarks_ids: list[int]):
         from App.models import WordWeight, Bookmark
 
+        bookmarks = Bookmark.all_objects.filter(id__in=bookmarks_ids).exclude(tags__isnull=False)
+
         # make sure this bookmarks has no tags
-        if cls.objects.filter(bookmarks__in=bookmarks_ids).exists():
+        if not bookmarks.exists():
             raise ValueError('Bookmarks has tags')
 
+        user = bookmarks.first().user
         # get words
         words_qs = (WordWeight.objects
                     .filter(bookmark_id__in=bookmarks_ids, important=True)
@@ -66,12 +69,13 @@ class Tag(models.Model):
         words_map = {w['word']: w for w in words_qs}
 
         # Update existing tags
-        existing_tags = cls.objects.filter(name__in=words)
+        existing_tags = user.tags.filter(name__in=words)
         for tag in existing_tags:
             tag.weight += words_map[tag.name]['total_weight']
             tag.bookmarks_count += len(
                 set(words_map[tag.name]['bookmark_ids']))
-        cls.objects.bulk_update(existing_tags, ['weight'], batch_size=250)
+        cls.objects.bulk_update(
+            existing_tags, ['weight', 'bookmarks_count'], batch_size=250)
 
         # Create new tags
         existing_tag_names = set(existing_tags.values_list('name', flat=True))
