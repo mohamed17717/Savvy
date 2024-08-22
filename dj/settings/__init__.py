@@ -145,6 +145,7 @@ CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 12 * 60 * 60}
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_IGNORE_RESULT = False
 CELERY_TASK_RESULT_EXPIRES = 3600 * 24 # 24 hour
+CELERY_CACHE_BACKEND = 'default'
 
 CACHES = {
     "default": {
