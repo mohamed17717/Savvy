@@ -57,7 +57,7 @@ def update_sent_state(sender=None, headers=None, **kwargs):
     backend.store_result(headers['id'], None, "SENT")
 
 
-@shared_task(queue='orm')
+@shared_task()
 def store_bookmarks_task(parent_id: int):
     parent = models.BookmarkFile.objects.get(id=parent_id)
     bookmarks_data = parent.cleaned_bookmarks_links()
@@ -98,7 +98,7 @@ def store_bookmarks_task(parent_id: int):
     return f'BookmarkFile<{parent_id}> [Created] {len(bookmarks_data)} Bookmarks'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def batch_bookmarks_to_tasks(bookmark_ids: list[int]):
     batch_size = 30
 
@@ -111,7 +111,7 @@ def batch_bookmarks_to_tasks(bookmark_ids: list[int]):
         tasks.extend([hook_method.s(group) for group in id_groups])
 
     callback = (
-        post_batch_bookmarks_task.s(bookmark_ids=bookmark_ids).set(queue='orm')
+        post_batch_bookmarks_task.s(bookmark_ids=bookmark_ids).set()
     )
 
     job = chord(tasks)(callback)
@@ -121,7 +121,7 @@ def batch_bookmarks_to_tasks(bookmark_ids: list[int]):
     return f'[Batched ({len(bookmark_ids)})] {bookmark_ids}'
 
 
-@shared_task(queue='scrapy')
+@shared_task()
 def crawl_bookmarks_task(bookmark_ids: list[int]):
     models.Bookmark.objects.filter(id__in=bookmark_ids).start_crawl()
 
@@ -132,7 +132,7 @@ def crawl_bookmarks_task(bookmark_ids: list[int]):
     return f'[Crawled ({len(bookmark_ids)})] {bookmark_ids}'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def bulk_store_weights_task(bookmark_ids: list[int]):
     bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
     words_weights = []
@@ -146,7 +146,7 @@ def bulk_store_weights_task(bookmark_ids: list[int]):
     return f'[BulkStoreWeights ({len(bookmark_ids)})] {bookmark_ids}'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def store_webpage_task(bookmark_id, page_title, meta_tags, headers):
     with transaction.atomic():
         bookmark = models.Bookmark.objects.get(id=bookmark_id)
@@ -160,7 +160,7 @@ def store_webpage_task(bookmark_id, page_title, meta_tags, headers):
     return f'[StoreWebpage] Bookmark<{bookmark_id}> Meta<{len(meta_tags)}> Header<{len(headers)}>'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def deep_clone_bookmarks_task(bookmark_ids, user_id, file_id, more_data=[]):
     bookmarks_file = models.BookmarkFile.objects.get(id=file_id)
     bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
@@ -179,7 +179,7 @@ def deep_clone_bookmarks_task(bookmark_ids, user_id, file_id, more_data=[]):
     return f'[DeepClone ({len(bookmark_ids)})] {bookmark_ids}'
 
 
-@shared_task(queue='download_images')
+@shared_task()
 def store_bookmark_image_task(bookmark_id, meta_tags=None, image_url=None):
     bookmark = models.Bookmark.objects.get(id=bookmark_id)
     if meta_tags:
@@ -196,7 +196,7 @@ def store_bookmark_image_task(bookmark_id, meta_tags=None, image_url=None):
     return f'[StoreImage] Bookmark<{bookmark_id}>'
 
 
-@shared_task(queue='download_images')
+@shared_task()
 def schedule_store_bookmark_image_task(bookmark_id, image_url):
     wait_time = 60 * 60  # 1 hour
     store_bookmark_image_task.apply_async(kwargs={
@@ -207,7 +207,7 @@ def schedule_store_bookmark_image_task(bookmark_id, image_url):
     return f'[ScheduleStoreImage] Bookmark<{bookmark_id}>'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def store_weights_task(bookmark_id):
     Status = models.Bookmark.ProcessStatus
 
@@ -225,7 +225,7 @@ def store_weights_task(bookmark_id):
     return f'[StoreWeights] Bookmark<{bookmark_id}>'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def store_tags_task(user_id):
     user = User.objects.get(pk=user_id)
     bookmark_ids = user.bookmarks.filter(
@@ -235,7 +235,7 @@ def store_tags_task(user_id):
     return f'[StoreTags] User<{user_id}> Bookmarks<{len(bookmark_ids)}> {bookmark_ids}'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def build_word_graph_task(user_id, bookmark_ids=[]):
     user = User.objects.get(pk=user_id)
 
@@ -261,7 +261,7 @@ def build_word_graph_task(user_id, bookmark_ids=[]):
     return f'[BuildGraph] User<{user_id}> Bookmarks<{len(bookmark_ids)}> {bookmark_ids}'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def store_bookmark_file_analytics_task(parent_id):
     parent = models.BookmarkFile.objects.get(id=parent_id)
 
@@ -276,7 +276,7 @@ def store_bookmark_file_analytics_task(parent_id):
     return f'StoreFileAnalytics<{parent_id}>'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def index_search_vector_task(bookmark_ids):
     from App import views
     search_fields = views.BookmarkAPI.search_fields
@@ -293,7 +293,7 @@ def index_search_vector_task(bookmark_ids):
     return f'[IndexedSearchVector ({len(bookmark_ids)})] {bookmark_ids}'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
     if not bookmark_ids:
         return
@@ -316,7 +316,7 @@ def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
     return f'[PostBatched ({len(bookmark_ids)})] {bookmark_ids}'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iteration=0, uncompleted_bookmarks_history: dict = {}):
     max_time = 3*60  # 3 min
     wait_time = 2  # 2 sec
@@ -355,13 +355,13 @@ def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iter
 
         if ready_to_scrape:
             tasks = [crawl_bookmarks_task.s(
-                ready_to_scrape).set(queue='scrapy')]
+                ready_to_scrape).set()]
             callback = (
                 cluster_checker_task.s(
                     user_id=user_id, bookmark_ids=bookmark_ids,
                     iteration=iteration+1,
                     uncompleted_bookmarks_history=uncompleted_bookmarks_history
-                ).set(queue='orm')
+                ).set()
             )
             job = chord(tasks)(callback)
             with allow_join_result():
@@ -403,7 +403,7 @@ def cluster_checker_task(callback_result=[], user_id=None, bookmark_ids=[], iter
     return f'[ClusterChecker] (succeed) Bookmarks<{len(bookmark_ids)}> {bookmark_ids}'
 
 
-@shared_task(queue='orm')
+@shared_task()
 def delete_bookmarks_beat_task():
     today = timezone.now().date()
     bookmarks = models.Bookmark.hidden_objects.filter(
