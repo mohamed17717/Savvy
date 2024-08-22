@@ -7,10 +7,6 @@ services:
     env_file:
       - .env
     restart: always
-    # volumes:
-    #   - .:/usr/src/app
-    #   - ./staticfiles:/usr/src/app/staticfiles
-    #   - ./media:/usr/src/app/media
     volumes:
       - .:/usr/src/app
       - ../files/staticfiles:/usr/src/app/staticfiles
@@ -31,11 +27,12 @@ services:
     networks:
       - dokploy-network
 
-  celery_scrapy_worker:
+  celery_worker:
     build:
       context: .
       dockerfile: Dockerfile-celery
-    command: celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=5
+    # command: celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=16
+    command: celery -A dj worker -l DEBUG --concurrency=16
     env_file:
       - .env
     volumes:
@@ -45,47 +42,62 @@ services:
     networks:
       - dokploy-network
 
-  celery_orm_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile-celery
-    command: celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=16
-    env_file:
-      - .env
-    volumes:
-      - .:/usr/src/app
-      - ../files/staticfiles:/usr/src/app/staticfiles
-      - ../files/media:/usr/src/app/media
-    networks:
-      - dokploy-network
 
-  celery_download_images_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile-celery
-    command: celery -A dj worker -l INFO -n download_images_worker -Q download_images -E --concurrency=4
-    env_file:
-      - .env
-    volumes:
-      - .:/usr/src/app
-      - ../files/staticfiles:/usr/src/app/staticfiles
-      - ../files/media:/usr/src/app/media
-    networks:
-      - dokploy-network
+  # celery_scrapy_worker:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile-celery
+  #   command: celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=5
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - .:/usr/src/app
+  #     - ../files/staticfiles:/usr/src/app/staticfiles
+  #     - ../files/media:/usr/src/app/media
+  #   networks:
+  #     - dokploy-network
 
-  celery_email_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile-celery
-    command: celery -A dj worker -l INFO -n email_worker -Q email -E --concurrency=2
-    env_file:
-      - .env
-    volumes:
-      - .:/usr/src/app
-      - ../files/staticfiles:/usr/src/app/staticfiles
-      - ../files/media:/usr/src/app/media
-    networks:
-      - dokploy-network
+  # celery_orm_worker:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile-celery
+  #   command: celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=16
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - .:/usr/src/app
+  #     - ../files/staticfiles:/usr/src/app/staticfiles
+  #     - ../files/media:/usr/src/app/media
+  #   networks:
+  #     - dokploy-network
+
+  # celery_download_images_worker:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile-celery
+  #   command: celery -A dj worker -l INFO -n download_images_worker -Q download_images -E --concurrency=4
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - .:/usr/src/app
+  #     - ../files/staticfiles:/usr/src/app/staticfiles
+  #     - ../files/media:/usr/src/app/media
+  #   networks:
+  #     - dokploy-network
+
+  # # celery_email_worker:
+  # #   build:
+  # #     context: .
+  # #     dockerfile: Dockerfile-celery
+  # #   command: celery -A dj worker -l INFO -n email_worker -Q email -E --concurrency=2
+  # #   env_file:
+  # #     - .env
+  # #   volumes:
+  # #     - .:/usr/src/app
+  # #     - ../files/staticfiles:/usr/src/app/staticfiles
+  # #     - ../files/media:/usr/src/app/media
+  # #   networks:
+  # #     - dokploy-network
 
   celerybeat:
     build:
