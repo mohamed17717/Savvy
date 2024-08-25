@@ -29,7 +29,7 @@ class Tag(models.Model):
     alias_name = models.CharField(max_length=128, blank=True, null=True)
 
     # Computed
-    weight = models.PositiveSmallIntegerField(default=0)
+    weight = models.PositiveIntegerField(default=0)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
