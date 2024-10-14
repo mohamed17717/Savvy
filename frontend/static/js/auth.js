@@ -41,7 +41,7 @@ class auth {
 class Backend {
   constructor(headers = {}) {
     // this.BASE_URL = "http://localhost";
-    this.BASE_URL = "https://itab.ltd";
+    this.BASE_URL = "http://localhost";
     this.headers = headers;
 
     let token = auth.getToken();
@@ -336,7 +336,7 @@ function submitBookmarkFile(form) {
   };
   const data = new FormData(form);
 
-  return axios.post('https://itab.ltd/api/bm/file/create/', data, {
+  return axios.post('http://localhost/api/bm/file/create/', data, {
     headers: headers,
     onUploadProgress: (progressEvent) => {
       const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
