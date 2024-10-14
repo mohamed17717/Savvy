@@ -166,7 +166,7 @@ services:
 networks:
   dokploy-network:
     driver: bridge
-    external: true
+    external: false
 
 volumes:
   redis_data:
