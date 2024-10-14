@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0039_website_bookmark_website'),
+        ("App", "0039_website_bookmark_website"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='graphnode',
-            name='is_sharded_islands',
+            model_name="graphnode",
+            name="is_sharded_islands",
             field=models.BooleanField(default=False),
         ),
     ]

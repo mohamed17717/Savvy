@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0027_rename_documentwordweight_wordweight'),
+        ("App", "0027_rename_documentwordweight_wordweight"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='bookmark',
-            name='cloned',
+            model_name="bookmark",
+            name="cloned",
             field=models.BooleanField(default=False),
         ),
     ]

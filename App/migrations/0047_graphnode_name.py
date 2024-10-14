@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0046_tag_bookmarks_count'),
+        ("App", "0046_tag_bookmarks_count"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='graphnode',
-            name='name',
+            model_name="graphnode",
+            name="name",
             field=models.CharField(blank=True, max_length=256, null=True),
         ),
     ]

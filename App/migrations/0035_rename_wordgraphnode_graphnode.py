@@ -5,15 +5,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('App', '0034_wordgraphnode_is_leaf'),
+        ("App", "0034_wordgraphnode_is_leaf"),
     ]
 
     operations = [
         migrations.RenameModel(
-            old_name='WordGraphNode',
-            new_name='GraphNode',
+            old_name="WordGraphNode",
+            new_name="GraphNode",
         ),
     ]

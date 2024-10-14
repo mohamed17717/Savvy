@@ -5,14 +5,15 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0044_bookmark_search_vector'),
+        ("App", "0044_bookmark_search_vector"),
     ]
 
     operations = [
         migrations.AddIndex(
-            model_name='bookmark',
-            index=django.contrib.postgres.indexes.GinIndex(fields=['search_vector'], name='App_bookmar_search__40979f_gin'),
+            model_name="bookmark",
+            index=django.contrib.postgres.indexes.GinIndex(
+                fields=["search_vector"], name="App_bookmar_search__40979f_gin"
+            ),
         ),
     ]

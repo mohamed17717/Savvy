@@ -5,15 +5,16 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0043_alter_wordweight_word'),
+        ("App", "0043_alter_wordweight_word"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='bookmark',
-            name='search_vector',
-            field=django.contrib.postgres.search.SearchVectorField(blank=True, null=True),
+            model_name="bookmark",
+            name="search_vector",
+            field=django.contrib.postgres.search.SearchVectorField(
+                blank=True, null=True
+            ),
         ),
     ]

@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0013_alter_bookmarkwebpage_url_and_more'),
+        ("App", "0013_alter_bookmarkwebpage_url_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='bookmarkwebpage',
-            name='title',
+            model_name="bookmarkwebpage",
+            name="title",
             field=models.CharField(max_length=2048),
         ),
     ]

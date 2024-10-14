@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0001_initial'),
+        ("App", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='webpageheader',
-            name='cleaned_text',
+            model_name="webpageheader",
+            name="cleaned_text",
             field=models.TextField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='webpagemetatag',
-            name='cleaned_content',
+            model_name="webpagemetatag",
+            name="cleaned_content",
             field=models.TextField(blank=True, null=True),
         ),
     ]

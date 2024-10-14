@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0033_wordgraphnode'),
+        ("App", "0033_wordgraphnode"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='wordgraphnode',
-            name='is_leaf',
+            model_name="wordgraphnode",
+            name="is_leaf",
             field=models.BooleanField(default=False),
         ),
     ]

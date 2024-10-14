@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0009_tag_rename_document_documentwordweight_bookmark_and_more'),
+        ("App", "0009_tag_rename_document_documentwordweight_bookmark_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='bookmark',
-            name='title',
+            model_name="bookmark",
+            name="title",
             field=models.CharField(blank=True, max_length=2048, null=True),
         ),
     ]

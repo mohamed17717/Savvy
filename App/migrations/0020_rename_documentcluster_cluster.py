@@ -5,15 +5,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('App', '0019_bookmark_image'),
+        ("App", "0019_bookmark_image"),
     ]
 
     operations = [
         migrations.RenameModel(
-            old_name='DocumentCluster',
-            new_name='Cluster',
+            old_name="DocumentCluster",
+            new_name="Cluster",
         ),
     ]

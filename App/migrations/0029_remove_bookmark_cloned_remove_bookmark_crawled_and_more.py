@@ -4,36 +4,57 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0028_bookmark_cloned'),
+        ("App", "0028_bookmark_cloned"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='bookmark',
-            name='cloned',
+            model_name="bookmark",
+            name="cloned",
         ),
         migrations.RemoveField(
-            model_name='bookmark',
-            name='crawled',
+            model_name="bookmark",
+            name="crawled",
         ),
         migrations.RemoveField(
-            model_name='bookmark',
-            name='similarity_calculated',
+            model_name="bookmark",
+            name="similarity_calculated",
         ),
         migrations.RemoveField(
-            model_name='bookmark',
-            name='status',
+            model_name="bookmark",
+            name="status",
         ),
         migrations.AddField(
-            model_name='bookmark',
-            name='process_status',
-            field=models.PositiveSmallIntegerField(choices=[(None, None), (10, 'cloned from another user bookmark (to status 60)'), (20, 'created'), (30, 'sent to scrapy crawler'), (35, 'crawled failed for any reason'), (40, 'crawled succeeded'), (50, 'start text processing'), (60, 'text processed'), (70, 'start clustering process'), (80, 'done the whole flow')], default=20),
+            model_name="bookmark",
+            name="process_status",
+            field=models.PositiveSmallIntegerField(
+                choices=[
+                    (None, None),
+                    (10, "cloned from another user bookmark (to status 60)"),
+                    (20, "created"),
+                    (30, "sent to scrapy crawler"),
+                    (35, "crawled failed for any reason"),
+                    (40, "crawled succeeded"),
+                    (50, "start text processing"),
+                    (60, "text processed"),
+                    (70, "start clustering process"),
+                    (80, "done the whole flow"),
+                ],
+                default=20,
+            ),
         ),
         migrations.AddField(
-            model_name='bookmark',
-            name='user_status',
-            field=models.PositiveSmallIntegerField(choices=[(None, None), (1, 'waiting for any status change'), (2, 'no need to show anymore'), (3, 'hide for now')], default=1),
+            model_name="bookmark",
+            name="user_status",
+            field=models.PositiveSmallIntegerField(
+                choices=[
+                    (None, None),
+                    (1, "waiting for any status change"),
+                    (2, "no need to show anymore"),
+                    (3, "hide for now"),
+                ],
+                default=1,
+            ),
         ),
     ]

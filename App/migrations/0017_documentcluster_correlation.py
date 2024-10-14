@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0016_bookmarkfile_file_hash_and_more'),
+        ("App", "0016_bookmarkfile_file_hash_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='documentcluster',
-            name='correlation',
+            model_name="documentcluster",
+            name="correlation",
             field=models.FloatField(default=0.0),
         ),
     ]

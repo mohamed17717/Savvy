@@ -4,25 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0022_alter_bookmarkfile_location'),
+        ("App", "0022_alter_bookmarkfile_location"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='bookmarkfile',
-            name='failed_links_count',
+            model_name="bookmarkfile",
+            name="failed_links_count",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='bookmarkfile',
-            name='succeeded_links_count',
+            model_name="bookmarkfile",
+            name="succeeded_links_count",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='bookmarkfile',
-            name='total_links_count',
+            model_name="bookmarkfile",
+            name="total_links_count",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
     ]

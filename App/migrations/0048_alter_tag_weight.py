@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0047_graphnode_name'),
+        ("App", "0047_graphnode_name"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='tag',
-            name='weight',
+            model_name="tag",
+            name="weight",
             field=models.PositiveIntegerField(default=0),
         ),
     ]
