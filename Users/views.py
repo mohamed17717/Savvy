@@ -1,22 +1,19 @@
-from django.contrib.auth import login
 from django.conf import settings
-
-from rest_framework.response import Response
+from django.contrib.auth import login
+from knox import views as knox_views
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from rest_framework.status import HTTP_204_NO_CONTENT
 
-from knox import views as knox_views
-
 from common.utils.drf.viewsets import RUViewSet
-from Users import serializers, controllers
-
 from realtime.common import jwt_utils
+from Users import controllers, serializers
 
 
 def setup_serializer(view, request, **kwargs):
     serializer = view.serializer_class(
-        data=request.data, context={'request': request}, **kwargs
+        data=request.data, context={"request": request}, **kwargs
     )
     serializer.is_valid(raise_exception=True)
     return serializer
@@ -29,10 +26,10 @@ class LoginAPI(knox_views.LoginView):
 
     def post(self, request):
         serializer = setup_serializer(self, request)
-        user = serializer.validated_data['user']
+        user = serializer.validated_data["user"]
 
         login(request, user)
-        return super(LoginAPI, self).post(request, format=None)
+        return super().post(request, format=None)
 
 
 class ResetPasswordAPI(knox_views.LoginView):
@@ -42,13 +39,13 @@ class ResetPasswordAPI(knox_views.LoginView):
     def post(self, request):
         serializer = setup_serializer(self, request)
 
-        user = serializer.validated_data['user']
-        password = serializer.validated_data['password']
+        user = serializer.validated_data["user"]
+        password = serializer.validated_data["password"]
         user.set_password(password)
         user.save()
 
         login(request, user)
-        return super(ResetPasswordAPI, self).post(request, format=None)
+        return super().post(request, format=None)
 
 
 class AskForOTPCodeAPI(GenericAPIView):
@@ -58,12 +55,12 @@ class AskForOTPCodeAPI(GenericAPIView):
     def post(self, request):
         serializer = setup_serializer(self, request)
 
-        user = serializer.validated_data['user']
-        otp_type = serializer.validated_data['otp_type']
+        user = serializer.validated_data["user"]
+        otp_type = serializer.validated_data["otp_type"]
 
         otp_code = controllers.OTPManager(user).send(otp_type)
         if settings.DEBUG:
-            return Response({'otp_code': otp_code})
+            return Response({"otp_code": otp_code})
 
         return Response(status=HTTP_204_NO_CONTENT)
 
@@ -78,16 +75,16 @@ class RegisterAPI(knox_views.LoginView):
         user = serializer.save()
 
         login(request, user)
-        return super(RegisterAPI, self).post(request, format=None)
+        return super().post(request, format=None)
 
 
 class UserProfileAPI(RUViewSet):
     def get_serializer_class(self):
         serializer_class = serializers.UserSerializer
 
-        if self.action == 'update':
+        if self.action == "update":
             serializer_class = serializers.UserSerializer.Update
-        elif self.action == 'retrieve':
+        elif self.action == "retrieve":
             pass
 
         return serializer_class
