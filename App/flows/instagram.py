@@ -1,3 +1,5 @@
+import typing
+
 from common.utils.array_utils import window_list
 
 from .default import BookmarkHooks
@@ -16,12 +18,12 @@ class InstagramBookmarkHooks(BookmarkHooks):
 
         return InstagramBookmarkWeightingSerializer
 
-    def get_batch_method(self) -> callable:
+    def get_batch_method(self) -> typing.Callable:
         from App.tasks import bulk_store_weights_task
 
         return bulk_store_weights_task
 
-    def post_batch(self) -> callable:
+    def post_batch(self) -> typing.Callable:
         def method(bookmark_ids):
             from App import tasks
 

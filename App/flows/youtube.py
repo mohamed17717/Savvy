@@ -1,3 +1,5 @@
+import typing
+
 from .default import BookmarkHooks
 
 
@@ -13,7 +15,7 @@ class YoutubeBookmarkHooks(BookmarkHooks):
 
         return YoutubeBookmarkWeightingSerializer
 
-    def get_batch_method(self) -> callable:
+    def get_batch_method(self) -> typing.Callable:
         from App.tasks import bulk_store_weights_task
 
         return bulk_store_weights_task

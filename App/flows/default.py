@@ -1,7 +1,7 @@
+import typing
 from abc import ABC
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     from rest_framework.serializers import Serializer
     from scrapy.loader import ItemLoader
 
@@ -17,7 +17,7 @@ class BookmarkHooks(ABC):
     def DOMAIN(self):
         raise NotImplementedError
 
-    def get_batch_method(self) -> callable:
+    def get_batch_method(self) -> typing.Callable:
         from App.tasks import crawl_bookmarks_task
 
         return crawl_bookmarks_task

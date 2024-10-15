@@ -20,7 +20,7 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
     webpage_meta_data = serializers.SerializerMethodField()
 
     def get_weight(self, text, weight_factor) -> Dict[str, int]:
-        weights = {}
+        weights: Dict[str, int] = {}
         for word in text.split(" "):
             weights.setdefault(word, 0)
             weights[word] += weight_factor

@@ -19,7 +19,6 @@ repos:
     hooks:
       - id: flake8
         additional_dependencies: [django, flake8-django] # For Django specific checks
-        # args: [--max-line-length=88, --ignore=W503,DJ01]
         args:
           - --max-line-length=88
           - --ignore=W503,DJ01,F401,F403,E203,F405  # Ignore multiple rules in quotes
@@ -43,6 +42,7 @@ repos:
   #     - id: mypy
   #       name: mypy (type checker)
   #       language_version: python3.12
+  #       exclude: migrations
   - repo: https://github.com/asottile/pyupgrade
     rev: v3.18.0
     hooks:

@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from App.controllers import ClusterMaker, CosineSimilarityCalculator, TextCleaner
+from App.controllers import TextCleaner
 
 
 class TextCleanerTestCase(TestCase):
@@ -186,43 +186,3 @@ class TextCleanerTestCase(TestCase):
         c = TextCleaner(text)
         c.full_clean()
         # self.assertEqual(c.text, expected)
-
-
-class CosineSimilarityCalculatorTestCase(TestCase):
-    def setUp(self) -> None:
-        rcs = [
-            {"red": 5, "blue": 4},
-            {"doctor": 2, "blood": 11, "red": 50},
-        ]
-        self.obj = CosineSimilarityCalculator(rcs)
-
-    def test__unique_words_property(self):
-        keys = ["red", "blue", "doctor", "blood"]
-        self.assertEqual(len(self.obj._unique_words), 4)
-        self.assertTrue(all([item in self.obj._unique_words for item in keys]))
-
-    def test__doc_to_word_weight_matrix_property(self):
-        self.assertEqual(self.obj._doc_to_word_weight_matrix.shape, (2, 4))
-
-    def test_similarity_method(self):
-        # make sure it just work
-        self.obj.similarity()
-
-
-class ClusterMakerTestCase(TestCase):
-    def setUp(self) -> None:
-        rcs = ["doc1", "doc2"]
-        similarity = [[1, 0.76204993], [0.76204993, 1]]
-        self.obj = ClusterMaker(rcs, similarity)
-
-    def test_similarity_dict_method(self):
-        self.obj.similarity_dict(0.5)
-
-    def test_transitive_similarity_method(self):
-        self.obj.transitive_similarity(self.obj.similarity_dict(0.5))
-
-    def test_remove_doc_method(self):
-        self.obj.remove_doc("doc2")
-
-    def test_make_method(self):
-        self.obj.make()

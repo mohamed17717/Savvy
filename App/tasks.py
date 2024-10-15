@@ -1,6 +1,7 @@
 import json
 import logging
 import subprocess
+import typing
 
 from celery import chord, current_app, shared_task
 from celery.result import allow_join_result
@@ -21,7 +22,9 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-def group_bookmarks_by_hook(bookmarks, hook_name) -> list[list[callable, list[int]]]:
+def group_bookmarks_by_hook(
+    bookmarks, hook_name
+) -> list[list[typing.Callable, list[int]]]:
     hooks_methods = {}
     hooks_groups = {}
     for bookmark in bookmarks:
