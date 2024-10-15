@@ -1,38 +1,46 @@
 from urllib.parse import urlencode
 
-from App import tasks, models
+from App import models, tasks
 from common.utils.async_utils import django_wrapper
 
 
 class LogResponseMiddleware:
     async def process_response(self, request, response, spider):
-        # Store the URL, status code, and response body in a file, and store the file path in the database
-        bookmark = request.meta.get('bookmark')
+        # Store the URL, status code, and response
+        # body in a file, and store the file path in the database
+        bookmark = request.meta.get("bookmark")
 
         log = await models.ScrapyResponseLog.objects.acreate(
-            bookmark=bookmark, status_code=response.status,
-            error=None if response.status == 200 else f"HTTP status code {response.status}"
+            bookmark=bookmark,
+            status_code=response.status,
+            error=None
+            if response.status == 200
+            else f"HTTP status code {response.status}",
         )
         await django_wrapper(log.store_file, response.body)
-        await django_wrapper(tasks.store_weights_task.apply_async, kwargs={'bookmark_id': bookmark.id})
+        await django_wrapper(
+            tasks.store_weights_task.apply_async, kwargs={"bookmark_id": bookmark.id}
+        )
         return response
 
     async def process_exception(self, request, exception, spider):
-        bookmark = request.meta.get('bookmark')
+        bookmark = request.meta.get("bookmark")
 
-        await django_wrapper(tasks.store_weights_task.apply_async, kwargs={'bookmark_id': bookmark.id})
+        await django_wrapper(
+            tasks.store_weights_task.apply_async, kwargs={"bookmark_id": bookmark.id}
+        )
         await models.ScrapyResponseLog.objects.acreate(
             bookmark=bookmark, status_code=500, error=str(exception)
         )
 
 
 class ScrapeOpsRotateProxyMiddleware:
-    DOMAIN = 'proxy.scrapeops.io'
+    DOMAIN = "proxy.scrapeops.io"
 
     def get_proxy_url(self, url):
-        API_KEY = 'b89ad8f8-a2f2-4e89-a8eb-844dbb0ead32'
-        payload = {'api_key': API_KEY, 'url': url}
-        proxy_url = f'https://{self.DOMAIN}/v1/?{urlencode(payload)}'
+        API_KEY = "b89ad8f8-a2f2-4e89-a8eb-844dbb0ead32"
+        payload = {"api_key": API_KEY, "url": url}
+        proxy_url = f"https://{self.DOMAIN}/v1/?{urlencode(payload)}"
 
         return proxy_url
 
@@ -47,4 +55,4 @@ class ScrapeOpsRotateProxyMiddleware:
         if self.DOMAIN not in spider.allowed_domains:
             spider.allowed_domains.append(self.DOMAIN)
 
-        spider.logger.info('Spider opened: %s' % spider.name)
+        spider.logger.info("Spider opened: %s" % spider.name)

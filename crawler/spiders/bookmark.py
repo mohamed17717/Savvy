@@ -11,13 +11,13 @@ class BookmarkSpider(scrapy.Spider):
         # for url in self.urls:
         for bookmark in self.bookmarks:
             kwargs = {
-                'callback': self.parse,
-                'cb_kwargs': {'bookmark': bookmark},
-                'meta': {'bookmark': bookmark}
+                "callback": self.parse,
+                "cb_kwargs": {"bookmark": bookmark},
+                "meta": {"bookmark": bookmark},
             }
             cookies = bookmark.hooks.crawler_cookies()
             if cookies:
-                kwargs.update({'cookies': cookies})
+                kwargs.update({"cookies": cookies})
 
             yield scrapy.Request(bookmark.url, **kwargs)
 
