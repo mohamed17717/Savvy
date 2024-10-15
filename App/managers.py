@@ -7,7 +7,7 @@ from realtime.common.redis_utils import RedisPubSub
 
 
 class BulkSignalsQuerySet(models.QuerySet):
-    '''Custom manager to fire signals on bulk create and update'''
+    """Custom manager to fire signals on bulk create and update"""
 
     def _trigger_pre_save(self, objs):
         for obj in objs:
@@ -25,7 +25,8 @@ class BulkSignalsQuerySet(models.QuerySet):
 
     def bulk_update(self, objs, fields, **kwargs) -> int:
         raise NotImplementedError(
-            'This manage not support using `.bulk_update()` instead use `.update()`')
+            "This manage not support using `.bulk_update()` instead use `.update()`"
+        )
 
     def update(self, **kwargs) -> int:
         objs = list(self)
@@ -50,12 +51,14 @@ class BookmarkQuerySet(models.QuerySet):
         if result:
             user = result[0].user
             for obj in result:
-                RedisPubSub.pub({
-                    'type': RedisPubSub.MessageTypes.BOOKMARK_CHANGE,
-                    'user_id': user.id,
-                    'bookmark_id': obj.id,
-                    'status': obj.process_status
-                })
+                RedisPubSub.pub(
+                    {
+                        "type": RedisPubSub.MessageTypes.BOOKMARK_CHANGE,
+                        "user_id": user.id,
+                        "bookmark_id": obj.id,
+                        "status": obj.process_status,
+                    }
+                )
 
         return result
 
@@ -69,37 +72,47 @@ class BookmarkQuerySet(models.QuerySet):
             if obj.process_status >= new_status:
                 continue
             obj.process_status = new_status
-            RedisPubSub.pub({
-                'type': RedisPubSub.MessageTypes.BOOKMARK_CHANGE,
-                'user_id': user_id,
-                'bookmark_id': obj.id,
-                'status': new_status
-            })
+            RedisPubSub.pub(
+                {
+                    "type": RedisPubSub.MessageTypes.BOOKMARK_CHANGE,
+                    "user_id": user_id,
+                    "bookmark_id": obj.id,
+                    "status": new_status,
+                }
+            )
 
-        return self.bulk_update(objs, ['process_status'])
+        return self.bulk_update(objs, ["process_status"])
 
     def start_cluster(self) -> int:
         from App.models import Bookmark
+
         return self.update_process_status(Bookmark.ProcessStatus.START_CLUSTER.value)
 
     def clustered(self) -> int:
         from App.models import Bookmark
+
         return self.update_process_status(Bookmark.ProcessStatus.CLUSTERED.value)
 
     def start_text_processing(self) -> int:
         from App.models import Bookmark
-        return self.update_process_status(Bookmark.ProcessStatus.START_TEXT_PROCESSING.value)
+
+        return self.update_process_status(
+            Bookmark.ProcessStatus.START_TEXT_PROCESSING.value
+        )
 
     def text_processed(self) -> int:
         from App.models import Bookmark
+
         return self.update_process_status(Bookmark.ProcessStatus.TEXT_PROCESSED.value)
 
     def start_crawl(self) -> int:
         from App.models import Bookmark
+
         return self.update_process_status(Bookmark.ProcessStatus.START_CRAWL.value)
 
     def crawled(self) -> int:
         from App.models import Bookmark
+
         return self.update_process_status(Bookmark.ProcessStatus.CRAWLED.value)
 
 
@@ -123,7 +136,7 @@ class TagQuerySet(models.QuerySet):
         qs = self.filter(user=user)
 
         minimum_bookmarks = 5
-        accepted_ratio = 1/134
+        accepted_ratio = 1 / 134
         total_bookmarks = user.bookmarks.count()
         computed_minimum = math.ceil(total_bookmarks * accepted_ratio)
 

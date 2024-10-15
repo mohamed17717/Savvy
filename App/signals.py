@@ -1,9 +1,8 @@
 from django.db import transaction
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 
 from App import models, tasks
-
 from realtime.common.redis_utils import RedisPubSub
 
 
@@ -15,10 +14,12 @@ def on_create_bookmark_file_extract_urls(sender, instance, created, **kwargs):
     def event():
         tasks.store_bookmarks_task.delay(instance.id)
 
-        RedisPubSub.pub({
-            'type': RedisPubSub.MessageTypes.INIT_UPLOAD,
-            'user_id': instance.user.id,
-        })
+        RedisPubSub.pub(
+            {
+                "type": RedisPubSub.MessageTypes.INIT_UPLOAD,
+                "user_id": instance.user.id,
+            }
+        )
 
     transaction.on_commit(event)
 

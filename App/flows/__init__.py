@@ -1,7 +1,7 @@
 def get_flows():
     from .facebook import FacebookBookmarkHooks
-    from .youtube import YoutubeBookmarkHooks
     from .instagram import InstagramBookmarkHooks
+    from .youtube import YoutubeBookmarkHooks
 
     return [
         FacebookBookmarkHooks,
@@ -10,4 +10,4 @@ def get_flows():
     ]
 
 
-__all__ = ['get_flows']
+__all__ = ["get_flows"]

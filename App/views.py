@@ -1,27 +1,24 @@
 import math
 from datetime import timedelta
 
-from django.db.models import Count
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponseRedirect
 from django.core.cache import cache
+from django.db.models import Count
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
-
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.generics import ListAPIView
-from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import action
+from rest_framework.generics import ListAPIView
+from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from App import serializers, filters, models
-
-from common.utils.drf.viewsets import CRDLViewSet, RULViewSet, RUDLViewSet
-from common.utils.math_utils import minmax
-from common.utils.drf.serializers import only_fields
+from App import filters, models, serializers
 from common.utils.drf.filters import FullTextSearchFilter
-
+from common.utils.drf.serializers import only_fields
+from common.utils.drf.viewsets import CRDLViewSet, RUDLViewSet, RULViewSet
+from common.utils.math_utils import minmax
 from realtime.common.jwt_utils import JwtManager
 
 
@@ -36,7 +33,9 @@ def cache_per_user(timeout):
             else:
                 response = Response(response)
             return response
+
         return _wrapped_view
+
     return decorator
 
 
@@ -46,7 +45,7 @@ class BookmarkFileAPI(CRDLViewSet):
 
     def create(self, request, *args, **kwargs):
         response = super().create(request, *args, **kwargs)
-        JwtManager.inject_cookie(response, data={'user_id': request.user.id})
+        JwtManager.inject_cookie(response, data={"user_id": request.user.id})
 
         return response
 
@@ -64,23 +63,28 @@ class BookmarkAPI(RUDLViewSet):
     serializer_class = serializers.BookmarkSerializer
 
     filterset_class = filters.BookmarkFilter
-    search_fields = ['words_weights__word', 'title', 'url']
-    ordering_fields = ['id', 'parent_file_id']
+    search_fields = ["words_weights__word", "title", "url"]
+    ordering_fields = ["id", "parent_file_id"]
 
     @property
     def ordering(self):
-        if self.action == 'history_list':
-            return ['-history__created_at']
-        return ['nodes__id', 'added_at']  # 'id',
+        if self.action == "history_list":
+            return ["-history__created_at"]
+        return ["nodes__id", "added_at"]  # 'id',
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
 
         list_actions = [
-            'list', 'archived_list', 'deleted_list', 'favorite_list', 'retrieve', 'history_list'
+            "list",
+            "archived_list",
+            "deleted_list",
+            "favorite_list",
+            "retrieve",
+            "history_list",
         ]
 
-        if self.action == 'update' or self.action == 'partial_update':
+        if self.action == "update" or self.action == "partial_update":
             serializer_class = serializers.BookmarkSerializer.BookmarkUpdate
         elif self.action in list_actions:
             serializer_class = serializers.BookmarkSerializer.BookmarkDetails
@@ -93,19 +97,19 @@ class BookmarkAPI(RUDLViewSet):
 
         qs = self.request.user.bookmarks.all()
 
-        archive_actions = ['permanent_delete', 'restore', 'archived_destroy']
-        all_actions = ['open_url']
+        archive_actions = ["permanent_delete", "restore", "archived_destroy"]
+        all_actions = ["open_url"]
 
-        if self.action == 'archived_list':
+        if self.action == "archived_list":
             qs = models.Bookmark.hidden_objects.all().by_user(self.request.user)
             qs = qs.filter(delete_scheduled_at__isnull=True)
-        elif self.action == 'deleted_list':
+        elif self.action == "deleted_list":
             qs = models.Bookmark.hidden_objects.all().by_user(self.request.user)
             qs = qs.filter(delete_scheduled_at__isnull=False)
-        elif self.action == 'favorite_list':
+        elif self.action == "favorite_list":
             qs = self.request.user.bookmarks.all()
             qs = qs.filter(favorite=True)
-        elif self.action == 'history_list':
+        elif self.action == "history_list":
             qs = self.request.user.bookmarks.all()
             qs = qs.filter(history__isnull=False)
 
@@ -114,58 +118,69 @@ class BookmarkAPI(RUDLViewSet):
         elif self.action in all_actions:
             qs = models.Bookmark.all_objects.all().by_user(self.request.user)
 
-        is_read_action = self.action.endswith('list')
+        is_read_action = self.action.endswith("list")
         if is_read_action:
-            return qs.only(*only_fields(self.get_serializer_class())).select_related('website').prefetch_related('history')
+            return (
+                qs.only(*only_fields(self.get_serializer_class()))
+                .select_related("website")
+                .prefetch_related("history")
+            )
         return qs
 
     def perform_destroy(self, instance):
         instance.hidden = True
         instance.delete_scheduled_at = timezone.now() + timedelta(days=14)
-        instance.save(update_fields=['hidden', 'delete_scheduled_at'])
+        instance.save(update_fields=["hidden", "delete_scheduled_at"])
 
     def perform_restore(self, instance):
         instance.hidden = False
         instance.delete_scheduled_at = None
-        instance.save(update_fields=['hidden', 'delete_scheduled_at'])
+        instance.save(update_fields=["hidden", "delete_scheduled_at"])
 
-    @action(methods=['delete'], detail=False, url_path=r'(?P<pk>[\d]+)/permanent-delete')
+    @action(
+        methods=["delete"], detail=False, url_path=r"(?P<pk>[\d]+)/permanent-delete"
+    )
     def permanent_delete(self, request, pk):
         instance = self.get_object()
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=['get'], detail=False, url_path=r'(?P<pk>[\d]+)/restore')
+    @action(methods=["get"], detail=False, url_path=r"(?P<pk>[\d]+)/restore")
     def restore(self, request, pk):
         instance = self.get_object()
         self.perform_restore(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=['delete'], detail=False, url_path=r'(?P<pk>[\d]+)/archived-delete')
+    @action(methods=["delete"], detail=False, url_path=r"(?P<pk>[\d]+)/archived-delete")
     def archived_destroy(self, request, pk):
         instance = get_object_or_404(self.get_queryset(), pk=pk)
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(methods=['get'], detail=False, url_path=r'(?P<uuid>[\w-]+)/open', permission_classes=[AllowAny])
+    @action(
+        methods=["get"],
+        detail=False,
+        url_path=r"(?P<uuid>[\w-]+)/open",
+        permission_classes=[AllowAny],
+    )
     def open_url(self, request, uuid):
         bookmark = get_object_or_404(models.Bookmark.objects.all(), uuid=uuid)
         models.BookmarkHistory.objects.create(bookmark=bookmark)
         return HttpResponseRedirect(bookmark.url)
 
-    @action(methods=['get'], detail=False, url_path='archived-list')
+    @action(methods=["get"], detail=False, url_path="archived-list")
     def archived_list(self, request):
         return super().list(request)
 
-    @action(methods=['get'], detail=False, url_path='deleted-list')
+    @action(methods=["get"], detail=False, url_path="deleted-list")
     def deleted_list(self, request):
         return super().list(request)
 
-    @action(methods=['get'], detail=False, url_path='favorite-list')
+    @action(methods=["get"], detail=False, url_path="favorite-list")
     def favorite_list(self, request):
         return super().list(request)
 
-    @action(methods=['get'], detail=False, url_path='history-list')
+    @action(methods=["get"], detail=False, url_path="history-list")
     def history_list(self, request):
         return super().list(request)
 
@@ -177,11 +192,11 @@ class TagAPI(RULViewSet):
     def get_serializer_class(self):
         serializer_class = self.serializer_class
 
-        if self.action == 'update' or self.action == 'partial_update':
+        if self.action == "update" or self.action == "partial_update":
             serializer_class = serializers.TagSerializer.TagUpdate
-        elif self.action == 'list':
+        elif self.action == "list":
             serializer_class = serializers.TagSerializer.TagList
-        elif self.action == 'retrieve':
+        elif self.action == "retrieve":
             serializer_class = serializers.TagSerializer.TagDetails
 
         return serializer_class
@@ -190,15 +205,16 @@ class TagAPI(RULViewSet):
         if self.request.user.is_anonymous:
             return models.Tag.objects.none()
 
-        # Using this function from the manager to filtering tags with small amount of bookmarks
+        # Using this function from the manager
+        # to filtering tags with small amount of bookmarks
         qs = models.Tag.objects.all().by_user(self.request.user)
 
-        if self.action == 'list':
+        if self.action == "list":
             limit = math.ceil(qs.count() * 0.1)
             limit = minmax(limit, 10, 50)
-            qs = qs.order_by('-weight')[:limit]
-        elif self.action == 'retrieve':
-            qs = qs.prefetch_related('bookmarks')
+            qs = qs.order_by("-weight")[:limit]
+        elif self.action == "retrieve":
+            qs = qs.prefetch_related("bookmarks")
 
         return qs
 
@@ -207,9 +223,9 @@ class TagListAPI(ListAPIView):
     serializer_class = serializers.TagSerializer.TagList
 
     filterset_class = filters.TagFilter
-    search_fields = ['@name', '@alias_name']
-    ordering_fields = ['weight', 'id']
-    ordering = ['-weight']
+    search_fields = ["@name", "@alias_name"]
+    ordering_fields = ["weight", "id"]
+    ordering = ["-weight"]
 
     def get_queryset(self):
         if self.request.user.is_anonymous:
@@ -222,21 +238,20 @@ class WordGraphNodeAPI(APIView):
 
     def _get_bookmarks(self):
         bookmarks = self.request.user.bookmarks.all()
-        bookmarks = filters.BookmarkFilter(
-            self.request.GET, queryset=bookmarks).qs
+        bookmarks = filters.BookmarkFilter(self.request.GET, queryset=bookmarks).qs
         bookmarks = FullTextSearchFilter().filter_queryset(
-            self.request, bookmarks, BookmarkAPI, distinct=False)
+            self.request, bookmarks, BookmarkAPI, distinct=False
+        )
 
         return bookmarks
 
     def _get_available_nodes(self):
         bookmarks = self._get_bookmarks()
-        filtered_leafs = self.request.user.nodes.filter(
-            bookmarks__in=bookmarks)
-        paths = filtered_leafs.values_list('path', flat=True)
+        filtered_leafs = self.request.user.nodes.filter(bookmarks__in=bookmarks)
+        paths = filtered_leafs.values_list("path", flat=True)
         nodes = []
         for i in paths:
-            nodes.extend(i.split('.'))
+            nodes.extend(i.split("."))
         return nodes
 
     def get_queryset(self):
@@ -245,13 +260,13 @@ class WordGraphNodeAPI(APIView):
 
         return (
             self.request.user.nodes.all()
-                .only(*only_fields(self.serializer_class))
-                .annotate(children_count=Count('children'))
-                .filter(id__in=self._get_available_nodes())
+            .only(*only_fields(self.serializer_class))
+            .annotate(children_count=Count("children"))
+            .filter(id__in=self._get_available_nodes())
         )
 
     def get(self, request, parent=None):
-        lookup = {'parent_id': parent} if parent else {'parent__isnull': True}
+        lookup = {"parent_id": parent} if parent else {"parent__isnull": True}
         qs = self.get_queryset().filter(**lookup)
         serializer = self.serializer_class(qs, many=True)
 
@@ -264,10 +279,10 @@ class BookmarkFilterChoices:
             from common.utils.drf.filters import FullTextSearchFilter
 
             bookmarks = self.request.user.bookmarks.all()
-            bookmarks = filters.BookmarkFilter(
-                self.request.GET, queryset=bookmarks).qs
+            bookmarks = filters.BookmarkFilter(self.request.GET, queryset=bookmarks).qs
             bookmarks = FullTextSearchFilter().filter_queryset(
-                self.request, bookmarks, BookmarkAPI, distinct=False)
+                self.request, bookmarks, BookmarkAPI, distinct=False
+            )
 
             return bookmarks
 
@@ -279,13 +294,13 @@ class BookmarkFilterChoices:
             qs = (
                 self.get_related_qs()
                 .filter(bookmarks__in=bookmarks)
-                .annotate(num_bookmarks=Count('bookmarks', distinct=True))
+                .annotate(num_bookmarks=Count("bookmarks", distinct=True))
                 .filter(num_bookmarks__gt=0)
             )
 
             search_query = self.request.GET.get(self.search_param)
             if search_query:
-                lookup = {f'{self.search_field}__icontains': search_query}
+                lookup = {f"{self.search_field}__icontains": search_query}
                 qs = qs.filter(**lookup)
 
             return qs
@@ -293,18 +308,18 @@ class BookmarkFilterChoices:
     class Website(Base):
         serializer_class = serializers.WebsiteSerializer.WebsiteFilterChoicesList
         model = models.Website
-        search_param = 'website_search'
-        search_field = 'domain'
+        search_param = "website_search"
+        search_field = "domain"
 
         def get_related_qs(self):
             return self.request.user.websites.all()
 
     class Topic(Base):
         serializer_class = serializers.TagSerializer.TagFilterChoicesList
-        ordering = ['-weight']
+        ordering = ["-weight"]
         model = models.Tag
-        search_param = 'tags_search'
-        search_field = 'name'
+        search_param = "tags_search"
+        search_field = "name"
 
         def get_related_qs(self):
             return models.Tag.objects.all().by_user(self.request.user)

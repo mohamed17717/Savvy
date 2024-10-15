@@ -1,4 +1,5 @@
 import os
+
 from django.conf import settings
 from django.contrib.staticfiles.storage import StaticFilesStorage
 
@@ -10,7 +11,7 @@ class CustomStaticFilesStorage(StaticFilesStorage):
         checks = map(abs_path.startswith, abs_static_dirs)
 
         if any(checks):
-            if name.endswith('.html'):
+            if name.endswith(".html"):
                 return None
         return super().path(name)
 
