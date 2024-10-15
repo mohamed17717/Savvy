@@ -9,7 +9,7 @@ def window_list(data: list, size: int) -> Generator[list, None, None]:
     if length < size:
         size = length
     for i in range(0, length, size):
-        yield data[i: i + size]
+        yield data[i : i + size]
 
 
 def unique_dicts_in_list(data: list[dict], key) -> list[dict]:
