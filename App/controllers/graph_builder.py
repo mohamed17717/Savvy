@@ -1,4 +1,5 @@
 import numpy as np
+
 from App import models
 
 
@@ -12,7 +13,14 @@ class WordGraphBuilder:
     # THRESHOLD_STEP = 10  # avoid float inaccuracy
     # ACCEPTED_LEAF_LENGTH = 50 # 70
 
-    def __init__(self, documents, similarity_matrix, threshold: int = THRESHOLD, parent=None, user=None):
+    def __init__(
+        self,
+        documents,
+        similarity_matrix,
+        threshold: int = THRESHOLD,
+        parent=None,
+        user=None,
+    ):
         self.documents = documents
         self.similarity_matrix = similarity_matrix
         self.threshold = threshold
@@ -21,6 +29,7 @@ class WordGraphBuilder:
 
     def get_user(self):
         from App.models import Bookmark
+
         bookmark = Bookmark.objects.filter(pk__in=self.documents).first()
         if bookmark is None:
             raise ValueError
@@ -32,7 +41,7 @@ class WordGraphBuilder:
         groups = []  # To store the final groups
 
         def dfs(doc_index, group):
-            """ Depth-first search to find all connected documents """
+            """Depth-first search to find all connected documents"""
             stack = [doc_index]
             while stack:
                 current = stack.pop()
@@ -41,7 +50,11 @@ class WordGraphBuilder:
                     group.append(current)
                     # Consider all documents that are similar enough
                     for neighbor in range(n):
-                        if self.similarity_matrix[current][neighbor] >= (self.threshold/100) and not visited[neighbor]:
+                        if (
+                            self.similarity_matrix[current][neighbor]
+                            >= (self.threshold / 100)
+                            and not visited[neighbor]
+                        ):
                             stack.append(neighbor)
 
         for doc_index in range(n):
@@ -60,24 +73,26 @@ class WordGraphBuilder:
 
     def store_group(self, group: list[int], is_leaf=True, is_sharded_islands=False):
         node_kwargs = {
-            'user': self.user,
-            'parent': self.parent,
-            'threshold': (self.threshold / 100),
-            'bookmarks_count': len(group),
-            'is_leaf': is_leaf,
-            'is_sharded_islands': is_sharded_islands
+            "user": self.user,
+            "parent": self.parent,
+            "threshold": (self.threshold / 100),
+            "bookmarks_count": len(group),
+            "is_leaf": is_leaf,
+            "is_sharded_islands": is_sharded_islands,
         }
 
         if is_leaf:
             documents_ids = self.group_to_documents(group)
             bookmarks = models.Bookmark.objects.filter(pk__in=documents_ids)
-            tags = models.Tag.objects.filter(
-                bookmarks__in=bookmarks).distinct().order_by('-weight')[:10]
+            tags = (
+                models.Tag.objects.filter(bookmarks__in=bookmarks)
+                .distinct()
+                .order_by("-weight")[:10]
+            )
 
-            m2m_data = {'tags': tags}
-            node_kwargs['similarity_matrix'] = self.group_to_sub_matrix(
-                group).tolist()
-            m2m_data['bookmarks'] = bookmarks
+            m2m_data = {"tags": tags}
+            node_kwargs["similarity_matrix"] = self.group_to_sub_matrix(group).tolist()
+            m2m_data["bookmarks"] = bookmarks
 
             node = models.GraphNode(**node_kwargs)
 
@@ -92,7 +107,7 @@ class WordGraphBuilder:
             similarity_matrix=self.group_to_sub_matrix(group),
             threshold=self.threshold + self.THRESHOLD_STEP,
             parent=node,
-            user=self.user
+            user=self.user,
         ).build()
 
     def build(self):
@@ -106,8 +121,12 @@ class WordGraphBuilder:
                 sharded_islands.extend(groups[index])
                 is_sharded[index] = True
 
-        groups = [group for group, is_sharded in zip(groups, is_sharded) if not is_sharded]
-        lengths = [length for length, is_sharded in zip(lengths, is_sharded) if not is_sharded]
+        groups = [
+            group for group, is_sharded in zip(groups, is_sharded) if not is_sharded
+        ]
+        lengths = [
+            length for length, is_sharded in zip(lengths, is_sharded) if not is_sharded
+        ]
         # groups.append(sharded_islands)
 
         first_level = self.parent is None
@@ -115,8 +134,7 @@ class WordGraphBuilder:
 
         # if groups are too small don't nest new level and increase threshold
         is_leaf_array = [
-            last_level or length <= self.ACCEPTED_LEAF_LENGTH
-            for length in lengths 
+            last_level or length <= self.ACCEPTED_LEAF_LENGTH for length in lengths
         ]
         nodes_count = is_leaf_array.count(False)
         if sharded_islands:

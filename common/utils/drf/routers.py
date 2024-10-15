@@ -6,18 +6,18 @@ class CustomSuffixRouter(DefaultRouter):
         routes = super().get_routes(viewset)
 
         create_route = Route(
-            url=r'^{prefix}/create{trailing_slash}$',
-            mapping={'post': 'create'},
-            name='{basename}-create',
+            url=r"^{prefix}/create{trailing_slash}$",
+            mapping={"post": "create"},
+            name="{basename}-create",
             detail=False,
-            initkwargs={}
+            initkwargs={},
         )
         list_route = Route(
-            url=r'^{prefix}/list{trailing_slash}$',
-            mapping={'get': 'list'},
-            name='{basename}-list',
+            url=r"^{prefix}/list{trailing_slash}$",
+            mapping={"get": "list"},
+            name="{basename}-list",
             detail=False,
-            initkwargs={}
+            initkwargs={},
         )
 
         return [create_route, list_route, *routes]

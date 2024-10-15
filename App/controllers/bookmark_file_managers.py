@@ -1,12 +1,11 @@
-import re
 import json
-import validators
-
-from bs4 import BeautifulSoup
+import re
 from abc import ABC, abstractmethod
 
-from django.db.models.fields.files import FieldFile
+import validators
+from bs4 import BeautifulSoup
 from django.core.exceptions import ValidationError
+from django.db.models.fields.files import FieldFile
 
 
 class BookmarkFileManager(ABC):
@@ -16,9 +15,9 @@ class BookmarkFileManager(ABC):
     @property
     def is_valid(self):
         if self._is_valid is None:
-            raise ValidationError('Validate first before access the data')
+            raise ValidationError("Validate first before access the data")
         elif self._is_valid is False:
-            raise ValidationError('Invalid data')
+            raise ValidationError("Invalid data")
 
         return self._is_valid
 
@@ -41,17 +40,17 @@ class BookmarkHTMLFileManager(BookmarkFileManager):
     @property
     def soup(self):
         self.file.seek(0)
-        self._soup = self._soup or BeautifulSoup(self.get_src(), 'lxml')
+        self._soup = self._soup or BeautifulSoup(self.get_src(), "lxml")
         return self._soup
 
     def get_src(self, length: int = None):
         self.file.seek(0)
         content = self.file.read(length)
-        return content.decode('utf8')
+        return content.decode("utf8")
 
     def validate(self):
         def contain_links():
-            regex = r'<a\s+?href=[\"\']http[s]{0,1}://.+?[\"\']'
+            regex = r"<a\s+?href=[\"\']http[s]{0,1}://.+?[\"\']"
             regex = re.compile(regex, re.IGNORECASE)
             match = re.search(regex, self.get_src(3000))
             return bool(match)
@@ -66,12 +65,12 @@ class BookmarkHTMLFileManager(BookmarkFileManager):
         self.validate()
 
         links = []
-        for item in self.soup.select('a'):
+        for item in self.soup.select("a"):
             attrs = item.attrs.copy()
 
-            attrs['url'] = attrs.pop('href')
-            attrs['title'] = item.text
-            attrs['added_at'] = attrs.pop('add_date', None)
+            attrs["url"] = attrs.pop("href")
+            attrs["title"] = item.text
+            attrs["added_at"] = attrs.pop("add_date", None)
 
             links.append(attrs)
         return links
@@ -79,7 +78,7 @@ class BookmarkHTMLFileManager(BookmarkFileManager):
 
 class BookmarkJSONFileManager(BookmarkFileManager):
     def __init__(self, file_field: FieldFile):
-        self.data = json.loads(file_field.read().decode('utf8'))
+        self.data = json.loads(file_field.read().decode("utf8"))
         self._is_valid = None
 
     def validate(self):
@@ -92,9 +91,7 @@ class BookmarkJSONFileManager(BookmarkFileManager):
         def items_are_links():
             return all([bool(validators.url(i)) for i in self.data])
 
-        checks = [
-            data_is_list, items_are_str, items_are_links
-        ]
+        checks = [data_is_list, items_are_str, items_are_links]
         if self._is_valid is None:
             self._is_valid = all([check() for check in checks])
 
@@ -102,4 +99,4 @@ class BookmarkJSONFileManager(BookmarkFileManager):
 
     def get_links(self):
         self.validate()
-        return [{'url': url} for url in self.data]
+        return [{"url": url} for url in self.data]

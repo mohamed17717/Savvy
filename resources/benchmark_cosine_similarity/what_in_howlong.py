@@ -1,10 +1,11 @@
-
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
 import random
 from time import time
 
-def run(docs_count, words_count):
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+
+
+def run1(docs_count, words_count):
     matrix = np.zeros((docs_count, words_count))
     for i in range(docs_count):
         for j in range(words_count):
@@ -13,7 +14,8 @@ def run(docs_count, words_count):
     cosine_similarity(matrix)
     return time() - start
 
-def run(docs_count, words_count, new_docs_count):
+
+def run2(docs_count, words_count, new_docs_count):
     matrix = np.zeros((docs_count, words_count))
     for i in range(docs_count):
         for j in range(words_count):
@@ -23,19 +25,22 @@ def run(docs_count, words_count, new_docs_count):
     old_time = time() - start
     new_start = time()
     for i in range(new_docs_count):
-        doc_vector  = np.zeros(words_count)
+        doc_vector = np.zeros(words_count)
         for j in range(words_count):
             doc_vector[j] = round(random.random(), 3)
-        sim_vector = [cosine_similarity([doc_vector, row])[0,1] for row in matrix]
-        matrix = np.vstack( (matrix, doc_vector) )
-        sim_matrix = np.vstack( (sim_matrix, np.array(sim_vector)) )
-        sim_matrix = np.hstack( (sim_matrix, np.atleast_2d(np.array(sim_vector+[1])).T ) )
+        sim_vector = [cosine_similarity([doc_vector, row])[0, 1] for row in matrix]
+        matrix = np.vstack((matrix, doc_vector))
+        sim_matrix = np.vstack((sim_matrix, np.array(sim_vector)))
+        sim_matrix = np.hstack(
+            (sim_matrix, np.atleast_2d(np.array(sim_vector + [1])).T)
+        )
     new_time = time() - new_start
     total_time = time() - start
-    print(f'{sim_matrix.shape=}')
-    return f'{old_time=}, {new_time=}, {total_time=}'
+    print(f"{sim_matrix.shape=}")
+    return f"{old_time=}, {new_time=}, {total_time=}"
 
-def run(docs_count, words_count, new_docs_count):
+
+def run3(docs_count, words_count, new_docs_count):
     matrix = np.zeros((docs_count, words_count))
     for i in range(docs_count):
         for j in range(words_count):
@@ -47,19 +52,18 @@ def run(docs_count, words_count, new_docs_count):
     for i in range(new_docs_count):
         for j in range(words_count):
             new_matrix[i, j] = round(random.random(), 3)
-    
+
     start = time()
     new_sim_matrix = cosine_similarity(new_matrix)
     rel_sim_matrix = cosine_similarity(new_matrix, matrix)
     print(time() - start)
-    
-    sim_matrix = np.vstack( (sim_matrix, rel_sim_matrix) )
-    rel_sim_matrix = np.rot90(rel_sim_matrix, k=1)[::-1]
-    rel_sim_matrix = np.vstack( (rel_sim_matrix, new_sim_matrix) )
-    sim_matrix = np.hstack( (sim_matrix, rel_sim_matrix) )
 
-    
-    total_matrix = np.vstack( (matrix, new_matrix) )
+    sim_matrix = np.vstack((sim_matrix, rel_sim_matrix))
+    rel_sim_matrix = np.rot90(rel_sim_matrix, k=1)[::-1]
+    rel_sim_matrix = np.vstack((rel_sim_matrix, new_sim_matrix))
+    sim_matrix = np.hstack((sim_matrix, rel_sim_matrix))
+
+    total_matrix = np.vstack((matrix, new_matrix))
     # print(total_matrix)
     # print('---------------------------')
     # print(cosine_similarity(total_matrix))
@@ -68,7 +72,8 @@ def run(docs_count, words_count, new_docs_count):
     # print('---------------------------')
     return sim_matrix == cosine_similarity(total_matrix)
 
-run(docs_count=3000, words_count=7000, new_docs_count=400)
+
+run3(docs_count=3000, words_count=7000, new_docs_count=400)
 
 """
 >>> run(docs_count=500, words_count=1000)

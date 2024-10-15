@@ -1,7 +1,6 @@
-
-import numpy as np
 from functools import cached_property
 
+import numpy as np
 from django.db.models import Sum
 
 from App import models
@@ -60,19 +59,18 @@ class GraphGroupType(list):
     @cached_property
     def __high_words(self):
         return (
-            models.WordWeight.objects
-            .filter(bookmark_id__in=self.ids)
-            .values('word')
-            .annotate(total_weight=Sum('weight'))
-            .order_by('-total_weight')[:10]
-            .values_list('word', flat=True)
+            models.WordWeight.objects.filter(bookmark_id__in=self.ids)
+            .values("word")
+            .annotate(total_weight=Sum("weight"))
+            .order_by("-total_weight")[:10]
+            .values_list("word", flat=True)
         )
 
     @property
     def __m2m_fields(self):
         bookmarks = models.Bookmark.objects.filter(pk__in=self.ids)
         tags = models.Tag.objects.filter(name__in=self.__high_words)
-        return {'bookmarks': bookmarks, 'tags': tags}
+        return {"bookmarks": bookmarks, "tags": tags}
 
     def __get_node_instance(self, user, parent):
         instance = models.GraphNode(
@@ -81,7 +79,7 @@ class GraphGroupType(list):
             threshold=self.threshold,
             bookmarks_count=self.length,
             is_leaf=self.is_leaf,
-            name=', '.join(self.__high_words),
+            name=", ".join(self.__high_words),
         )
 
         return instance
@@ -122,7 +120,7 @@ class GraphGroupsFinder:
         groups = []  # To store the final groups
 
         def dfs(doc_index, group):
-            """ Depth-first search to find all connected documents """
+            """Depth-first search to find all connected documents"""
             stack = [doc_index]
             while stack:
                 current = stack.pop()
@@ -131,7 +129,10 @@ class GraphGroupsFinder:
                     group.append(current)
                     # Consider all documents that are similar enough
                     for neighbor in range(n):
-                        if self.similarity_mx[current][neighbor] >= (self.threshold) and not visited[neighbor]:
+                        if (
+                            self.similarity_mx[current][neighbor] >= (self.threshold)
+                            and not visited[neighbor]
+                        ):
                             stack.append(neighbor)
 
         for doc_index in range(n):
@@ -190,8 +191,7 @@ class GraphBuilder:
 
         if islands:
             islands_ids = groups_finder.group_to_ids(islands)
-            islands_similarity_mx = groups_finder.group_to_similarity_mx(
-                islands)
+            islands_similarity_mx = groups_finder.group_to_similarity_mx(islands)
             prev_threshold = self.threshold._prev(threshold)
             islands = GraphGroupType(
                 islands, threshold, islands_ids, islands_similarity_mx
@@ -200,8 +200,7 @@ class GraphBuilder:
             if prev_threshold is None or islands.is_leaf:
                 islands.store_leaf(self.user, root, is_island=True)
             else:
-                self.build(None, islands_ids,
-                           islands_similarity_mx, prev_threshold)
+                self.build(None, islands_ids, islands_similarity_mx, prev_threshold)
 
         # check to re-split root on bigger threshold
         next_threshold = self.threshold._next(threshold)
@@ -218,5 +217,4 @@ class GraphBuilder:
                 node.store_leaf(self.user, root)
             else:
                 node_instance = node.store_node(self.user, root)
-                self.build(node_instance, node.ids,
-                           node.similarity_mx, next_threshold)
+                self.build(node_instance, node.ids, node.similarity_mx, next_threshold)
