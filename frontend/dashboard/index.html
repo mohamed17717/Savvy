@@ -67,7 +67,7 @@
                               'checkbox-error': choiceIsExcluded($data, unpackWebsiteForChange(website))
                             }" x-on:change="onChangeChoice($el, $data, unpackWebsiteForChange(website))" x-bind:checked="choiceIsChecked($data, unpackWebsiteForChange(website))"></label></li></template></div></ul></div></div><div class="select-field topic"><div class="dropdown"><div tabindex="0" role="button" class="btn m-1">Topic</div><ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"><input type="text" placeholder="Search" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" x-on:keyup="
                         searchTopics($data, $el.value);
-                    
+
                     "><div class="mt-1 w-full bg-white shadow-lg max-h-60 overflow-auto z-10 border border-gray-300 rounded-lg scrollbar-thin scrollbar-thumb-gray-300 scrollbar-corner-transparent" @scroll="
                     if ($el.scrollTop + $el.offsetHeight>= $el.scrollHeight-50 ){
                       loadMoreTopics()
@@ -146,7 +146,7 @@
       setTimeout(() => { card.remove() }, 500);
     })
   "><template x-if="iconLoading"><span class="loading loading-spinner loading-xs"></span></template><template x-if="!iconLoading"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"></path></svg></template></div><div class="tooltip btn flex btn-sm btn-circle fill-none" data-tip="Delete" @click="
-    deleteModal.showModal(); 
+    deleteModal.showModal();
     deleteModal.dataset['id'] = item.id;
     if(item.delete_scheduled_at) {
       deleteModal.dataset['action'] = 'deletePermanently';
@@ -156,7 +156,7 @@
       deleteModal.dataset['action'] = 'delete';
     }
   " :class="{
-    'fill-current': item.hidden && item.delete_scheduled_at !== null, 
+    'fill-current': item.hidden && item.delete_scheduled_at !== null,
   }"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"></path></svg></div></div></div></div></article></div></template></div><div x-show="view === 'row'" class="max-w-full grid justify-items-stretch items-stretch grid-cols-1 place-items-center mt-12" :class="{
                 'grid': bookmarks.length > 0,
                 'xl:grid-cols-3 lg:grid-cols-2 md:grid-cols-2 sm:grid-cols-1 gap-5 ': view === 'row' || view === 'grid',
@@ -181,7 +181,7 @@
       setTimeout(() => { card.remove() }, 500);
     })
   "><template x-if="iconLoading"><span class="loading loading-spinner loading-xs"></span></template><template x-if="!iconLoading"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"></path></svg></template></div><div class="tooltip btn flex btn-sm btn-circle fill-none" data-tip="Delete" @click="
-    deleteModal.showModal(); 
+    deleteModal.showModal();
     deleteModal.dataset['id'] = item.id;
     if(item.delete_scheduled_at) {
       deleteModal.dataset['action'] = 'deletePermanently';
@@ -191,7 +191,7 @@
       deleteModal.dataset['action'] = 'delete';
     }
   " :class="{
-    'fill-current': item.hidden && item.delete_scheduled_at !== null, 
+    'fill-current': item.hidden && item.delete_scheduled_at !== null,
   }"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"></path></svg></div></div></div></div></article></div></template></div><div x-show="view === 'list'" class="max-w-full grid justify-items-stretch items-stretch grid-cols-1 place-items-center mt-12" :class="{
                 'grid': bookmarks.length > 0,
                 'xl:grid-cols-3 lg:grid-cols-2 md:grid-cols-2 sm:grid-cols-1 gap-5 ': view === 'row' || view === 'grid',
@@ -216,7 +216,7 @@
       setTimeout(() => { card.remove() }, 500);
     })
   "><template x-if="iconLoading"><span class="loading loading-spinner loading-xs"></span></template><template x-if="!iconLoading"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 0 1 4.5 9.75h15A2.25 2.25 0 0 1 21.75 12v.75m-8.69-6.44-2.12-2.12a1.5 1.5 0 0 0-1.061-.44H4.5A2.25 2.25 0 0 0 2.25 6v12a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9a2.25 2.25 0 0 0-2.25-2.25h-5.379a1.5 1.5 0 0 1-1.06-.44Z"></path></svg></template></div><div class="tooltip btn flex btn-sm btn-circle fill-none" data-tip="Delete" @click="
-    deleteModal.showModal(); 
+    deleteModal.showModal();
     deleteModal.dataset['id'] = item.id;
     if(item.delete_scheduled_at) {
       deleteModal.dataset['action'] = 'deletePermanently';
@@ -226,7 +226,7 @@
       deleteModal.dataset['action'] = 'delete';
     }
   " :class="{
-    'fill-current': item.hidden && item.delete_scheduled_at !== null, 
+    'fill-current': item.hidden && item.delete_scheduled_at !== null,
   }"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon" class="h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"></path></svg></div></div><a class="btn btn-circle btn-ghost btn-sm bg-slate-50 border-2 border-slate-300 border-solid z-10 shadow-sm" x-on:mouseover="showActions = true"><svg class="w-4 h-4 current" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-width="4" d="M12 6h.01M12 12h.01M12 18h.01"/></svg></a></div></div></article></div></template></div></div></template><template x-if="loadingBookmarks"><div class="flex justify-center mt-3 h-[25vh]"><span class="loading loading-infinity loading-lg opacity-60"></span></div></template><template x-if="bookmarks.length === 0 && !loadingBookmarks"><div class="w-11/12 mx-auto my-12"><h1 class="mb-6">NoData</h1><div class="flex justify-center"><div class="max-w-lg space-y-2 min-w-60"><span class="font-bold text-lg">Integrate with data source</span> <a href="#" class="btn btn-outline btn-neutral btn-md w-full" x-data="{}" @click="uploadBookmarksModal.showModal()"><svg class="w-6 h-6 current" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v9m-5 0H5a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-2M8 9l4-5 4 5m1 8h.01"/></svg> <span>Upload Browser Bookmarks</span> </a><a href="#" class="btn btn-outline btn-neutral btn-md btn-disabled w-full"><svg class="w-4 h-4 current fill-current" xmlns="http://www.w3.org/2000/svg" width="64" height="64" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 640 640"><path d="M161.423 279.11L69.816 120.474C128.458 47.068 218.708-.012 319.976-.012c117.168 0 219.57 62.965 275.33 156.888H334.175c-4.69-.39-9.438-.638-14.245-.638-76.158 0-140.352 52.288-158.553 122.848l.048.024zm273.121-75.958H617.96c14.197 36.202 22.04 75.64 22.04 116.872C640 495.55 498.668 638.04 323.626 640l130.88-226.692c18.449-26.492 29.244-58.642 29.244-93.284 0-45.71-18.839-87.12-49.205-116.872zM203.742 320.024c0-64.099 52.158-116.234 116.234-116.234 64.087 0 116.246 52.159 116.246 116.234 0 64.088-52.158 116.246-116.246 116.246-64.076 0-116.234-52.158-116.234-116.246zm160.112 157.762l-91.596 158.695C118.17 613.438 0 480.515 0 320.024c0-56.988 14.918-110.505 41.044-156.876l130.643 226.278c26.162 55.678 82.808 94.372 148.277 94.372 15.19 0 29.87-2.091 43.879-5.965l.012-.047z"/></svg> <span>Sync Extension</span></a></div></div></div></template></div><div class="flex justify-center mt-3" x-show="loadingNewBookmarks"><span class="loading loading-infinity loading-lg opacity-60"></span></div><div class="drawer drawer-end"><input id="my-drawer-4" type="checkbox" class="drawer-toggle"><div class="drawer-side z-50"><label for="my-drawer-4" aria-label="close sidebar" class="drawer-overlay"></label><div class="menu p-4 min-h-full bg-base-200 text-base-content w-1/2 min-w-80"><script src="https://cdn.amcharts.com/lib/5/index.js" defer="defer"></script><script src="https://cdn.amcharts.com/lib/5/hierarchy.js" defer="defer"></script><script src="https://cdn.amcharts.com/lib/5/themes/Animated.js" defer="defer"></script><div id="chart"><div id="chartdiv"></div></div><style>body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
       Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
@@ -260,7 +260,7 @@
               action = deleteArchivedBookmark
             else if (actionName === 'deletePermanently')
               action = permenantDeleteBookmark
-            
+
 
             action(bookmarkId).then( () => {
               iconLoading = false;

@@ -30,7 +30,7 @@
               action = deleteArchivedBookmark
             else if (actionName === 'deletePermanently')
               action = permenantDeleteBookmark
-            
+
 
             action(bookmarkId).then( () => {
               iconLoading = false;
