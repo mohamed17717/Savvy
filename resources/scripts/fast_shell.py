@@ -1,7 +1,11 @@
+from pprint import pprint
+
+from django.db import models as dj_models
+from django.db.models import Count
 
 from App import models, serializers
-from pprint import pprint
-from django.db.models import Count
+from App.controllers import document_cluster as doc_cluster
+from App.controllers.text_cleaner import TextCleaner
 
 bm = models.Bookmark.objects.get(pk=2399)
 s = serializers.BookmarkWeightingSerializer(bm)
@@ -9,12 +13,12 @@ words = s.total_weight
 ww = s.data
 
 # stemming
-pprint(list(bm.webpage.headers.all().values('level', 'text')))
-pprint(list(bm.webpage.meta_tags.all().values('name', 'content')))
+pprint(list(bm.webpage.headers.all().values("level", "text")))
+pprint(list(bm.webpage.meta_tags.all().values("name", "content")))
 
-from App.controllers.text_cleaner import TextCleaner
-x = ' '.join(bm.important_words)
-print(x, TextCleaner(x).stemming(method='lem').text, sep='\n')
+
+x = " ".join(bm.important_words)
+print(x, TextCleaner(x).stemming(method="lem").text, sep="\n")
 
 # update tags
 models.Tag.objects.all().delete()
@@ -23,12 +27,17 @@ for bm in models.Bookmark.objects.all():
 
 
 # get bm in clusters and has no webpage
-clusters_ids = models.Bookmark.objects.filter(webpages__isnull=True, clusters__isnull=False).values_list('clusters', flat=True)
-list(models.Cluster.objects.filter(id__in=clusters_ids).annotate(bookmarks_count=Count('bookmarks')).values_list('bookmarks_count', flat=True))
+clusters_ids = models.Bookmark.objects.filter(
+    webpages__isnull=True, clusters__isnull=False
+).values_list("clusters", flat=True)
+list(
+    models.Cluster.objects.filter(id__in=clusters_ids)
+    .annotate(bookmarks_count=Count("bookmarks"))
+    .values_list("bookmarks_count", flat=True)
+)
 
 
 # delete and cluster again
-from App import models
 
 models.Cluster.objects.all().delete()
 bookmarks = models.Bookmark.objects.all()
@@ -44,19 +53,16 @@ models.Bookmark.cluster_bookmarks(bookmarks)
 models.WordWeight.objects.all().delete()
 for bm in models.Bookmark.objects.all():
     bm.store_word_vector()
-    
+
 models.Bookmark.objects.filter(words_weights__isnull=True)
 models.WordWeight.objects.filter(important=True)
 
 # cosine similarity
-from App import models, serializers
-from App.controllers import document_cluster as doc_cluster
-
 
 bookmarks = list(models.Bookmark.objects.all())
 
 items_indexes = {b.id: i for i, b in enumerate(bookmarks)}
-item_id = models.Bookmark.objects.get(title__icontains='Django Cook Book').id
+item_id = models.Bookmark.objects.get(title__icontains="Django Cook Book").id
 item_index = items_indexes[item_id]
 
 vectors = [b.important_words for b in bookmarks]
@@ -64,10 +70,6 @@ vectors = [b.important_words for b in bookmarks]
 sim_calculator = doc_cluster.CosineSimilarityCalculator(vectors)
 similarity_matrix = sim_calculator.similarity()
 
-
-from pprint import pprint
-from App import models
-from App.controllers import document_cluster as doc_cluster
 
 bookmarks = models.Bookmark.objects.all()
 ids = [b.id for b in bookmarks]
@@ -82,14 +84,12 @@ pprint(clusters)
 
 
 # delete all data
-from App import models
-from django.db import models as dj_models
 
 for model in dir(models):
     model = getattr(models, model)
     try:
-        if issubclass(model, dj_models.Model) and 'App' in model.__module__:
-            print('Start deleting', model)
+        if issubclass(model, dj_models.Model) and "App" in model.__module__:
+            print("Start deleting", model)
             model.objects.all().delete()
-    except:
+    except Exception:
         pass

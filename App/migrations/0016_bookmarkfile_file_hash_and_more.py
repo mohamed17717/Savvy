@@ -5,20 +5,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('App', '0015_alter_tag_unique_together'),
+        ("App", "0015_alter_tag_unique_together"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='bookmarkfile',
-            name='file_hash',
+            model_name="bookmarkfile",
+            name="file_hash",
             field=models.CharField(blank=True, max_length=64, null=True),
         ),
         migrations.AlterUniqueTogether(
-            name='bookmarkfile',
-            unique_together={('user', 'file_hash')},
+            name="bookmarkfile",
+            unique_together={("user", "file_hash")},
         ),
     ]

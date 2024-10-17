@@ -1,8 +1,7 @@
 from django.contrib.auth import authenticate, get_user_model
 from django.utils.translation import gettext_lazy as _
-
-from rest_framework.exceptions import ValidationError
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from Users.controllers import OTPManager
 from Users.serializers_mixins import GetUserByEmailMixin, ValidatePasswordMixin
@@ -11,33 +10,37 @@ User = get_user_model()
 
 
 class AskForOTPCodeSerializer(GetUserByEmailMixin, serializers.Serializer):
-    otp_type = serializers.ChoiceField(choices=['email'], required=True)
+    otp_type = serializers.ChoiceField(choices=["email"], required=True)
 
     def validate(self, attrs):
-        attrs['user'] = self.get_user(attrs['email'])
+        attrs["user"] = self.get_user(attrs["email"])
         return attrs
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        exclude = ['password', 'groups', 'user_permissions', ]
+        exclude = [
+            "password",
+            "groups",
+            "user_permissions",
+        ]
 
     class Register(serializers.ModelSerializer):
         class Meta:
             model = User
-            fields = ['email', 'password']
+            fields = ["email", "password"]
 
         def validate(self, attrs):
-            attrs['username'] = attrs['email'].split('@')[0]
-            attrs['first_name'] = attrs['username']
-            attrs['confirm_password'] = attrs['password']
+            attrs["username"] = attrs["email"].split("@")[0]
+            attrs["first_name"] = attrs["username"]
+            attrs["confirm_password"] = attrs["password"]
 
             return super().validate(attrs)
 
         def create(self, validated_data):
             User = self.Meta.model
-            validated_data.pop('confirm_password')
+            validated_data.pop("confirm_password")
 
             return User.objects.create_user(**validated_data)
 
@@ -45,8 +48,12 @@ class UserSerializer(serializers.ModelSerializer):
         class Meta:
             model = User
             exclude = [
-                'username', 'email', 'email_verified',
-                'is_staff', 'is_active', 'is_superuser',
+                "username",
+                "email",
+                "email_verified",
+                "is_staff",
+                "is_active",
+                "is_superuser",
             ]
 
     class Login(serializers.Serializer):
@@ -54,25 +61,27 @@ class UserSerializer(serializers.ModelSerializer):
         password = serializers.CharField(required=True)
 
         def validate(self, attrs):
-            request = self.context.get('request')
+            request = self.context.get("request")
             user = authenticate(request, **attrs)
 
             if not user:
-                msg = _('Unable to log in with provided credentials.')
-                raise ValidationError({'error': msg}, code='authorization')
+                msg = _("Unable to log in with provided credentials.")
+                raise ValidationError({"error": msg}, code="authorization")
 
-            attrs['user'] = user
+            attrs["user"] = user
             return attrs
 
-    class ResetPassword(GetUserByEmailMixin, ValidatePasswordMixin, serializers.Serializer):
+    class ResetPassword(
+        GetUserByEmailMixin, ValidatePasswordMixin, serializers.Serializer
+    ):
         otp_code = serializers.CharField(required=True)
 
         def validate(self, attrs):
             super().validate(attrs)
 
-            user = self.get_user(attrs['email'])
-            if not OTPManager(user).confirm(attrs['otp_code']):
-                raise ValidationError({'error': 'Not Valid OTP code.'})
+            user = self.get_user(attrs["email"])
+            if not OTPManager(user).confirm(attrs["otp_code"]):
+                raise ValidationError({"error": "Not Valid OTP code."})
 
-            attrs['user'] = user
+            attrs["user"] = user
             return attrs

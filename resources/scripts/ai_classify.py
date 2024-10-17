@@ -1,9 +1,6 @@
-
-
 def labels_by_bert(texts):
-    from transformers import AutoTokenizer, AutoModelForSequenceClassification
     import torch
-    from transformers import logging
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer, logging
 
     logging.set_verbosity_error()
 
@@ -13,8 +10,7 @@ def labels_by_bert(texts):
 
     labels = []
     for text in texts:
-        inputs = tokenizer(text, return_tensors="pt",
-                           padding=True, truncation=True)
+        inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
 
         with torch.no_grad():
             logits = model(**inputs).logits
@@ -25,9 +21,9 @@ def labels_by_bert(texts):
     return labels
 
 
-def labels_by_sklearn(texts):    
-    from sklearn.feature_extraction.text import TfidfVectorizer
+def labels_by_sklearn(texts):
     from sklearn.cluster import KMeans
+    from sklearn.feature_extraction.text import TfidfVectorizer
 
     vectorizer = TfidfVectorizer()
     tfidf_matrix = vectorizer.fit_transform(texts)
@@ -40,28 +36,12 @@ def labels_by_sklearn(texts):
 
 
 def phrase_negativity_distilbert():
-    from transformers import pipeline
-    from transformers import AutoTokenizer, AutoModelForSequenceClassification
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 
-    model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
+    model_name = "distilbert-base-uncased-finetuned-sst-2-english"
     model = AutoModelForSequenceClassification.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    classifier = pipeline('sentiment-analysis',
-                          model=model, tokenizer=tokenizer)
-    res = classifier('i\'ve waiting for a HuggingFace course my whole life')
+    classifier = pipeline("sentiment-analysis", model=model, tokenizer=tokenizer)
+    res = classifier("i've waiting for a HuggingFace course my whole life")
     return res
-
-
-def tokenize_phrase():
-    from transformers import AutoTokenizer
-
-    model_name = 'distilbert-base-uncased-finetuned-sst-2-english'
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-
-    # Tokenizer in deep
-    sequence = 'Using transformers network is simple'
-    res = tokenizer(sequence)
-    tokens = tokenizer.tokenize(sequence)
-    ids = tokenizer.convert_tokens_to_ids(tokens)
-    decode_string = tokenizer.decode(ids)

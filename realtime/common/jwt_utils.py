@@ -1,29 +1,32 @@
 import os
-import jwt
 from datetime import datetime, timedelta
-from pydantic import BaseModel, Field
 
+import jwt
+from fastapi import HTTPException, Request
+from pydantic import BaseModel, Field
 from rest_framework.response import Response
-from fastapi import Request, HTTPException
 
 
 class JwtManager:
-    SECRET_KEY = os.getenv('JWT_SECRET')
-    ALGORITHM = os.getenv('JWT_ALGORITHM')
-    COOKIE_NAME = os.getenv('JWT_COOKIE_NAME')
+    SECRET_KEY = os.getenv("JWT_SECRET")
+    ALGORITHM = os.getenv("JWT_ALGORITHM")
+    COOKIE_NAME = os.getenv("JWT_COOKIE_NAME")
     ACCESS_TOKEN_EXPIRE_DAYS = 3
 
-    class AuthPayload(BaseModel, extra='allow'):
+    class AuthPayload(BaseModel, extra="allow"):
         user_id: int
-        exp: float = Field(default_factory=lambda: (
-            datetime.utcnow() + timedelta(days=JwtManager.ACCESS_TOKEN_EXPIRE_DAYS)
-        ).timestamp())
+        exp: float = Field(
+            default_factory=lambda: (
+                datetime.utcnow() + timedelta(days=JwtManager.ACCESS_TOKEN_EXPIRE_DAYS)
+            ).timestamp()
+        )
 
     @classmethod
     def create_access_token(cls, data: dict) -> str:
         auth_payload = cls.AuthPayload.model_validate(data)
         encoded_jwt = jwt.encode(
-            auth_payload.model_dump(), cls.SECRET_KEY, algorithm=cls.ALGORITHM)
+            auth_payload.model_dump(), cls.SECRET_KEY, algorithm=cls.ALGORITHM
+        )
         return encoded_jwt
 
     @classmethod
@@ -33,16 +36,20 @@ class JwtManager:
             cls.create_access_token(data),
             max_age=timedelta(days=cls.ACCESS_TOKEN_EXPIRE_DAYS),
             domain=None,
-            path='/',
+            path="/",
             secure=False or None,
             httponly=True,
-            samesite='Lax',
+            samesite="Lax",
         )
+
+    @classmethod
+    def remove_cookie(cls, response: Response) -> None:
+        response.delete_cookie(cls.COOKIE_NAME)
 
     @classmethod
     def decode_token(cls, token) -> dict:
         data = jwt.decode(token, cls.SECRET_KEY, algorithms=[cls.ALGORITHM])
-        if data['exp'] < datetime.utcnow().timestamp():
+        if data["exp"] < datetime.utcnow().timestamp():
             raise jwt.ExpiredSignatureError
 
         return data

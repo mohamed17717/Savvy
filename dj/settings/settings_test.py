@@ -5,14 +5,14 @@ from . import *
 # DEBUG = False
 TEMPLATE_DEBUG = False
 PASSWORD_HASHERS = [
-    'django.contrib.auth.hashers.MD5PasswordHasher',
+    "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
 
 MIDDLEWARE = [
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
 ]
 
 # DATABASES = {
@@ -26,6 +26,6 @@ MIDDLEWARE = [
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 CELERY_ALWAYS_EAGER = True
-CELERY_BROKER_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/1'
+CELERY_BROKER_URL = f"{REDIS_URL}/1"
 
-os.environ['DJANGO_TEST_MODE'] = 'True'
+os.environ["DJANGO_TEST_MODE"] = "True"

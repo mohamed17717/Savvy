@@ -11,7 +11,7 @@ class WordGraphModifier:
         self.similarity_matrix = similarity_matrix
         self.graphed_documents = graphed_documents
         self.intersection_matrix = None
-        
+
         self.calculate_intersection_matrix()
 
     def calculate_intersection_matrix(self):
@@ -23,7 +23,7 @@ class WordGraphModifier:
             for v in vectors:
                 words.update(v.keys())
             return words
-        
+
         def weight_matrix(vectors, words):
             matrix = np.zeros((len(vectors), len(words)))
             for i, v in enumerate(vectors):
@@ -35,15 +35,19 @@ class WordGraphModifier:
 
         self.intersection_matrix = cosine_similarity(
             weight_matrix(graphed_vectors, words),
-            weight_matrix(documents_vectors, words)
+            weight_matrix(documents_vectors, words),
         )
 
     def remove_document(self, doc_index):
         self.documents.pop(doc_index)
         self.similarity_matrix = np.delete(self.similarity_matrix, doc_index, axis=0)
         self.similarity_matrix = np.delete(self.similarity_matrix, doc_index, axis=1)
-        self.intersection_matrix = np.delete(self.intersection_matrix, doc_index, axis=0)
-        self.intersection_matrix = np.delete(self.intersection_matrix, doc_index, axis=1)
+        self.intersection_matrix = np.delete(
+            self.intersection_matrix, doc_index, axis=0
+        )
+        self.intersection_matrix = np.delete(
+            self.intersection_matrix, doc_index, axis=1
+        )
 
     def modify(self):
         ...
@@ -64,7 +68,7 @@ class MergeGraphs:
             for v in vectors:
                 words.update(v.keys())
             return words
-        
+
         def node_vector(vectors, words):
             vector = [0] * len(words)
             weights = {}
@@ -77,10 +81,9 @@ class MergeGraphs:
 
         words = unique_words([*node1_vectors, *node2_vectors])
         similarity = cosine_similarity(
-            node_vector(node1_vectors, words),
-            node_vector(node2_vectors, words)
+            node_vector(node1_vectors, words), node_vector(node2_vectors, words)
         )[0][0]
-        
+
         return similarity > max(node1.threshold, node2.threshold)
 
     def leaf_to_leaf(self, sub, original):
@@ -98,13 +101,12 @@ class MergeGraphs:
         # TODO create new field that hold the similarity matrix and documents ids
 
     def leaf_to_node(self, sub, original):
-        # TODO compare sub to original children and add leaf to most relevant recursively
+        # TODO compare sub to original children and add leaf to most relevant recursively # noqa
         # NOTE most relevant is by comparing the similarity by node.threshold
         # if no most relevant then add leaf as a sibling by changing its parent
         # otherwise its relevant to a leaf merge them using self.leaf_to_leaf()
         pass
 
-    
     def node_to_leaf(self, sub, original):
         # TODO add node as a sibling then apply self.leaf_to_node() between them
         pass
@@ -129,7 +131,6 @@ class MergeGraphs:
 
                 elif not sub_node.is_leaf and original_node.is_leaf:
                     self.node_to_leaf(sub_node, original_node)
-                
+
                 elif not sub_node.is_leaf and not original_node.is_leaf:
                     self.node_to_node(sub_node, original_node)
-                

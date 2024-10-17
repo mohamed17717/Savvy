@@ -50,7 +50,7 @@ func generateMatrix(rows, cols int) [][]float64 {
 func calculatePairwiseSimilarity(vectors [][]float64) []float64 {
 	var wg sync.WaitGroup
 	similarities := make([]float64, len(vectors)/2)
-	
+
 	for i := 0; i < len(vectors); i += 2 {
 		wg.Add(1)
 		go func(i int) {
@@ -58,7 +58,7 @@ func calculatePairwiseSimilarity(vectors [][]float64) []float64 {
 			similarities[i/2] = cosineSimilarity(vectors[i], vectors[i+1])
 		}(i)
 	}
-	
+
 	wg.Wait()
 	return similarities
 }
@@ -76,8 +76,8 @@ func main() {
 	rows, cols := 20000, 10000
 	matrix := generateMatrix(rows, cols)
 
-	// similarities := 
+	// similarities :=
 	calculatePairwiseSimilarity(matrix)
-	fmt.Println("Cosine Similarities DONE") 
+	fmt.Println("Cosine Similarities DONE")
 	// similarities)
 }

@@ -1,5 +1,8 @@
-from .default import BookmarkHooks
+import typing
+
 from common.utils.array_utils import window_list
+
+from .default import BookmarkHooks
 
 
 class InstagramBookmarkHooks(BookmarkHooks):
@@ -8,17 +11,19 @@ class InstagramBookmarkHooks(BookmarkHooks):
     # 3- using url patterns inject words weights
     # 4- crawl with custom spider to store just the image
 
-    DOMAIN = 'instagram.com'
+    DOMAIN = "instagram.com"
 
     def get_weighting_serializer(self):
         from App.serializers import InstagramBookmarkWeightingSerializer
+
         return InstagramBookmarkWeightingSerializer
 
-    def get_batch_method(self) -> callable:
+    def get_batch_method(self) -> typing.Callable:
         from App.tasks import bulk_store_weights_task
+
         return bulk_store_weights_task
 
-    def post_batch(self) -> callable:
+    def post_batch(self) -> typing.Callable:
         def method(bookmark_ids):
             from App import tasks
 

@@ -4,34 +4,33 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0040_graphnode_is_sharded_islands'),
+        ("App", "0040_graphnode_is_sharded_islands"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='bookmark',
-            name='user_status',
+            model_name="bookmark",
+            name="user_status",
         ),
         migrations.AddField(
-            model_name='bookmark',
-            name='added_at',
+            model_name="bookmark",
+            name="added_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='bookmark',
-            name='delete_scheduled_at',
+            model_name="bookmark",
+            name="delete_scheduled_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='bookmark',
-            name='favorite',
+            model_name="bookmark",
+            name="favorite",
             field=models.BooleanField(default=False),
         ),
         migrations.AddField(
-            model_name='bookmark',
-            name='hidden',
+            model_name="bookmark",
+            name="hidden",
             field=models.BooleanField(default=False),
         ),
     ]

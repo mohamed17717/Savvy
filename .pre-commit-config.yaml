@@ -1,0 +1,50 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-private-key
+      - id: check-added-large-files
+      - id: debug-statements # To check for print or pdb statements in your code
+
+  - repo: https://github.com/psf/black
+    rev: 23.11.0
+    hooks:
+      - id: black
+        language_version: python3.12
+        args: [--safe, --quiet]
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.1.0
+    hooks:
+      - id: flake8
+        additional_dependencies: [django, flake8-django] # For Django specific checks
+        args:
+          - --max-line-length=88
+          - --ignore=W503,DJ01,F401,F403,E203,F405  # Ignore multiple rules in quotes
+        language_version: python3.12
+  - repo: https://github.com/pycqa/isort
+    rev: 5.12.0
+    hooks:
+      - id: isort
+        name: isort (python)
+        args: [--profile=black]
+        language_version: python3.12
+  - repo: https://github.com/pycqa/bandit
+    rev: 1.7.5
+    hooks:
+      - id: bandit
+        name: bandit (security linter)
+        args: ["--severity-level", "medium"]
+  # - repo: https://github.com/pre-commit/mirrors-mypy
+  #   rev: v0.971
+  #   hooks:
+  #     - id: mypy
+  #       name: mypy (type checker)
+  #       language_version: python3.12
+  #       exclude: migrations
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.18.0
+    hooks:
+      - id: pyupgrade
+        args: [--py38-plus]

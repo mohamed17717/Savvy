@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0007_alter_bookmarkfile_tasks'),
+        ("App", "0007_alter_bookmarkfile_tasks"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='bookmarkfile',
-            name='tasks',
+            model_name="bookmarkfile",
+            name="tasks",
             field=models.JSONField(blank=True, default=list),
         ),
     ]

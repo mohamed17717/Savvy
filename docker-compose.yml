@@ -1,32 +1,28 @@
-version: '3.8'
+version: "3.8"
 services:
   db:
     image: postgres
     volumes:
       - ./data/db:/var/lib/postgresql/data
     environment:
-      POSTGRES_DB: savvy
+      POSTGRES_DB: main
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     networks:
-      - djangonetwork
+      - dokploy-network
 
   redis:
     image: "redis:alpine"
     volumes:
       - redis_data:/data
     networks:
-      - djangonetwork
+      - dokploy-network
 
   django:
-    build: .
-    command: sh -c "
-      pipenv run python manage.py migrate --noinput &&
-      pipenv run python manage.py collectstatic --noinput &&
-      pipenv run python manage.py runserver 0.0.0.0:8000"
-      # pipenv run gunicorn dj.wsgi:application --bind 0.0.0.0:8000"
-    expose:
-      - 8000
+    # restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile-django
     env_file:
       - .env
     volumes:
@@ -34,7 +30,7 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     ports:
-      - "8000:8000"
+      - "8000"
     depends_on:
       - db
       - redis
@@ -42,28 +38,28 @@ services:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   realtime:
     build: ./realtime
-    expose:
-      - 8001
     env_file:
       - .env
     volumes:
       - ./realtime:/usr/src/realtime
     ports:
-      - "8001:8000" # Expose the service on host port 8001 and container port 8000
+      - "8000"
     depends_on:
       - redis
     links:
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   celery_scrapy_worker:
-    build: .
-    command: pipenv run celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=10
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
+    command: celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=5
     env_file:
       - .env
     volumes:
@@ -71,17 +67,18 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     depends_on:
-      - db
-      - redis
+      - django
     links:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   celery_orm_worker:
-    build: .
-    command: pipenv run celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=10
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
+    command: celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=16
     env_file:
       - .env
     volumes:
@@ -89,17 +86,18 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     depends_on:
-      - db
-      - redis
+      - django
     links:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   celery_download_images_worker:
-    build: .
-    command: pipenv run celery -A dj worker -l INFO -n download_images_worker -Q download_images -E --concurrency=10
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
+    command: celery -A dj worker -l INFO -n download_images_worker -Q download_images -E --concurrency=4
     env_file:
       - .env
     volumes:
@@ -107,18 +105,18 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     depends_on:
-      - db
-      - redis
+      - django
     links:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
-
+      - dokploy-network
 
   celery_email_worker:
-    build: .
-    command: pipenv run celery -A dj worker -l INFO -n email_worker -Q email -E --concurrency=4
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
+    command: celery -A dj worker -l INFO -n email_worker -Q email -E --concurrency=2
     env_file:
       - .env
     volumes:
@@ -126,17 +124,18 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     depends_on:
-      - db
-      - redis
+      - django
     links:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
+      - dokploy-network
 
   celerybeat:
-    build: .
-    command: pipenv run celery -A dj beat --loglevel=info
+    build:
+      context: .
+      dockerfile: Dockerfile-celery
+    command: ./wait-for-it.sh celery -A dj beat --loglevel=info
     env_file:
       - .env
     volumes:
@@ -144,61 +143,30 @@ services:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
     depends_on:
-      - db
-      - redis
+      - django
     links:
       - db:db
       - redis:redis
     networks:
-      - djangonetwork
-
-  # flower:
-  #   image: mher/flower
-  #   command: flower --broker=redis://redis:6379/0
-  #   ports:
-  #     - "5555:5555"
-  #   depends_on:
-  #     - redis
+      - dokploy-network
 
   nginx:
     build: ./nginx
     volumes:
       - ./staticfiles:/usr/src/app/staticfiles
       - ./media:/usr/src/app/media
+      - ./frontend:/usr/src/app/frontend
     ports:
       - "80:80"
     depends_on:
       - django
     networks:
-      - djangonetwork
-
-  prometheus:
-    image: prom/prometheus
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-
-    ports:
-      - "9090:9090"
-    depends_on:
-      - django # or any other service you want to monitor
-
-  grafana:
-    image: grafana/grafana
-    volumes:
-      - grafana_data:/var/lib/grafana
-    ports:
-      - "3000:3000"
-    depends_on:
-      - prometheus
+      - dokploy-network
 
 networks:
-  default:
+  dokploy-network:
     driver: bridge
-  djangonetwork:
-    driver: bridge
+    external: false
 
 volumes:
-  grafana_data:
-  prometheus_data:
   redis_data:

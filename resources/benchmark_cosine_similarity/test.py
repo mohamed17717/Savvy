@@ -1,6 +1,7 @@
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
 import time
+
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 # Generating a random matrix of shape (10000, 10000)
 X = np.random.rand(10000, 10000)

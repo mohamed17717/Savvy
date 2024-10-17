@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0035_rename_wordgraphnode_graphnode'),
+        ("App", "0035_rename_wordgraphnode_graphnode"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='graphnode',
-            name='similarity_matrix',
+            model_name="graphnode",
+            name="similarity_matrix",
             field=models.JSONField(blank=True, null=True),
         ),
     ]

@@ -4,25 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0004_documentcluster_user'),
+        ("App", "0004_documentcluster_user"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='clustertag',
-            name='name',
+            model_name="clustertag",
+            name="name",
             field=models.CharField(max_length=2048),
         ),
         migrations.AlterField(
-            model_name='documentwordweight',
-            name='word',
+            model_name="documentwordweight",
+            name="word",
             field=models.CharField(max_length=2048),
         ),
         migrations.AlterField(
-            model_name='webpagemetatag',
-            name='name',
-            field=models.CharField(default='undefined', max_length=2048),
+            model_name="webpagemetatag",
+            name="name",
+            field=models.CharField(default="undefined", max_length=2048),
         ),
     ]

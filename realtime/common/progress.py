@@ -1,7 +1,6 @@
-import json
 import asyncio
+import json
 import uuid
-
 from datetime import datetime, timedelta
 
 from fastapi import Request
@@ -16,67 +15,66 @@ class UserProgressSingleton:
 
     def __init__(self, user_id):
         if self._instances.get(user_id) is not None:
-            raise Exception('UserProgressSingleton instance already exists')
+            raise Exception("UserProgressSingleton instance already exists")
 
         self.user_id = user_id
 
         self.created = datetime.now()
-        self.total = None
+        self._total = 0
         self.individual_progress = {}
         self.individual_limit = 80
-        self.message = ''
+        self.message = ""
         self.DONE = False
 
     @property
+    def total(self):
+        return self._total
+
+    @total.setter
+    def total(self, value):
+        self._total += value
+
+    @property
     def progress(self) -> float:
-        if self.total in [None, 0]:
-            raise ValueError('Total is not set')
-
-        total_progress = sum(
-            self.individual_progress.values()) / self.individual_limit
-        return total_progress / self.total * 100
-
-    def set_total(self, total):
-        if self.total is None:
-            self.total = 0
-        self.total += total
+        total_progress = sum(self.individual_progress.values()) / self.individual_limit
+        return total_progress / (self.total or 1) * 100
 
     def change(self, data):
-        if data['type'] == RedisPubSub.MessageTypes.INIT_UPLOAD:
-            self.message = 'Start Uploading'
-        elif data['type'] == RedisPubSub.MessageTypes.FILE_UPLOAD:
-            total = data['total_bookmarks']
-            self.set_total(total)
-            self.message = f'new uploaded bookmarks: {total}'
-        elif data['type'] == RedisPubSub.MessageTypes.BOOKMARK_CHANGE:
-            bookmark_id = data['bookmark_id']
-            status = data['status']
+        if data["type"] == RedisPubSub.MessageTypes.INIT_UPLOAD:
+            self.message = "Start Uploading"
+        elif data["type"] == RedisPubSub.MessageTypes.FILE_UPLOAD:
+            total = data["total_bookmarks"]
+            self.total = total
+            self.message = f"new uploaded bookmarks: {total}"
+        elif data["type"] == RedisPubSub.MessageTypes.BOOKMARK_CHANGE:
+            bookmark_id = data["bookmark_id"]
+            status = data["status"]
             self.individual_progress[bookmark_id] = status
-            self.message = f'bookmark {bookmark_id} status: {status/80*100}%'
-        elif data['type'] == RedisPubSub.MessageTypes.FINISH:
+            self.message = f"bookmark {bookmark_id} status: {status / 80 * 100}%"
+        elif data["type"] == RedisPubSub.MessageTypes.FINISH:
             self.DONE = True
         else:
             self.DONE = self.progress >= 100
 
         if self.DONE:
-            self.message = 'All bookmarks are uploaded'
+            self.message = "All bookmarks are uploaded"
 
     def __str__(self):
         data = {
-            'total': self.total,
-            'progress': self.progress,
-            'message': self.message,
+            "total": self.total,
+            "progress": self.progress,
+            "message": self.message,
         }
         return json.dumps(data)
 
     @classmethod
-    async def get_instance(cls, user_id) -> 'UserProgressSingleton':
+    async def get_instance(cls, user_id) -> "UserProgressSingleton":
         async with cls._lock:
             _instance = cls._instances.get(user_id)
             return _instance
 
     @classmethod
-    async def get_or_create_instance(cls, user_id) -> 'UserProgressSingleton':
+    async def get_or_create_instance(cls, user_id) -> "UserProgressSingleton":
         async with cls._lock:
             _instance = cls._instances.get(user_id)
             if _instance is None:
@@ -93,11 +91,13 @@ class ProgressSSE:
         self.progress = 0
 
     def wrap_message(self, data):
-        return json.dumps({
-            "event": "progress",
-            "id": uuid.uuid4().hex,
-            "data": data,
-        })
+        return json.dumps(
+            {
+                "event": "progress",
+                "id": uuid.uuid4().hex,
+                "data": data,
+            }
+        )
 
     async def event_loop(self, request: Request):
         force_break_time = datetime.now() + timedelta(hours=1)

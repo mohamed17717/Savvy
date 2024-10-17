@@ -4,23 +4,30 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0020_rename_documentcluster_cluster'),
+        ("App", "0020_rename_documentcluster_cluster"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='webpageheader',
-            name='cleaned_text',
+            model_name="webpageheader",
+            name="cleaned_text",
         ),
         migrations.RemoveField(
-            model_name='webpagemetatag',
-            name='cleaned_content',
+            model_name="webpagemetatag",
+            name="cleaned_content",
         ),
         migrations.AddField(
-            model_name='bookmark',
-            name='status',
-            field=models.PositiveSmallIntegerField(choices=[(None, None), (1, 'waiting for any status change'), (2, 'no need to show anymore'), (3, 'hide for now')], default=1),
+            model_name="bookmark",
+            name="status",
+            field=models.PositiveSmallIntegerField(
+                choices=[
+                    (None, None),
+                    (1, "waiting for any status change"),
+                    (2, "no need to show anymore"),
+                    (3, "hide for now"),
+                ],
+                default=1,
+            ),
         ),
     ]

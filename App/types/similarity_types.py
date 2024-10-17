@@ -1,5 +1,5 @@
-import json
 import copy
+import json
 
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -15,7 +15,8 @@ class WordVectorType(dict):
 
 
 class SimilarityMatrixType:
-    """This class type represent an object that hold all data about similarity calculations
+    """This class type represent an object that hold all data about
+    similarity calculations
     Like:
         - similarity matrix
         - ordered documents
@@ -27,7 +28,7 @@ class SimilarityMatrixType:
         vectors: list[WordVectorType],  # table of data
         document_ids: list[int],  # y_axis
         unique_words: list[str] = None,  # x_axis
-        similarity_matrix: np.ndarray = None  # relation between documents base on words
+        similarity_matrix: np.ndarray = None,  # relation between documents base on words # noqa
     ) -> None:
         self.vectors = vectors
         self.document_ids = document_ids
@@ -53,7 +54,7 @@ class SimilarityMatrixType:
     def similarity_matrix(self) -> np.ndarray:
         def calculate():
             matrix = cosine_similarity(self.weight_matrix())
-            return np.ceil(matrix*100)/100
+            return np.ceil(matrix * 100) / 100
 
         if self._similarity_matrix is None:
             self._similarity_matrix = calculate()
@@ -63,18 +64,23 @@ class SimilarityMatrixType:
     def __repr__(self):
         return self.similarity_matrix.__repr__()
 
-    def __add__(self, other: 'SimilarityMatrixType') -> 'SimilarityMatrixType':
+    def __add__(self, other: "SimilarityMatrixType") -> "SimilarityMatrixType":
         if not isinstance(other, SimilarityMatrixType):
             raise TypeError(f"Can't add {type(other)} to {type(self)}")
 
         # TODO if needed // remove duplicated words and do the operations normally
         if set(self.document_ids).intersection(other.document_ids):
             raise ValueError(
-                "Can't add two SimilarityMatrixType with same document_ids")
+                "Can't add two SimilarityMatrixType with same document_ids"
+            )
 
         if self.similarity_matrix is None or not self.vectors or not self.unique_words:
             return other
-        if other.similarity_matrix is None or not other.vectors or not other.unique_words:
+        if (
+            other.similarity_matrix is None
+            or not other.vectors
+            or not other.unique_words
+        ):
             return self
 
         # Combine dimensions
@@ -90,7 +96,8 @@ class SimilarityMatrixType:
             document_ids=[*self.document_ids, *other.document_ids],
             unique_words=unique_words,
             similarity_matrix=extend_matrix(
-                similarity_matrix, other.similarity_matrix, intersect_similarity)
+                similarity_matrix, other.similarity_matrix, intersect_similarity
+            ),
         )
 
     def store(self, path: str) -> str:
@@ -102,13 +109,15 @@ class SimilarityMatrixType:
         Returns:
             str: full path
         """
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(self.similarity_matrix.tolist(), f)
 
         return path
 
     @classmethod
-    def load(cls, vectors: list[WordVectorType], document_ids: list[int], path: str) -> 'SimilarityMatrixType':
+    def load(
+        cls, vectors: list[WordVectorType], document_ids: list[int], path: str
+    ) -> "SimilarityMatrixType":
         try:
             with open(path) as f:
                 similarity_matrix = json.loads(f.read())
@@ -118,5 +127,5 @@ class SimilarityMatrixType:
         return cls(
             vectors=vectors,
             document_ids=document_ids,
-            similarity_matrix=similarity_matrix
+            similarity_matrix=similarity_matrix,
         )

@@ -1,9 +1,8 @@
-
-
 from scrapy.crawler import CrawlerProcess
-from crawler.spiders.bookmark import BookmarkSpider
 from scrapy.utils.project import get_project_settings
+
 from App.models import Bookmark
+from crawler.spiders.bookmark import BookmarkSpider
 
 bookmarks = list(Bookmark.objects.all())
 

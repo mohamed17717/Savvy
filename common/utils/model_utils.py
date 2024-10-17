@@ -1,12 +1,12 @@
 import threading
 from datetime import date
 
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.utils import IntegrityError
-from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _
-from django.contrib.auth import get_user_model
 from django.utils.deconstruct import deconstructible
+from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
 
@@ -19,14 +19,13 @@ class FileSizeValidator:
     def __call__(self, value):
         max_size = self.size_MB * 1024 * 1024  # 5MB
         if value.size > max_size:
-            raise ValidationError(
-                _(f'File size should not exceed {self.size_MB}MB.'))
+            raise ValidationError(_(f"File size should not exceed {self.size_MB}MB."))
 
 
 def is_future_date_validator(value: date):
     today = date.today()
     if value < today:
-        raise ValidationError('date must be in the future.')
+        raise ValidationError("date must be in the future.")
 
 
 def concurrent_get_or_create(model, **kwargs):
@@ -36,7 +35,7 @@ def concurrent_get_or_create(model, **kwargs):
             return obj, created
         except IntegrityError:
             # Handle the exception if a duplicate is trying to be created
-            kwargs.pop('defaults', None)
+            kwargs.pop("defaults", None)
             obj = model.objects.select_for_update().get(**kwargs)
             return obj, False
 
@@ -67,13 +66,14 @@ class CentralizedBulkCreator:
         self.model = model
         self.m2m_fields = m2m_fields
         self.m2m_models = {
-            m2m_field: getattr(self.model, m2m_field).through for m2m_field in m2m_fields
+            m2m_field: getattr(self.model, m2m_field).through
+            for m2m_field in m2m_fields
         }
         self.data = {
-            'objects': [],
-            'm2m_objects': []  # [{bookmarks: [], tags: []}, ...]
+            "objects": [],
+            "m2m_objects": [],  # [{bookmarks: [], tags: []}, ...]
         }
-        self.has_post_calculation = hasattr(model, 'post_create')
+        self.has_post_calculation = hasattr(model, "post_create")
         # max objects
         self.max_objects = 500
 
@@ -87,10 +87,10 @@ class CentralizedBulkCreator:
 
     def add(self, obj, m2m_objects: dict = {}):
         with self.lock:
-            self.data['objects'].append(obj)
-            self.data['m2m_objects'].append(m2m_objects)
+            self.data["objects"].append(obj)
+            self.data["m2m_objects"].append(m2m_objects)
 
-        if len(self.data['objects']) >= self.max_objects:
+        if len(self.data["objects"]) >= self.max_objects:
             self.flush()
 
         self.reset_timer()
@@ -108,36 +108,32 @@ class CentralizedBulkCreator:
 
     def reset_data(self):
         self.data = {
-            'objects': [],
-            'm2m_objects': []  # [{bookmarks: [], tags: []}, ...]
+            "objects": [],
+            "m2m_objects": [],  # [{bookmarks: [], tags: []}, ...]
         }
 
     def bulk_create_m2m(self, objects):
-        m2m_bulk_data = {
-            m2m_field: [] for m2m_field in self.m2m_fields}
+        m2m_bulk_data = {m2m_field: [] for m2m_field in self.m2m_fields}
 
-        for obj, m2m_objects in zip(objects, self.data['m2m_objects']):
+        for obj, m2m_objects in zip(objects, self.data["m2m_objects"]):
             for m2m_field, m2m_data_array in m2m_objects.items():
                 m2m_model = self.m2m_models[m2m_field]
-                m2m_model_fields = map(
-                    lambda i: i.name + '_id', m2m_model._meta.fields)
-                _, instance_field_name, related_field_name = list(
-                    m2m_model_fields)
+                m2m_model_fields = map(lambda i: i.name + "_id", m2m_model._meta.fields)
+                _, instance_field_name, related_field_name = list(m2m_model_fields)
 
                 for m2m_object in m2m_data_array:
                     m2m_object_kwargs = {
                         instance_field_name: obj.id,
-                        related_field_name: m2m_object.id
+                        related_field_name: m2m_object.id,
                     }
-                    m2m_bulk_data[m2m_field].append(
-                        m2m_model(**m2m_object_kwargs))
+                    m2m_bulk_data[m2m_field].append(m2m_model(**m2m_object_kwargs))
 
         for field, data in m2m_bulk_data.items():
             self.m2m_models[field].objects.bulk_create(data, batch_size=500)
 
     def flush(self) -> None:
         with self.lock:
-            objects = self.data['objects']
+            objects = self.data["objects"]
 
             if not objects:
                 return

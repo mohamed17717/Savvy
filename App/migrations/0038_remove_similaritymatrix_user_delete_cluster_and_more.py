@@ -4,20 +4,19 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0037_merge_20240507_0530'),
+        ("App", "0037_merge_20240507_0530"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='similaritymatrix',
-            name='user',
+            model_name="similaritymatrix",
+            name="user",
         ),
         migrations.DeleteModel(
-            name='Cluster',
+            name="Cluster",
         ),
         migrations.DeleteModel(
-            name='SimilarityMatrix',
+            name="SimilarityMatrix",
         ),
     ]

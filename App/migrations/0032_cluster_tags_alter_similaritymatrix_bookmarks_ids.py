@@ -4,20 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0031_similaritymatrix_bookmarks_ids'),
+        ("App", "0031_similaritymatrix_bookmarks_ids"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='cluster',
-            name='tags',
-            field=models.ManyToManyField(related_name='clusters', to='App.tag'),
+            model_name="cluster",
+            name="tags",
+            field=models.ManyToManyField(related_name="clusters", to="App.tag"),
         ),
         migrations.AlterField(
-            model_name='similaritymatrix',
-            name='bookmarks_ids',
+            model_name="similaritymatrix",
+            name="bookmarks_ids",
             field=models.JSONField(blank=True, default=list),
         ),
     ]

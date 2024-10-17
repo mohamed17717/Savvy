@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0026_bookmark_similarity_calculated_similaritymatrix'),
+        ("App", "0026_bookmark_similarity_calculated_similaritymatrix"),
     ]
 
     operations = [
         migrations.RenameModel(
-            old_name='DocumentWordWeight',
-            new_name='WordWeight',
+            old_name="DocumentWordWeight",
+            new_name="WordWeight",
         ),
     ]

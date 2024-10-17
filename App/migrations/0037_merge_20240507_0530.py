@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0034_alter_bookmark_uuid_bookmarkhistory'),
-        ('App', '0036_graphnode_similarity_matrix'),
+        ("App", "0034_alter_bookmark_uuid_bookmarkhistory"),
+        ("App", "0036_graphnode_similarity_matrix"),
     ]
 
-    operations = [
-    ]
+    operations = []

@@ -1,3 +1,5 @@
+import typing
+
 from .default import BookmarkHooks
 
 
@@ -8,12 +10,14 @@ class FacebookBookmarkHooks(BookmarkHooks):
 
     # TODO crawl using random cookies to make sure
     # we don't get banned and get valid results
-    DOMAIN = 'facebook.com'
+    DOMAIN = "facebook.com"
 
     def get_weighting_serializer(self):
         from App.serializers import FacebookBookmarkWeightingSerializer
+
         return FacebookBookmarkWeightingSerializer
 
-    def get_batch_method(self) -> callable:
+    def get_batch_method(self) -> typing.Callable:
         from App.tasks import bulk_store_weights_task
+
         return bulk_store_weights_task

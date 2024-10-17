@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('App', '0030_cluster_bookmarks_count_and_more'),
+        ("App", "0030_cluster_bookmarks_count_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='similaritymatrix',
-            name='bookmarks_ids',
+            model_name="similaritymatrix",
+            name="bookmarks_ids",
             field=models.JSONField(default=list),
         ),
     ]
