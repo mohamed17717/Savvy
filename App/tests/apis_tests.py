@@ -14,7 +14,7 @@ from App.tests.models_tests import ObjFactory, disconnect_signals
 
 def knox_authorize(user, test_case):
     token = AuthToken.objects.create(user)[1]
-    test_case.client.credentials(HTTP_AUTHORIZATION="Token " + token)
+    test_case.client.credentials(HTTP_AUTHORIZATION=f"Token {token}")
 
 
 class BookmarkFileAPITestCase(APITestCase):
