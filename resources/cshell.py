@@ -2,12 +2,10 @@ import glob
 import os
 import shutil
 
-import numpy as np
 from django.db import models as dj_models
 from django.db.models import Count
-from sklearn.metrics.pairwise import cosine_similarity
 
-from App import models, types
+from App import models
 
 
 def cluster_duplicates_bookmarks():

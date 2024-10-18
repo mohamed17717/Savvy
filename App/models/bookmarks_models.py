@@ -104,8 +104,7 @@ class BookmarkFile(models.Model):
     @property
     def file_obj(self) -> controllers.BookmarkFileManager:
         self.location.seek(0)
-        obj = self.file_manager(self.location)
-        return obj
+        return self.file_manager(self.location)
 
     @property
     def bookmarks_links(self) -> list[dict]:
