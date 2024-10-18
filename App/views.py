@@ -12,7 +12,6 @@ from rest_framework.generics import ListAPIView
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from App import filters, models, serializers
 from common.utils.drf.filters import FullTextSearchFilter
@@ -233,51 +232,9 @@ class TagListAPI(ListAPIView):
         return models.Tag.objects.all().by_user(self.request.user)
 
 
-class WordGraphNodeAPI(APIView):
-    serializer_class = serializers.GraphNodeSerializer.NodeDetails
-
-    def _get_bookmarks(self):
-        bookmarks = self.request.user.bookmarks.all()
-        bookmarks = filters.BookmarkFilter(self.request.GET, queryset=bookmarks).qs
-        bookmarks = FullTextSearchFilter().filter_queryset(
-            self.request, bookmarks, BookmarkAPI, distinct=False
-        )
-
-        return bookmarks
-
-    def _get_available_nodes(self):
-        bookmarks = self._get_bookmarks()
-        filtered_leafs = self.request.user.nodes.filter(bookmarks__in=bookmarks)
-        paths = filtered_leafs.values_list("path", flat=True)
-        nodes = []
-        for i in paths:
-            nodes.extend(i.split("."))
-        return nodes
-
-    def get_queryset(self):
-        if self.request.user.is_anonymous:
-            return models.GraphNode.objects.none()
-
-        return (
-            self.request.user.nodes.all()
-            .only(*only_fields(self.serializer_class))
-            .annotate(children_count=Count("children"))
-            .filter(id__in=self._get_available_nodes())
-        )
-
-    def get(self, request, parent=None):
-        lookup = {"parent_id": parent} if parent else {"parent__isnull": True}
-        qs = self.get_queryset().filter(**lookup)
-        serializer = self.serializer_class(qs, many=True)
-
-        return Response(serializer.data)
-
-
 class BookmarkFilterChoices:
     class Base(ListAPIView):
         def get_bookmarks(self):
-            from common.utils.drf.filters import FullTextSearchFilter
-
             bookmarks = self.request.user.bookmarks.all()
             bookmarks = filters.BookmarkFilter(self.request.GET, queryset=bookmarks).qs
             bookmarks = FullTextSearchFilter().filter_queryset(

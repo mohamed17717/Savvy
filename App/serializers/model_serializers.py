@@ -163,23 +163,3 @@ class BookmarkSerializer(serializers.ModelSerializer):
         class Meta:
             model = models.Bookmark
             fields = ["favorite", "hidden"]
-
-
-class GraphNodeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.GraphNode
-        fields = "__all__"
-
-    class NodeDetails(serializers.ModelSerializer):
-        children_count = serializers.ReadOnlyField()
-
-        class Meta:
-            model = models.GraphNode
-            exclude = [
-                "bookmarks",
-                "tags",
-                "similarity_matrix",
-                "created_at",
-                "updated_at",
-                "parent",
-            ]

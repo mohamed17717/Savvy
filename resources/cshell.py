@@ -8,7 +8,6 @@ from django.db.models import Count
 from sklearn.metrics.pairwise import cosine_similarity
 
 from App import models, types
-from App.controllers.graph_builder import WordGraphBuilder
 
 
 def cluster_duplicates_bookmarks():
@@ -87,88 +86,6 @@ def system_zero():
 # ]
 # for s in services:
 # os.system(f"docker-compose logs {s} > {s}.log")
-
-
-def build_graph():
-    models.GraphNode.objects.all().delete()
-
-    bookmarks = models.Bookmark.objects.all()
-    document_ids, vectors = models.WordWeight.word_vectors(bookmarks)
-    similarity = types.SimilarityMatrixType(vectors, document_ids)
-
-    maker = WordGraphBuilder(similarity.document_ids, similarity.similarity_matrix)
-    maker.build()
-    models.GraphNode.centralized_creator().flush()
-
-
-def analyze_graph():
-    bookmark_nodes_count = set(
-        models.Bookmark.objects.annotate(nodes_count=Count("nodes")).values_list(
-            "nodes_count", flat=True
-        )
-    )
-    nodes_count = models.GraphNode.objects.all().count()
-    roots_count = models.GraphNode.objects.filter(parent__isnull=True).count()
-    leafs_count = (
-        models.GraphNode.objects.filter(bookmarks__isnull=False).distinct().count()
-    )
-    thresholds = sorted(
-        set(models.GraphNode.objects.values_list("threshold", flat=True))
-    )
-    # paths = list(models.GraphNode.objects.values_list('path', flat=True))
-    bookmarks_on_leafs = list(
-        models.GraphNode.objects.filter(bookmarks__isnull=False)
-        .distinct()
-        .values_list("bookmarks_count", flat=True)
-    )
-    # children_count = sorted(models.GraphNode.objects.annotate(
-    #     children_count=Count('children')).values_list('children_count', flat=True))
-
-    print(f"{bookmark_nodes_count=}")
-    print(f"{nodes_count=}")
-    print(f"{roots_count=}")
-    print(f"{leafs_count=}")
-    print(f"{thresholds=}")
-    # print(f'{paths=}')
-    print(f"{bookmarks_on_leafs=}")
-    # print(f'{children_count=}')
-
-
-def similarity_between_nodes():
-    parent = models.GraphNode.objects.all()[0]
-    children = parent.leafs
-    node1, node2 = children[0], children[1]
-
-    node1_docs, node1_vectors = models.WordWeight.word_vectors(node1.bookmarks.all())
-    node2_docs, node2_vectors = models.WordWeight.word_vectors(node2.bookmarks.all())
-
-    def unique_words(vectors):
-        words = set()
-        for v in vectors:
-            words.update(v.keys())
-        return words
-
-    def weight_matrix(vectors, unique_words):
-        vector = [0] * len(unique_words)
-        weights = {}
-        for v in vectors:
-            for word in unique_words:
-                weights.setdefault(word, 0)
-                weights[word] += v.get(word, 0)
-        for i, word in enumerate(unique_words):
-            vector[i] = weights[word]
-        return [vector]
-
-    # def weight_matrix(vectors, unique_words):
-    #     return np.array([[v.get(word, 0) for word in unique_words] for v in vectors])
-
-    # Combine dimensions
-    unique_words = tuple(unique_words(node1_vectors).union(unique_words(node2_vectors)))
-    intersect_similarity = cosine_similarity(
-        weight_matrix(node1_vectors, unique_words),
-        weight_matrix(node2_vectors, unique_words),
-    )
-    print(np.average(intersect_similarity))
 
 
 # bms = not_clustered_bookmarks()

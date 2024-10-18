@@ -13,8 +13,6 @@ app_name = "app"
 
 urlpatterns = [
     path("tags/list/", views.TagListAPI.as_view(), name="tag_list"),
-    path("graph/", views.WordGraphNodeAPI.as_view(), name="node_graph"),
-    path("graph/<int:parent>/", views.WordGraphNodeAPI.as_view(), name="node_graph"),
     path(
         "filter/choices/website/",
         views.BookmarkFilterChoices.Website.as_view(),
