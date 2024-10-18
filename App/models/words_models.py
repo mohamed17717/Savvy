@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import Sum
 from django.shortcuts import reverse
 
+from App import managers
 from App.types import WordVectorType
 
 User = get_user_model()
@@ -54,6 +55,7 @@ class Tag(models.Model):
         get_user_model(), on_delete=models.CASCADE, related_name="tags"
     )
     bookmarks = models.ManyToManyField("App.Bookmark", blank=True, related_name="tags")
+    bookmarks_count = models.PositiveSmallIntegerField(default=0, db_index=True)
 
     # Required
     name = models.CharField(max_length=128)
@@ -62,11 +64,13 @@ class Tag(models.Model):
     alias_name = models.CharField(max_length=128, blank=True, null=True)
 
     # Computed
-    weight = models.PositiveSmallIntegerField(default=0)
+    weight = models.PositiveIntegerField(default=0)
 
     # Timing
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = managers.TagManager()
 
     class Meta:
         unique_together = ("user", "name")
@@ -81,10 +85,15 @@ class Tag(models.Model):
     def update_tags_with_new_bookmarks(cls, bookmarks_ids: list[int]):
         from App.models import Bookmark, WordWeight
 
+        bookmarks = Bookmark.all_objects.filter(id__in=bookmarks_ids).exclude(
+            tags__isnull=False
+        )
+
         # make sure this bookmarks has no tags
-        if cls.objects.filter(bookmarks__in=bookmarks_ids).exists():
+        if not bookmarks.exists():
             raise ValueError("Bookmarks has tags")
 
+        user = bookmarks.first().user
         # get words
         words_qs = (
             WordWeight.objects.filter(bookmark_id__in=bookmarks_ids, important=True)
@@ -95,10 +104,13 @@ class Tag(models.Model):
         words_map = {w["word"]: w for w in words_qs}
 
         # Update existing tags
-        existing_tags = cls.objects.filter(name__in=words)
+        existing_tags = user.tags.filter(name__in=words)
         for tag in existing_tags:
             tag.weight += words_map[tag.name]["total_weight"]
-        cls.objects.bulk_update(existing_tags, ["weight"], batch_size=250)
+            tag.bookmarks_count += len(set(words_map[tag.name]["bookmark_ids"]))
+        cls.objects.bulk_update(
+            existing_tags, ["weight", "bookmarks_count"], batch_size=250
+        )
 
         # Create new tags
         existing_tag_names = set(existing_tags.values_list("name", flat=True))
@@ -107,7 +119,12 @@ class Tag(models.Model):
         user = Bookmark.objects.filter(pk__in=bookmarks_ids).first().user
 
         new_tags = [
-            cls(name=name, weight=words_map[name]["total_weight"], user=user)
+            cls(
+                name=name,
+                weight=words_map[name]["total_weight"],
+                user=user,
+                bookmarks_count=len(set(words_map[name]["bookmark_ids"])),
+            )
             for name in new_tag_names
         ]
         new_tags = cls.objects.bulk_create(new_tags, batch_size=250)
@@ -126,4 +143,5 @@ class Tag(models.Model):
             )
 
         relation_model.objects.bulk_create(relations, batch_size=250)
+
         return len(all_tags)
