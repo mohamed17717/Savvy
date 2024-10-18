@@ -135,27 +135,6 @@ def scrapy_log(bookmark):
     )
 
 
-def graph_node(user):
-    return models.GraphNode(
-        user=user,
-        name=data.phrase()[:200],
-        path=data.word(),
-        is_leaf=data.boolean(),
-        threshold=data.decimal(),
-    )
-
-
-def graph_node_with_bookmarks(user, bookmarks):
-    instance = graph_node(user)
-
-    # This is closure
-    def _m2m_bookmarks():
-        for b in bookmarks:
-            instance.bookmarks.add(b)
-
-    return instance, _m2m_bookmarks
-
-
 USERS_COUNT = 100
 MIN_BOOKMARKS = 5000
 MAX_BOOKMARKS = 10_000
@@ -168,7 +147,6 @@ def store_data():
         tags_bookmarks = []
         words = []
         scrapy_logs = []
-        nodes = []
         nodes_bookmarks = []
 
         user_instance = user()
@@ -213,26 +191,11 @@ def store_data():
         tags.extend([t[0] for t in tags_tuples])
         tags_bookmarks.extend([t[1] for t in tags_tuples])
 
-        # graph_node, graph_node_with_bookmarks
-        nodes_count = random.randint(12, 200)
-        avg_bookmarks_for_node = bookmarks_count // nodes_count
-        nodes_tuples = [
-            graph_node_with_bookmarks(
-                user_instance,
-                bookmarks=random.sample(bookmarks, k=avg_bookmarks_for_node),
-            )
-            for _ in range(nodes_count)
-        ]
-
-        nodes.extend([t[0] for t in nodes_tuples])
-        nodes_bookmarks.extend([t[1] for t in nodes_tuples])
-
         print("bulk creates")
         models.BookmarkHistory.objects.bulk_create(histories, batch_size=1000)
         models.Tag.objects.bulk_create(tags, batch_size=1000)
         models.WordWeight.objects.bulk_create(words, batch_size=1000)
         models.ScrapyResponseLog.objects.bulk_create(scrapy_logs, batch_size=1000)
-        models.GraphNode.objects.bulk_create(nodes, batch_size=1000)
 
         for save_m2m in tags_bookmarks + nodes_bookmarks:
             print("m2m2 save")

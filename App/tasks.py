@@ -232,34 +232,6 @@ def store_tags_task(user_id):
 
 
 @shared_task(queue="orm")
-def build_word_graph_task(user_id, bookmark_ids=[]):
-    user = User.objects.get(pk=user_id)
-
-    # TODO don't delete old graph otherwise update it with new data
-    # NOTE cosine similarity re-calculated / graph builder also re-calculated
-    user.nodes.all().delete()
-
-    bookmarks = user.bookmarks.all()
-    document_ids, vectors = models.WordWeight.word_vectors(bookmarks)
-    similarity = types.SimilarityMatrixType(vectors, document_ids)
-
-    controllers.GraphBuilder(
-        similarity.document_ids, similarity.similarity_matrix
-    ).build()
-
-    if bookmark_ids:
-        models.Bookmark.objects.filter(id__in=bookmark_ids).clustered()
-        RedisPubSub.pub(
-            {
-                "type": RedisPubSub.MessageTypes.FINISH,
-                "user_id": user_id,
-            }
-        )
-
-    return f"[BuildGraph] User<{user_id}> Bookmarks<{len(bookmark_ids)}> {bookmark_ids}"
-
-
-@shared_task(queue="orm")
 def store_bookmark_file_analytics_task(parent_id):
     parent = models.BookmarkFile.objects.get(id=parent_id)
 
@@ -391,9 +363,6 @@ def cluster_checker_task(
             bookmark.store_word_vector()
 
         store_tags_task.apply_async(kwargs={"user_id": user_id})
-        build_word_graph_task.apply_async(
-            kwargs={"user_id": user_id, "bookmark_ids": bookmark_ids}
-        )
         index_search_vector_task.apply_async(kwargs={"bookmark_ids": bookmark_ids})
     else:
         cluster_checker_task.apply_async(
