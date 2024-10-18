@@ -83,7 +83,7 @@ class BookmarkAPI(RUDLViewSet):
             "history_list",
         ]
 
-        if self.action == "update" or self.action == "partial_update":
+        if self.action in ["update", "partial_update"]:
             serializer_class = serializers.BookmarkSerializer.BookmarkUpdate
         elif self.action in list_actions:
             serializer_class = serializers.BookmarkSerializer.BookmarkDetails
