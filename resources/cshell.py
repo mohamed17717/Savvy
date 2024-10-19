@@ -1,3 +1,4 @@
+import contextlib
 import glob
 import os
 import shutil
@@ -49,18 +50,16 @@ def how_it_look(cluster_name, index):
     cluster = cluster_by_name(cluster_name)
     bookmark = cluster.bookmarks.all()[index]
     html_file = bookmark.scrapes.last().html_file
-    return "http://localhost" + html_file.url, bookmark
+    return f"http://localhost{html_file.url}", bookmark
 
 
 def delete_everything():
     for model_name in dir(models):
         model = getattr(models, model_name)
-        try:
+        with contextlib.suppress(Exception):
             if issubclass(model, dj_models.Model) and "App" in model.__module__:
                 print("Start deleting", model)
                 model.objects.all().delete()
-        except Exception:
-            pass
 
 
 def system_zero():

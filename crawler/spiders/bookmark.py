@@ -15,9 +15,8 @@ class BookmarkSpider(scrapy.Spider):
                 "cb_kwargs": {"bookmark": bookmark},
                 "meta": {"bookmark": bookmark},
             }
-            cookies = bookmark.hooks.crawler_cookies()
-            if cookies:
-                kwargs.update({"cookies": cookies})
+            if cookies := bookmark.hooks.crawler_cookies():
+                kwargs["cookies"] = cookies
 
             yield scrapy.Request(bookmark.url, **kwargs)
 

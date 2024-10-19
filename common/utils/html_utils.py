@@ -6,9 +6,9 @@ class OneMetaTag:
         self.attributes = attributes
 
     def __str__(self):
-        attributes = ""
-        for name, value in self.attributes.items():
-            attributes += f'{name}="{value}" '
+        attributes = " ".join(
+            f'{name}="{value}"' for name, value in self.attributes.items()
+        )
         return f"<meta {attributes} />"
 
 

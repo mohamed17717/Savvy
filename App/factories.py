@@ -27,7 +27,7 @@ class DataFactory:
         return f"{word}_{self.INCREMENT()}"
 
     def email(self):
-        return self.username() + "@example.com"
+        return f"{self.username()}@example.com"
 
     def password(self):
         length = random.randint(8, 16)
@@ -141,18 +141,13 @@ MAX_BOOKMARKS = 10_000
 
 
 def store_data():
-    for _ in range(USERS_COUNT):
-        histories = []
-        tags = []
-        tags_bookmarks = []
-        words = []
-        scrapy_logs = []
-        nodes_bookmarks = []
+    for i in range(USERS_COUNT):
+        histories, words, scrapy_logs, nodes_bookmarks = [], [], [], []
 
         user_instance = user()
         user_instance.save()
 
-        print(f"{_}- {user_instance=}")
+        print(f"{i}- {user_instance=}")
 
         websites_count = random.randint(5, 50)
         websites = [website(user_instance) for _ in range(websites_count)]
@@ -188,9 +183,8 @@ def store_data():
             for _ in range(tags_count)
         ]
 
-        tags.extend([t[0] for t in tags_tuples])
-        tags_bookmarks.extend([t[1] for t in tags_tuples])
-
+        tags = [t[0] for t in tags_tuples]
+        tags_bookmarks = [t[1] for t in tags_tuples]
         print("bulk creates")
         models.BookmarkHistory.objects.bulk_create(histories, batch_size=1000)
         models.Tag.objects.bulk_create(tags, batch_size=1000)

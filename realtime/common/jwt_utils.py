@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import jwt
 from fastapi import HTTPException, Request
@@ -24,10 +24,9 @@ class JwtManager:
     @classmethod
     def create_access_token(cls, data: dict) -> str:
         auth_payload = cls.AuthPayload.model_validate(data)
-        encoded_jwt = jwt.encode(
+        return jwt.encode(
             auth_payload.model_dump(), cls.SECRET_KEY, algorithm=cls.ALGORITHM
         )
-        return encoded_jwt
 
     @classmethod
     def inject_cookie(cls, response: Response, data: dict) -> None:
@@ -49,7 +48,7 @@ class JwtManager:
     @classmethod
     def decode_token(cls, token) -> dict:
         data = jwt.decode(token, cls.SECRET_KEY, algorithms=[cls.ALGORITHM])
-        if data["exp"] < datetime.utcnow().timestamp():
+        if data["exp"] < datetime.now(timezone.utc).timestamp():
             raise jwt.ExpiredSignatureError
 
         return data
@@ -66,13 +65,13 @@ class JwtManager:
         try:
             token = cls.fastapi_cookie(request)
             data = cls.decode_token(token)
-        except jwt.ExpiredSignatureError:
-            raise HTTPException(status_code=401, detail="Signature expired")
-        except jwt.DecodeError:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        except jwt.InvalidTokenError:
-            raise HTTPException(status_code=401, detail="Invalid token")
+        except jwt.ExpiredSignatureError as e:
+            raise HTTPException(status_code=401, detail="Signature expired") from e
+        except jwt.DecodeError as e:
+            raise HTTPException(status_code=401, detail="Invalid token") from e
+        except jwt.InvalidTokenError as e:
+            raise HTTPException(status_code=401, detail="Invalid token") from e
         except Exception as e:
-            raise HTTPException(status_code=401, detail=str(e))
+            raise HTTPException(status_code=401, detail=str(e)) from e
 
         return cls.AuthPayload.model_validate(data)

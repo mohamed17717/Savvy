@@ -35,9 +35,7 @@ class SubscriptionEstimator:
         self.price = price
 
     def taxes(self, net, force=True):
-        if net >= 100_000 or force:
-            return 0.2 * net
-        return 0
+        return 0.2 * net if net >= 100_000 or force else 0
 
     def monthly_net_per_user(self):
         net = self.price

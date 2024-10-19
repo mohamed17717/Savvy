@@ -57,10 +57,9 @@ class OTPManager:
             raise ValidationError({"error": "not valid code"})
 
         cache.delete(f"otp_{code}")
-        if data["otp_type"] == "email":
-            self.user.email_verified = True
-            self.user.save()
-        else:
+        if data["otp_type"] != "email":
             raise ValidationError({"error": "Not valid `otp_type`."})
 
+        self.user.email_verified = True
+        self.user.save()
         return True

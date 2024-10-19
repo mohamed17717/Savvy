@@ -37,7 +37,7 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
         return merged
 
     def clean_text(self, text) -> str:
-        cleaned = (
+        return (
             controllers.TextCleaner(text)
             .html_entities()
             .html_tags()
@@ -58,11 +58,10 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
             .stemming(method="lem")
             .double_spaces()
         ).text
-        return cleaned
 
     def clean_url(self, url) -> str:
         path = urllib3.util.parse_url(url).path
-        cleaned = (
+        return (
             controllers.TextCleaner(path)
             .not_letters()
             .underscore()
@@ -73,7 +72,6 @@ class BookmarkWeightingSerializer(serializers.ModelSerializer):
             .double_spaces()
             .lowercase()
         ).text
-        return cleaned
 
     def get_url(self, obj) -> Dict[str, int]:
         WEIGHT_FACTOR = 6
@@ -177,11 +175,14 @@ class YoutubeBookmarkWeightingSerializer(BookmarkWeightingSerializer):
             ("search", r"youtube\.com\/results\?search_query=[\w\-\+]+"),
         )
 
-        for content_type, pattern in patterns:
-            if re.search(pattern, url):
-                return content_type
-
-        return None
+        return next(
+            (
+                content_type
+                for content_type, pattern in patterns
+                if re.search(pattern, url)
+            ),
+            None,
+        )
 
     def get_url(self, obj) -> Dict[str, int]:
         WEIGHT_FACTOR = 20
@@ -190,7 +191,7 @@ class YoutubeBookmarkWeightingSerializer(BookmarkWeightingSerializer):
 
         content_type = self.identify_youtube_link(obj.url)
         if content_type is not None:
-            weight["yt_" + content_type] = WEIGHT_FACTOR * 2
+            weight[f"yt_{content_type}"] = WEIGHT_FACTOR * 2
 
         return weight
 
@@ -234,11 +235,14 @@ class FacebookBookmarkWeightingSerializer(BookmarkWeightingSerializer):
             ("profile", r"facebook\.com/[\w\.]+/?"),
         )
 
-        for content_type, pattern in patterns:
-            if re.search(pattern, url):
-                return content_type
-
-        return None
+        return next(
+            (
+                content_type
+                for content_type, pattern in patterns
+                if re.search(pattern, url)
+            ),
+            None,
+        )
 
     def get_url(self, obj) -> Dict[str, int]:
         WEIGHT_FACTOR = 20
@@ -247,7 +251,7 @@ class FacebookBookmarkWeightingSerializer(BookmarkWeightingSerializer):
 
         content_type = self.identify_facebook_link(obj.url)
         if content_type is not None:
-            weight["fb_" + content_type] = WEIGHT_FACTOR * 2
+            weight[f"fb_{content_type}"] = WEIGHT_FACTOR * 2
 
         return weight
 
@@ -277,11 +281,14 @@ class InstagramBookmarkWeightingSerializer(BookmarkWeightingSerializer):
             ("profile", r"instagram\.com/([\w\.]+)/?"),
         )
 
-        for content_type, pattern in patterns:
-            if re.search(pattern, url):
-                return content_type
-
-        return None
+        return next(
+            (
+                content_type
+                for content_type, pattern in patterns
+                if re.search(pattern, url)
+            ),
+            None,
+        )
 
     def get_url(self, obj) -> Dict[str, int]:
         # Url is not important for instagram just care about the pattern
@@ -291,7 +298,7 @@ class InstagramBookmarkWeightingSerializer(BookmarkWeightingSerializer):
 
         content_type = self.identify_instagram_link(obj.url)
         if content_type is not None:
-            weight["ig_" + content_type] = 20 * 2
+            weight[f"ig_{content_type}"] = 20 * 2
 
         return weight
 

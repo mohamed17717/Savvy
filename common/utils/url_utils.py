@@ -5,11 +5,11 @@ def url_builder(url, domain):
     if url.startswith("data:image"):
         return url
     if url.startswith("://"):
-        url = "https" + url
+        url = f"https{url}"
     if not url.startswith("http") and not url.startswith("/"):
-        url = "/" + url
+        url = f"/{url}"
     if url.startswith("/"):
-        url = f"https://{domain}" + url
+        url = f"https://{domain}{url}"
 
     return url
 

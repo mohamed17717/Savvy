@@ -40,9 +40,7 @@ class ScrapeOpsRotateProxyMiddleware:
     def get_proxy_url(self, url):
         API_KEY = "b89ad8f8-a2f2-4e89-a8eb-844dbb0ead32"
         payload = {"api_key": API_KEY, "url": url}
-        proxy_url = f"https://{self.DOMAIN}/v1/?{urlencode(payload)}"
-
-        return proxy_url
+        return f"https://{self.DOMAIN}/v1/?{urlencode(payload)}"
 
     def process_request(self, request, spider):
         if self.DOMAIN not in request.url:
@@ -55,4 +53,4 @@ class ScrapeOpsRotateProxyMiddleware:
         if self.DOMAIN not in spider.allowed_domains:
             spider.allowed_domains.append(self.DOMAIN)
 
-        spider.logger.info("Spider opened: %s" % spider.name)
+        spider.logger.info(f"Spider opened: {spider.name}")
