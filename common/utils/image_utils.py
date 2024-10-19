@@ -51,9 +51,7 @@ def download_image(url: str) -> list[bytes, str]:
             if urlparse(url).path.endswith(".svg"):
                 content = cairosvg.svg2png(content, output_width=300)
 
-        elif 400 <= response.status_code < 410:
-            pass
-        else:
+        elif not 400 <= response.status_code < 410:
             response.raise_for_status()
     except (
         requests.exceptions.ConnectTimeout,

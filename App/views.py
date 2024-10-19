@@ -117,8 +117,7 @@ class BookmarkAPI(RUDLViewSet):
         elif self.action in all_actions:
             qs = models.Bookmark.all_objects.all().by_user(self.request.user)
 
-        is_read_action = self.action.endswith("list")
-        if is_read_action:
+        if self.action.endswith("list"):
             return (
                 qs.only(*only_fields(self.get_serializer_class()))
                 .select_related("website")
@@ -191,7 +190,7 @@ class TagAPI(RULViewSet):
     def get_serializer_class(self):
         serializer_class = self.serializer_class
 
-        if self.action == "update" or self.action == "partial_update":
+        if self.action in ["update", "partial_update"]:
             serializer_class = serializers.TagSerializer.TagUpdate
         elif self.action == "list":
             serializer_class = serializers.TagSerializer.TagList
@@ -255,8 +254,7 @@ class BookmarkFilterChoices:
                 .filter(num_bookmarks__gt=0)
             )
 
-            search_query = self.request.GET.get(self.search_param)
-            if search_query:
+            if search_query := self.request.GET.get(self.search_param):
                 lookup = {f"{self.search_field}__icontains": search_query}
                 qs = qs.filter(**lookup)
 

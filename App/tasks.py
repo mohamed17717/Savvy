@@ -12,7 +12,7 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
-from App import controllers, models, types
+from App import models
 from common.utils.array_utils import window_list
 from common.utils.html_utils import extract_image_from_meta
 from common.utils.time_utils import fromtimestamp
@@ -158,7 +158,9 @@ def store_webpage_task(bookmark_id, page_title, meta_tags, headers):
 
 
 @shared_task(queue="orm")
-def deep_clone_bookmarks_task(bookmark_ids, user_id, file_id, more_data=[]):
+def deep_clone_bookmarks_task(bookmark_ids, user_id, file_id, more_data=None):
+    if more_data is None:
+        more_data = []
     bookmarks_file = models.BookmarkFile.objects.get(id=file_id)
     bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
     user = User.objects.get(pk=user_id)
@@ -207,11 +209,12 @@ def store_weights_task(bookmark_id):
     Status = models.Bookmark.ProcessStatus
 
     with transaction.atomic():
-        bookmark = models.Bookmark.objects.filter(
+        bookmarks_qs = models.Bookmark.objects.filter(
             id=bookmark_id,
             words_weights__isnull=True,
-        ).first()
-        if bookmark:
+        )
+
+        if bookmark := bookmarks_qs.first():
             bookmark.update_process_status(Status.START_TEXT_PROCESSING.value)
 
             bookmark.store_word_vector()

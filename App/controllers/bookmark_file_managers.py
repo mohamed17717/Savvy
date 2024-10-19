@@ -57,7 +57,7 @@ class BookmarkHTMLFileManager(BookmarkFileManager):
 
         checks = [contain_links]
         if self._is_valid is None:
-            self._is_valid = all([check() for check in checks])
+            self._is_valid = all(check() for check in checks)
 
         return self.is_valid
 
@@ -86,14 +86,14 @@ class BookmarkJSONFileManager(BookmarkFileManager):
             return isinstance(self.data, list)
 
         def items_are_str():
-            return all([isinstance(i, str) for i in self.data])
+            return all(isinstance(i, str) for i in self.data)
 
         def items_are_links():
-            return all([bool(validators.url(i)) for i in self.data])
+            return all(bool(validators.url(i)) for i in self.data)
 
         checks = [data_is_list, items_are_str, items_are_links]
         if self._is_valid is None:
-            self._is_valid = all([check() for check in checks])
+            self._is_valid = all(check() for check in checks)
 
         return self.is_valid
 

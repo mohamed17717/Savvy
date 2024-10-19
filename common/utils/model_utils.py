@@ -85,7 +85,9 @@ class CentralizedBulkCreator:
     def __del__(self):
         self.flush()
 
-    def add(self, obj, m2m_objects: dict = {}):
+    def add(self, obj, m2m_objects: dict = None):
+        if m2m_objects is None:
+            m2m_objects = {}
         with self.lock:
             self.data["objects"].append(obj)
             self.data["m2m_objects"].append(m2m_objects)
@@ -118,7 +120,7 @@ class CentralizedBulkCreator:
         for obj, m2m_objects in zip(objects, self.data["m2m_objects"]):
             for m2m_field, m2m_data_array in m2m_objects.items():
                 m2m_model = self.m2m_models[m2m_field]
-                m2m_model_fields = map(lambda i: i.name + "_id", m2m_model._meta.fields)
+                m2m_model_fields = map(lambda i: f"{i.name}_id", m2m_model._meta.fields)
                 _, instance_field_name, related_field_name = list(m2m_model_fields)
 
                 for m2m_object in m2m_data_array:

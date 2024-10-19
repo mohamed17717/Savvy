@@ -7,9 +7,8 @@ class SQLitePipeline:
         meta_tags = item.get("meta_tags", [])
         headers = item.get("headers", [])
         page_title = item.get("page_title", ["Undefined"])[0]
-        bookmark = item.get("bookmark", [None])[0]
 
-        if bookmark:
+        if bookmark := item.get("bookmark", [None])[0]:
             # in case of succeeded crawled item
             await django_wrapper(
                 tasks.store_webpage_task.apply_async,

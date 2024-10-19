@@ -4,8 +4,6 @@ def balanced_avg(length1, avg1, length2, avg2):
 
 
 def minmax(num, bottom, top):
-    if num > top:
-        num = top
-    if num < bottom:
-        num = bottom
+    num = min(num, top)
+    num = max(num, bottom)
     return num

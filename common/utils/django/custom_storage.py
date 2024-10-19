@@ -10,12 +10,7 @@ class CustomStaticFilesStorage(StaticFilesStorage):
         abs_static_dirs = map(os.path.abspath, settings.STATICFILES_DIRS)
         checks = map(abs_path.startswith, abs_static_dirs)
 
-        if any(checks):
-            if name.endswith(".html"):
-                return None
-        return super().path(name)
+        return None if any(checks) and name.endswith(".html") else super().path(name)
 
     def exists(self, name):
-        if self.path(name) is None:
-            return False
-        return super().exists(name)
+        return False if self.path(name) is None else super().exists(name)

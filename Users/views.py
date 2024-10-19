@@ -80,14 +80,11 @@ class RegisterAPI(knox_views.LoginView):
 
 class UserProfileAPI(RUViewSet):
     def get_serializer_class(self):
-        serializer_class = serializers.UserSerializer
-
-        if self.action == "update":
-            serializer_class = serializers.UserSerializer.Update
-        elif self.action == "retrieve":
-            pass
-
-        return serializer_class
+        return (
+            serializers.UserSerializer.Update
+            if self.action == "update"
+            else serializers.UserSerializer
+        )
 
     def get_object(self):
         return self.request.user

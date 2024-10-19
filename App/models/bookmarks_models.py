@@ -279,11 +279,10 @@ class Bookmark(models.Model):
     def hooks(self):
         from App.flows.default import BookmarkHooks
 
-        hook_class = BookmarkHooks
-        for h in flows.get_flows():
-            if self.domain.endswith(h.DOMAIN):
-                hook_class = h
-                break
+        hook_class = next(
+            (h for h in flows.get_flows() if self.domain.endswith(h.DOMAIN)),
+            BookmarkHooks,
+        )
         return hook_class(self)
 
     def calculate_important_words(self, word_vector: dict = None) -> dict:
@@ -331,32 +330,35 @@ class Bookmark(models.Model):
         words = self.important_words
 
         with transaction.atomic():
-            existing_tags = Tag.objects.select_for_update().filter(
-                name__in=words.keys()
-            )
-            for tag in existing_tags:
-                tag.weight += words.pop(tag.name, 0)
-
-            Tag.objects.bulk_update(existing_tags, ["weight"], batch_size=250)
-
-            new_tags = [
-                Tag(name=word, weight=weight, user=self.user)
-                for word, weight in words.items()
-            ]
-            # NOTE - bulk_create will ignore conflicts
-            # which will make some tags lost some of the weights
-            new_tags = Tag.objects.bulk_create(
-                new_tags, batch_size=250, ignore_conflicts=True
-            )
-
-            all_tags = [*existing_tags, *new_tags]
-            transaction.on_commit(
-                lambda: self.tags.add(
-                    *Tag.objects.filter(name__in=self.important_words.keys())
-                )
-            )
-
+            all_tags = self._extracted_from_store_tags_7(Tag, words)
         return all_tags
+
+    # TODO Rename this here and in `store_tags`
+    def _extracted_from_store_tags_7(self, Tag, words):
+        existing_tags = Tag.objects.select_for_update().filter(name__in=words.keys())
+        for tag in existing_tags:
+            tag.weight += words.pop(tag.name, 0)
+
+        Tag.objects.bulk_update(existing_tags, ["weight"], batch_size=250)
+
+        new_tags = [
+            Tag(name=word, weight=weight, user=self.user)
+            for word, weight in words.items()
+        ]
+        # NOTE - bulk_create will ignore conflicts
+        # which will make some tags lost some of the weights
+        new_tags = Tag.objects.bulk_create(
+            new_tags, batch_size=250, ignore_conflicts=True
+        )
+
+        result = [*existing_tags, *new_tags]
+        transaction.on_commit(
+            lambda: self.tags.add(
+                *Tag.objects.filter(name__in=self.important_words.keys())
+            )
+        )
+
+        return result
 
     def set_image_from_url(self, url: str, new_width: int = 300):
         url = url_builder(url, self.domain)
@@ -607,16 +609,15 @@ class WebpageMetaTag(models.Model):
 
     @classmethod
     def bulk_create(cls, webpage: BookmarkWebpage, tags: list[dict]):
-        tag_objects = []
-        for tag in tags:
-            tag_objects.append(
-                cls(
-                    webpage=webpage,
-                    name=tag.get("name", "UNKNOWN"),
-                    content=tag.get("content"),
-                    attrs=tag,
-                )
+        tag_objects = [
+            cls(
+                webpage=webpage,
+                name=tag.get("name", "UNKNOWN"),
+                content=tag.get("content"),
+                attrs=tag,
             )
+            for tag in tags
+        ]
         return cls.objects.bulk_create(tag_objects)
 
 
@@ -656,7 +657,7 @@ class WebpageHeader(models.Model):
             for header, texts in headers_dict.items():
                 level = int(header.strip("h"))  # [1-6]
 
-                for text in texts:
-                    header_objects.append(cls(webpage=webpage, text=text, level=level))
-
+                header_objects.extend(
+                    cls(webpage=webpage, text=text, level=level) for text in texts
+                )
         return cls.objects.bulk_create(header_objects)

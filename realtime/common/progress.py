@@ -70,8 +70,7 @@ class UserProgressSingleton:
     @classmethod
     async def get_instance(cls, user_id) -> "UserProgressSingleton":
         async with cls._lock:
-            _instance = cls._instances.get(user_id)
-            return _instance
+            return cls._instances.get(user_id)
 
     @classmethod
     async def get_or_create_instance(cls, user_id) -> "UserProgressSingleton":
@@ -102,10 +101,7 @@ class ProgressSSE:
     async def event_loop(self, request: Request):
         force_break_time = datetime.now() + timedelta(hours=1)
 
-        while datetime.now() < force_break_time:
-            if await request.is_disconnected():
-                break
-
+        while datetime.now() < force_break_time and not await request.is_disconnected():
             progress = self.user_progress.progress
             # progress changed
             if self.progress != progress:
