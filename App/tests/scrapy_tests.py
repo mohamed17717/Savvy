@@ -56,14 +56,6 @@ class BookmarkSpiderTestCase(TestCase):
         headers = models.WebpageHeader.objects.filter(webpage__in=webpages)
         self.assertGreaterEqual(headers.count(), len(self.urls))
 
-        # bookmarks have word vector
-        words = models.WordWeight.objects.filter(bookmark__in=self.bookmarks)
-        self.assertGreaterEqual(words.count(), len(self.urls))
-
-        # bookmarks got clustered
-        clusters = models.Cluster.objects.filter(bookmarks__in=self.bookmarks)
-        self.assertGreaterEqual(clusters.count(), 1)
-
     def tearDown(self) -> None:
         ids = [bm.id for bm in self.bookmarks]
         models.Bookmark.objects.filter(user=self.user, id__in=ids).delete()

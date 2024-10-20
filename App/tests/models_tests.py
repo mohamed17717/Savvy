@@ -45,12 +45,11 @@ class ObjFactory:
         if username is None:
             username = "testuser"
 
-        user = User.objects.create_user(
+        return User.objects.create_user(
             username=username,
             password=username,
             email=f"{username}@gmail.com",
         )
-        return user
 
     @staticmethod
     def create_file(file_type, how_many=1):
@@ -187,58 +186,6 @@ class BookmarkTestCase(TestCase):
     def test_site_name_property(self):
         self.assertEqual(self.obj.site_name, "toscrape")
 
-    def test_word_vector_property(self):
-        # TODO test it for more case and strict data
-        vector = self.obj.word_vector
-        self.assertIsInstance(vector, dict)
-        self.assertIsInstance(list(vector.keys())[0], str)
-        self.assertIsInstance(list(vector.values())[0], int)
-
-    def test_important_words_property(self):
-        # TODO test it for more case and strict data
-        vector = self.obj.important_words
-        self.assertIsInstance(vector, dict)
-        # TODO create important word for testing
-        if vector:
-            self.assertIsInstance(list(vector.keys())[0], str)
-            self.assertIsInstance(list(vector.values())[0], int)
-
-    def test_store_word_vector_method(self):
-        # it depend on word vector property
-        length = len(self.obj.word_vector)
-        total_weights = sum(self.obj.word_vector.values())
-        # words created
-        self.obj.store_word_vector()
-        self.assertEqual(self.obj.words_weights.count(), length)
-        # words not duplicated
-        self.obj.store_word_vector()
-        self.assertEqual(self.obj.words_weights.count(), length)
-
-        # weights stored right
-        total = self.obj.words_weights.all().aggregate(total=Sum("weight"))["total"]
-        self.assertEqual(total, total_weights)
-
-        for word, weight in self.obj.word_vector.items():
-            db_weight = self.obj.words_weights.get(word=word).weight
-            self.assertEqual(db_weight, weight)
-
-    def test_store_tags_method(self):
-        # it depend on word vector property
-        length = len(self.obj.important_words)
-        total_weights = sum(self.obj.important_words.values())
-        # words created
-        self.obj.store_tags()
-        self.assertEqual(self.obj.tags.count(), length)
-
-        # weights stored right
-        # TODO make sure tags are created in tests
-        total = self.obj.tags.all().aggregate(total=Sum("weight"))["total"] or 0
-        self.assertEqual(total, total_weights)
-
-        for word, weight in self.obj.important_words.items():
-            db_weight = self.obj.tags.get(name=word).weight
-            self.assertEqual(db_weight, weight)
-
     def test_instance_by_parent_class_method(self):
         data = {
             "url": "https://quotes.toscrape.com/",
@@ -374,13 +321,6 @@ class WebpageHeaderTestCase(TestCase):
     def test_tagname_property(self):
         self.assertEqual(self.obj.tagname, "h1")
 
-    def test_weight_factor_property(self):
-        obj = self.obj
-        self.assertEqual(obj.weight_factor, 9)
-
-        obj.level = 6
-        self.assertEqual(obj.weight_factor, 1)
-
     def test_bulk_create_class_method(self):
         # just run to make sure not raise errors
         old_count = self.wb.webpage.headers.count()
@@ -405,42 +345,13 @@ class TagTestCase(TestCase):
         )
 
     def deprecated_test_create_word_reflect_tag(self):
-        word, weight1 = "hello", 10
-        word_obj = models.WordWeight(bookmark=self.bookmark, word=word, weight=weight1)
-        word_obj.save()
-
+        word = "hello"
         # check tag created with word
         tag = models.Tag.objects.filter(user=self.user, name=word)
         self.assertEqual(tag.count(), 1)
-        self.assertEqual(tag[0].weight, weight1)
 
         # create again and make sure tag merged not duplicated
-        word, weight2 = "hello", 3
-        word_obj = models.WordWeight.objects.create(
-            bookmark=self.bookmark, word=word, weight=weight2
-        )
+        word = "hello"
 
         tag = models.Tag.objects.filter(user=self.user, name=word)
         self.assertEqual(tag.count(), 1)
-        self.assertEqual(tag[0].weight, weight1 + weight2)
-
-        # check bulk create words reflect tag
-        words = [
-            {"word": "fun", "weight": 10},
-            {"word": "hi", "weight": 8},
-            {"word": "you", "weight": 3},
-            {"word": "me", "weight": 4},
-        ]
-        words_objs = models.WordWeight.objects.bulk_create(
-            [models.WordWeight(bookmark=self.bookmark, **word) for word in words]
-        )
-
-        tags = models.Tag.objects.filter(
-            user=self.user, name__in=[word_obj.word for word_obj in words_objs]
-        )
-
-        self.assertEqual(tags.count(), 4)
-        self.assertEqual(
-            tags.aggregate(total=Sum("weight"))["total"],
-            sum([word_obj.weight for word_obj in words_objs]),
-        )

@@ -13,15 +13,9 @@ class InstagramBookmarkHooks(BookmarkHooks):
 
     DOMAIN = "instagram.com"
 
-    def get_weighting_serializer(self):
-        from App.serializers import InstagramBookmarkWeightingSerializer
-
-        return InstagramBookmarkWeightingSerializer
-
+    # TODO go to next step not crawl nor store weights
     def get_batch_method(self) -> typing.Callable:
-        from App.tasks import bulk_store_weights_task
-
-        return bulk_store_weights_task
+        pass
 
     def post_batch(self) -> typing.Callable:
         def method(bookmark_ids):

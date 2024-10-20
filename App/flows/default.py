@@ -2,7 +2,6 @@ import typing
 from abc import ABC
 
 if typing.TYPE_CHECKING:
-    from rest_framework.serializers import Serializer
     from scrapy.loader import ItemLoader
 
     from App.models import Bookmark
@@ -24,11 +23,6 @@ class BookmarkHooks(ABC):
 
     def post_batch(self) -> None:
         pass
-
-    def get_weighting_serializer(self) -> "Serializer":
-        from App.serializers import BookmarkWeightingSerializer
-
-        return BookmarkWeightingSerializer
 
     def crawler_cookies(self) -> dict:
         return {}

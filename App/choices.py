@@ -13,8 +13,5 @@ class BookmarkProcessStatusChoices(models.IntegerChoices):
     START_TEXT_PROCESSING = 50, _("start text processing")
     TEXT_PROCESSED = 60, _("text processed")
 
-    START_CLUSTER = 70, _("start clustering process")
-    CLUSTERED = 80, _("done the whole flow")
-
     __empty__ = None
     __default__ = CREATED

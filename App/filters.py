@@ -14,7 +14,7 @@ class TagFilter(filters.FilterSet):
     exclude = filters.CharFilter(method="filter_exclude")
 
     def filter_exclude(self, queryset, name, value):
-        return queryset.exclude(name__icontains=value, alias_name__icontains=value)
+        return queryset.exclude(name__icontains=value)
 
     class Meta:
         model = models.Tag

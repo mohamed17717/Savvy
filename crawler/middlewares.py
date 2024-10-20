@@ -18,17 +18,11 @@ class LogResponseMiddleware:
             else f"HTTP status code {response.status}",
         )
         await django_wrapper(log.store_file, response.body)
-        await django_wrapper(
-            tasks.store_weights_task.apply_async, kwargs={"bookmark_id": bookmark.id}
-        )
         return response
 
     async def process_exception(self, request, exception, spider):
         bookmark = request.meta.get("bookmark")
 
-        await django_wrapper(
-            tasks.store_weights_task.apply_async, kwargs={"bookmark_id": bookmark.id}
-        )
         await models.ScrapyResponseLog.objects.acreate(
             bookmark=bookmark, status_code=500, error=str(exception)
         )
