@@ -83,16 +83,6 @@ class BookmarkQuerySet(models.QuerySet):
 
         return self.bulk_update(objs, ["process_status"])
 
-    def start_cluster(self) -> int:
-        from App.models import Bookmark
-
-        return self.update_process_status(Bookmark.ProcessStatus.START_CLUSTER.value)
-
-    def clustered(self) -> int:
-        from App.models import Bookmark
-
-        return self.update_process_status(Bookmark.ProcessStatus.CLUSTERED.value)
-
     def start_text_processing(self) -> int:
         from App.models import Bookmark
 

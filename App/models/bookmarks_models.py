@@ -172,7 +172,7 @@ class BookmarkFile(models.Model):
 
 
 class Bookmark(models.Model):
-    """Main bookmark that got clustered and the whole next flow depend on it
+    """Main bookmark the whole next flow depend on it
     ON_CREATE
         - call the scraper controller to scrape and get webpages / log response
     ACTIONS
@@ -266,16 +266,6 @@ class Bookmark(models.Model):
         return self.webpages.order_by("-id").first()
 
     @property
-    def word_vector(self) -> dict:
-        weighting_serializer = self.hooks.get_weighting_serializer()
-        return weighting_serializer(self).total_weight
-
-    @property
-    def important_words(self) -> dict:
-        qs = self.words_weights.filter(important=True)
-        return dict(qs.values_list("word", "weight"))
-
-    @property
     def hooks(self):
         from App.flows.default import BookmarkHooks
 
@@ -285,80 +275,7 @@ class Bookmark(models.Model):
         )
         return hook_class(self)
 
-    def calculate_important_words(self, word_vector: dict = None) -> dict:
-        if word_vector is None:
-            word_vector = self.word_vector
-
-        top_weights_ranks = 5
-        weights = sorted(set(word_vector.values()), reverse=True)
-
-        if len(weights) > top_weights_ranks:
-            break_point = weights[top_weights_ranks - 1]
-            word_vector = {k: v for k, v in word_vector.items() if v >= break_point}
-        return word_vector
-
     # methods
-    def store_word_vector(self, commit=True):
-        from . import WordWeight
-
-        # Delete the old data , store new ones
-        with transaction.atomic():
-            self.words_weights.all().delete()
-
-            word_vector = self.word_vector
-            important_words = self.calculate_important_words(word_vector)
-
-            words_weights = [
-                WordWeight(
-                    bookmark=self,
-                    word=word[:64],
-                    weight=weight,
-                    important=word in important_words,
-                )
-                for word, weight in word_vector.items()
-            ]
-            if commit:
-                results = WordWeight.objects.bulk_create(words_weights, batch_size=250)
-            else:
-                return words_weights
-
-        return results
-
-    def store_tags(self):
-        from App.models import Tag
-
-        words = self.important_words
-
-        with transaction.atomic():
-            all_tags = self._extracted_from_store_tags_7(Tag, words)
-        return all_tags
-
-    # TODO Rename this here and in `store_tags`
-    def _extracted_from_store_tags_7(self, Tag, words):
-        existing_tags = Tag.objects.select_for_update().filter(name__in=words.keys())
-        for tag in existing_tags:
-            tag.weight += words.pop(tag.name, 0)
-
-        Tag.objects.bulk_update(existing_tags, ["weight"], batch_size=250)
-
-        new_tags = [
-            Tag(name=word, weight=weight, user=self.user)
-            for word, weight in words.items()
-        ]
-        # NOTE - bulk_create will ignore conflicts
-        # which will make some tags lost some of the weights
-        new_tags = Tag.objects.bulk_create(
-            new_tags, batch_size=250, ignore_conflicts=True
-        )
-
-        result = [*existing_tags, *new_tags]
-        transaction.on_commit(
-            lambda: self.tags.add(
-                *Tag.objects.filter(name__in=self.important_words.keys())
-            )
-        )
-
-        return result
 
     def set_image_from_url(self, url: str, new_width: int = 300):
         url = url_builder(url, self.domain)
@@ -388,7 +305,6 @@ class Bookmark(models.Model):
         """Clone bookmark with all relations for new user
         relations are ->
             - webpages -> meta tags / headers
-            - words_weights
             - tags
 
         new parameters ->
@@ -430,10 +346,6 @@ class Bookmark(models.Model):
                 )
                 new_bookmark.website = new_website
                 new_webpage.save(update_fields=["website"])
-
-            bulk_clone(self.words_weights.all(), {"bookmark": new_bookmark})
-
-            new_bookmark.store_tags()
 
         return new_bookmark
 

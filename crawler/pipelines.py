@@ -19,9 +19,5 @@ class SQLitePipeline:
                     "headers": headers,
                 },
             )
-            await django_wrapper(
-                tasks.store_weights_task.apply_async,
-                kwargs={"bookmark_id": bookmark.id},
-            )
 
         return item

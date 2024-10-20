@@ -14,8 +14,7 @@ class CustomFileField(serializers.Field):
         content = image.read()
         image_name = image.name.split("/")[-1]
 
-        path = default_storage.save(upload_to + image_name, ContentFile(content))
-        return path
+        return default_storage.save(upload_to + image_name, ContentFile(content))
 
     def to_representation(self, value):
         # Return the path to the image as the representation

@@ -16,7 +16,7 @@ from rest_framework.response import Response
 from App import filters, models, serializers
 from common.utils.drf.filters import FullTextSearchFilter
 from common.utils.drf.serializers import only_fields
-from common.utils.drf.viewsets import CRDLViewSet, RUDLViewSet, RULViewSet
+from common.utils.drf.viewsets import CRDLViewSet, RLViewSet, RUDLViewSet
 from common.utils.math_utils import minmax
 from realtime.common.jwt_utils import JwtManager
 
@@ -62,7 +62,7 @@ class BookmarkAPI(RUDLViewSet):
     serializer_class = serializers.BookmarkSerializer
 
     filterset_class = filters.BookmarkFilter
-    search_fields = ["words_weights__word", "title", "url"]
+    search_fields = ["title", "url"]  # TODO use content not one word text
     ordering_fields = ["id", "parent_file_id"]
 
     @property
@@ -183,16 +183,14 @@ class BookmarkAPI(RUDLViewSet):
         return super().list(request)
 
 
-class TagAPI(RULViewSet):
+class TagAPI(RLViewSet):
     pagination_class = None
     serializer_class = serializers.TagSerializer
 
     def get_serializer_class(self):
         serializer_class = self.serializer_class
 
-        if self.action in ["update", "partial_update"]:
-            serializer_class = serializers.TagSerializer.TagUpdate
-        elif self.action == "list":
+        if self.action == "list":
             serializer_class = serializers.TagSerializer.TagList
         elif self.action == "retrieve":
             serializer_class = serializers.TagSerializer.TagDetails
@@ -210,7 +208,7 @@ class TagAPI(RULViewSet):
         if self.action == "list":
             limit = math.ceil(qs.count() * 0.1)
             limit = minmax(limit, 10, 50)
-            qs = qs.order_by("-weight")[:limit]
+            qs = qs[:limit]
         elif self.action == "retrieve":
             qs = qs.prefetch_related("bookmarks")
 
@@ -221,9 +219,9 @@ class TagListAPI(ListAPIView):
     serializer_class = serializers.TagSerializer.TagList
 
     filterset_class = filters.TagFilter
-    search_fields = ["@name", "@alias_name"]
-    ordering_fields = ["weight", "id"]
-    ordering = ["-weight"]
+    search_fields = ["@name"]
+    ordering_fields = ["id"]
+    ordering = ["-id"]
 
     def get_queryset(self):
         if self.request.user.is_anonymous:
@@ -271,7 +269,6 @@ class BookmarkFilterChoices:
 
     class Topic(Base):
         serializer_class = serializers.TagSerializer.TagFilterChoicesList
-        ordering = ["-weight"]
         model = models.Tag
         search_param = "tags_search"
         search_field = "name"

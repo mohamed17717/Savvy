@@ -130,19 +130,6 @@ def crawl_bookmarks_task(bookmark_ids: list[int]):
 
 
 @shared_task(queue="orm")
-def bulk_store_weights_task(bookmark_ids: list[int]):
-    bookmarks = models.Bookmark.objects.filter(id__in=bookmark_ids)
-    words_weights = []
-    for bookmark in bookmarks:
-        words_weights.extend(bookmark.store_word_vector(commit=False))
-
-    if words_weights:
-        models.WordWeight.objects.bulk_create(words_weights, batch_size=1000)
-
-    return f"[BulkStoreWeights ({len(bookmark_ids)})] {bookmark_ids}"
-
-
-@shared_task(queue="orm")
 def store_webpage_task(bookmark_id, page_title, meta_tags, headers):
     with transaction.atomic():
         bookmark = models.Bookmark.objects.get(id=bookmark_id)
@@ -205,36 +192,6 @@ def schedule_store_bookmark_image_task(bookmark_id, image_url):
 
 
 @shared_task(queue="orm")
-def store_weights_task(bookmark_id):
-    Status = models.Bookmark.ProcessStatus
-
-    with transaction.atomic():
-        bookmarks_qs = models.Bookmark.objects.filter(
-            id=bookmark_id,
-            words_weights__isnull=True,
-        )
-
-        if bookmark := bookmarks_qs.first():
-            bookmark.update_process_status(Status.START_TEXT_PROCESSING.value)
-
-            bookmark.store_word_vector()
-            bookmark.update_process_status(Status.TEXT_PROCESSED.value)
-
-    return f"[StoreWeights] Bookmark<{bookmark_id}>"
-
-
-@shared_task(queue="orm")
-def store_tags_task(user_id):
-    user = User.objects.get(pk=user_id)
-    bookmark_ids = (
-        user.bookmarks.filter(tags__isnull=True).distinct().values_list("id", flat=True)
-    )
-    models.Tag.update_tags_with_new_bookmarks(list(bookmark_ids))
-
-    return f"[StoreTags] User<{user_id}> Bookmarks<{len(bookmark_ids)}> {bookmark_ids}"
-
-
-@shared_task(queue="orm")
 def store_bookmark_file_analytics_task(parent_id):
     parent = models.BookmarkFile.objects.get(id=parent_id)
 
@@ -284,103 +241,20 @@ def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
     user_id = parent.user.id
 
     store_bookmark_file_analytics_task.delay(parent.id)
-    cluster_checker_task.delay(user_id=user_id, bookmark_ids=bookmark_ids, iteration=0)
+    cluster_checker_task.delay(user_id=user_id, bookmark_ids=bookmark_ids)
 
     return f"[PostBatched ({len(bookmark_ids)})] {bookmark_ids}"
 
 
 @shared_task(queue="orm")
-def cluster_checker_task(
-    callback_result=[],
-    user_id=None,
-    bookmark_ids=[],
-    iteration=0,
-    uncompleted_bookmarks_history: dict = {},
-):
-    max_time = 3 * 60  # 3 min
-    wait_time = 2  # 2 sec
-    max_iteration = max_time // wait_time
+def cluster_checker_task(callback_result=None, user_id=None, bookmark_ids=None):
+    # TODO not important just rewrite the logic again
+    if callback_result is None:
+        callback_result = []
+    if bookmark_ids is None:
+        bookmark_ids = []
 
-    uncompleted_bookmarks = models.Bookmark.objects.filter(
-        id__in=set(bookmark_ids)
-        - {
-            i
-            for i, value in uncompleted_bookmarks_history.items()
-            if value["times"] > 3
-        },
-        words_weights__isnull=True,
-    )
-
-    for uncompleted in uncompleted_bookmarks:
-        uncompleted_bookmarks_history.setdefault(
-            uncompleted.id, {"times": 0, "status": "wait"}
-        )
-        uncompleted_bookmarks_history[uncompleted.id]["times"] += 1
-
-    # if this bookmark come more than 3 times
-    if uncompleted_bookmarks.exists():
-        has_scrapes = uncompleted_bookmarks.filter(scrapes__isnull=False).values_list(
-            "id", flat=True
-        )
-        for bookmark_id in has_scrapes:
-            bookmark_history = uncompleted_bookmarks_history[bookmark_id]
-            if bookmark_history["status"] != "wait":
-                continue
-            elif bookmark_history["times"] == 3:
-                bookmark_history["status"] = "calculated"
-                store_weights_task.delay(bookmark_id)
-
-        has_no_scrapes = uncompleted_bookmarks.filter(scrapes__isnull=True).values_list(
-            "id", flat=True
-        )
-        ready_to_scrape = []
-        for i, value in uncompleted_bookmarks_history.items():
-            if i in has_no_scrapes and value["times"] > 3 and value["status"] == "wait":
-                ready_to_scrape.append(i)
-                uncompleted_bookmarks_history[i]["status"] = "scraped"
-
-        if ready_to_scrape:
-            tasks = [crawl_bookmarks_task.s(ready_to_scrape).set(queue="scrapy")]
-            callback = cluster_checker_task.s(
-                user_id=user_id,
-                bookmark_ids=bookmark_ids,
-                iteration=iteration + 1,
-                uncompleted_bookmarks_history=uncompleted_bookmarks_history,
-            ).set(queue="orm")
-            job = chord(tasks)(callback)
-            with allow_join_result():
-                job.get()
-
-            return
-
-    accepted = any(
-        [iteration >= max_iteration, uncompleted_bookmarks.exists() is False]
-    )
-
-    if accepted:
-        models.Bookmark.objects.filter(id__in=bookmark_ids).start_cluster()
-        uncompleted_bookmarks = models.Bookmark.objects.filter(
-            user_id=user_id, words_weights__isnull=True
-        )
-        for bookmark in uncompleted_bookmarks:
-            bookmark.store_word_vector()
-
-        store_tags_task.apply_async(kwargs={"user_id": user_id})
-        index_search_vector_task.apply_async(kwargs={"bookmark_ids": bookmark_ids})
-    else:
-        cluster_checker_task.apply_async(
-            kwargs={
-                "user_id": user_id,
-                "bookmark_ids": bookmark_ids,
-                "iteration": iteration + 1,
-                "uncompleted_bookmarks_history": uncompleted_bookmarks_history,
-            },
-            countdown=wait_time,
-        )
-
-        return (
-            f"[ClusterChecker] (failed) Bookmarks<{len(bookmark_ids)}> {bookmark_ids}"
-        )
+    index_search_vector_task.apply_async(kwargs={"bookmark_ids": bookmark_ids})
 
     return f"[ClusterChecker] (succeed) Bookmarks<{len(bookmark_ids)}> {bookmark_ids}"
 

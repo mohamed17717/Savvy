@@ -104,7 +104,6 @@ def tag(user):
     return models.Tag(
         user=user,
         name=data.word(),
-        weight=data.number(),
     )
 
 
@@ -117,15 +116,6 @@ def tag_with_bookmarks(user, bookmarks):
             instance.bookmarks.add(b)
 
     return instance, _m2m_bookmarks
-
-
-def word_weight(bookmark):
-    return models.WordWeight(
-        bookmark=bookmark,
-        word=data.word(),
-        weight=data.number(),
-        important=data.boolean(),
-    )
 
 
 def scrapy_log(bookmark):
@@ -142,7 +132,7 @@ MAX_BOOKMARKS = 10_000
 
 def store_data():
     for i in range(USERS_COUNT):
-        histories, words, scrapy_logs, nodes_bookmarks = [], [], [], []
+        histories, scrapy_logs, nodes_bookmarks = [], [], []
 
         user_instance = user()
         user_instance.save()
@@ -167,10 +157,6 @@ def store_data():
                 print("create history")
                 histories.append(history(b))
 
-            print("create words")
-            words_count = random.randint(8, 50)
-            words.extend([word_weight(b) for _ in range(words_count)])
-
             scrapy_logs.append(scrapy_log(b))
         # tag, tag_with_bookmarks
         tags_count = random.randint(8, 100)
@@ -188,7 +174,6 @@ def store_data():
         print("bulk creates")
         models.BookmarkHistory.objects.bulk_create(histories, batch_size=1000)
         models.Tag.objects.bulk_create(tags, batch_size=1000)
-        models.WordWeight.objects.bulk_create(words, batch_size=1000)
         models.ScrapyResponseLog.objects.bulk_create(scrapy_logs, batch_size=1000)
 
         for save_m2m in tags_bookmarks + nodes_bookmarks:

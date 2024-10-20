@@ -49,12 +49,6 @@ class WebpageHeaderSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class WordWeightSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.WordWeight
-        fields = "__all__"
-
-
 class BookmarkWebpageSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.BookmarkWebpage
@@ -86,22 +80,16 @@ class TagSerializer(serializers.ModelSerializer):
             model = models.Tag
             fields = "__all__"
 
-    class TagUpdate(serializers.ModelSerializer):
-        class Meta:
-            model = models.Tag
-            fields = ["alias_name"]
-            extra_kwargs = {"alias_name": {"allow_null": True}}
-
     class TagList(serializers.ModelSerializer):
         name = serializers.SerializerMethodField()
         url = serializers.CharField(source="get_absolute_url", read_only=True)
 
         def get_name(self, obj):
-            return obj.alias_name or obj.name
+            return obj.name
 
         class Meta:
             model = models.Tag
-            fields = ["id", "name", "weight", "url"]
+            fields = ["id", "name", "url"]
             extra_kwargs = {"user": {"read_only": True}}
 
     class TagFilterChoicesList(serializers.ModelSerializer):

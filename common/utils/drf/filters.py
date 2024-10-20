@@ -67,6 +67,4 @@ class FullTextSearchFilter(SearchFilter):
         if exclude_terms:
             queryset = queryset.exclude(search_vector=exclude_terms)
 
-        if distinct:
-            return queryset.distinct()
-        return queryset
+        return queryset.distinct() if distinct else queryset
