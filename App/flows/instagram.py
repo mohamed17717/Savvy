@@ -6,7 +6,6 @@ from .default import BookmarkHooks
 
 
 class InstagramBookmarkHooks(BookmarkHooks):
-    # 1- clustering don't depend on crawling // no webpage // no scrapes
     # 2- don't weight the existing title and url because they are useless
     # 3- using url patterns inject words weights
     # 4- crawl with custom spider to store just the image
