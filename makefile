@@ -9,10 +9,7 @@ loadtest:
 	autocannon -c 100 -d 10 -p 10 -H Authorization="Token 132" http://localhost:8000/bm/bookmark/list/
 
 runtests:
-	python manage.py test --parallel auto --keepdb --settings=dj.settings.settings_test
-
-# Testing for API
-# python manage.py test --parallel auto --keepdb --settings=dj.settings.settings_test App.tests.apis_tests
+	python manage.py test --parallel auto --keepdb --settings=dj.settings.settings_test $(args)
 
 # export DJANGO_SETTINGS_MODULE=dj.settings.settings_test && celery -A dj worker -l INFO -n scrapy_worker -Q scrapy -E --concurrency=2
 # export DJANGO_SETTINGS_MODULE=dj.settings.settings_test && celery -A dj worker -l INFO -n orm_worker -Q orm -E --concurrency=2
@@ -28,4 +25,8 @@ runcelery:
 	celery -A dj beat -l INFO
 
 
-.PHONY: fullmigrate loadtest runtests runcelery
+update-requirements:
+	pip freeze | sed 's/==/~=/' > requirements.txt
+
+
+.PHONY: fullmigrate loadtest runtests runcelery update-requirements
