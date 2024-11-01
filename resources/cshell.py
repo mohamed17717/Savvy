@@ -4,28 +4,8 @@ import os
 import shutil
 
 from django.db import models as dj_models
-from django.db.models import Count
 
 from App import models
-
-
-def one_bookmark_cluster():
-    return models.Cluster.objects.filter(bookmarks_count=1)
-
-
-def cluster_related_to_tag(tag_name):
-    return models.Cluster.objects.filter(bookmarks__tags__name=tag_name).distinct()
-
-
-def cluster_by_name(name):
-    return models.Cluster.objects.get(name=name)
-
-
-def how_it_look(cluster_name, index):
-    cluster = cluster_by_name(cluster_name)
-    bookmark = cluster.bookmarks.all()[index]
-    html_file = bookmark.scrapes.last().html_file
-    return f"http://localhost{html_file.url}", bookmark
 
 
 def delete_everything():
@@ -58,11 +38,3 @@ def system_zero():
 # ]
 # for s in services:
 # os.system(f"docker-compose logs {s} > {s}.log")
-
-
-# cluster_duplicates_bookmarks().count() # 168
-# one_bookmark_cluster().count() # 234
-
-# c_name = 'cluster power 0.567 contain 9 items'
-# pprint(words_vectors_for_cluster(c_name))
-# how_it_look(c_name, 1)

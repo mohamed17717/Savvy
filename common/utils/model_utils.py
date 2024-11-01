@@ -3,8 +3,6 @@ from datetime import date
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.db import transaction
-from django.db.utils import IntegrityError
 from django.utils.deconstruct import deconstructible
 from django.utils.translation import gettext_lazy as _
 
@@ -26,18 +24,6 @@ def is_future_date_validator(value: date):
     today = date.today()
     if value < today:
         raise ValidationError("date must be in the future.")
-
-
-def concurrent_get_or_create(model, **kwargs):
-    with transaction.atomic():
-        try:
-            obj, created = model.objects.get_or_create(**kwargs)
-            return obj, created
-        except IntegrityError:
-            # Handle the exception if a duplicate is trying to be created
-            kwargs.pop("defaults", None)
-            obj = model.objects.select_for_update().get(**kwargs)
-            return obj, False
 
 
 def clone(instance, **kwargs):

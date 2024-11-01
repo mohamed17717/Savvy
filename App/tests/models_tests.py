@@ -99,12 +99,6 @@ class ObjFactory:
             user=user, location=ObjFactory.create_file("json")
         )
 
-    @staticmethod
-    def create_cluster(user):
-        return models.Cluster.objects.create(
-            user=user, name="".join(random.choices(string.ascii_letters, k=8))
-        )
-
 
 class BookmarkFileTestCase(TestCase):
     model = models.BookmarkFile
@@ -201,10 +195,6 @@ class BookmarkTestCase(TestCase):
         self.assertEqual(obj.url, data["url"])
         self.assertEqual(obj.title, data["title"])
         self.assertDictEqual(obj.more_data, {"more": "this is more data"})
-
-    def test_cluster_bookmarks_class_method(self):
-        # should be refactored
-        pass
 
 
 class ScrapyResponseLogTestCase(TestCase):

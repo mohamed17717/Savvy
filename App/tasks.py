@@ -225,7 +225,11 @@ def index_search_vector_task(bookmark_ids):
 
 
 @shared_task(queue="orm")
-def post_batch_bookmarks_task(callback_result=[], bookmark_ids=[]):
+def post_batch_bookmarks_task(callback_result=None, bookmark_ids=None):
+    if callback_result is None:
+        callback_result = []
+    if bookmark_ids is None:
+        bookmark_ids = []
     if not bookmark_ids:
         return
 

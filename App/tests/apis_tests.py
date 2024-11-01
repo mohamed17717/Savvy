@@ -171,43 +171,6 @@ class BookmarkAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-class ClusterAPITestCase(APITestCase):
-    model = models.Cluster
-
-    def setUp(self) -> None:
-        user = ObjFactory.create_user(username="mhameho")
-        knox_authorize(user, self)
-
-        self.reconnect_signals = disconnect_signals(self.model)
-
-        self.user = user
-        self.cluster = ObjFactory.create_cluster(user)
-
-    def tearDown(self) -> None:
-        self.reconnect_signals()
-
-    def test_cluster_read(self):
-        endpoint = reverse("app:cluster_read-detail", args=(self.cluster.pk,))
-        response = self.client.get(endpoint)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_cluster_read_unowned_file(self):
-        other_user = ObjFactory.create_user(username="the_other")
-        other_cluster = ObjFactory.create_cluster(other_user)
-
-        endpoint = reverse("app:cluster_read-detail", args=(other_cluster.pk,))
-        response = self.client.get(endpoint)
-
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_cluster_list(self):
-        endpoint = reverse("app:cluster_read-list")
-        response = self.client.get(endpoint)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
 class TagsMostWeightedListAPITestCase(APITestCase):
     model = models.Tag
 

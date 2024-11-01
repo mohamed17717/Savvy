@@ -83,7 +83,9 @@ class TextCleaner:
         self.text = re.sub(pattern, "", self.text).strip()
         return self
 
-    def stop_words(self, words=[], lang="english") -> "TextCleaner":
+    def stop_words(self, words=None, lang="english") -> "TextCleaner":
+        if words is None:
+            words = []
         # remove this words
         words += {
             "english": lambda: (
