@@ -1,7 +1,7 @@
 import re
 
 
-class YoutubeBookmarkWeightingSerializer:
+class YoutubeBookmarkSerializer:
     def identify_youtube_link(self, url):
         patterns = (
             ("video", r"youtu\.be\/[\w\-\+]+|youtube\.com\/watch\?v=[\w\-\+]+"),
@@ -24,7 +24,7 @@ class YoutubeBookmarkWeightingSerializer:
         )
 
 
-class FacebookBookmarkWeightingSerializer:
+class FacebookBookmarkSerializer:
     def identify_facebook_link(self, url):
         patterns = (
             ("page", r"facebook\.com/pg/[\w\.]+/about/?"),
@@ -63,7 +63,7 @@ class FacebookBookmarkWeightingSerializer:
         )
 
 
-class InstagramBookmarkWeightingSerializer:
+class InstagramBookmarkSerializer:
     def identify_instagram_link(self, url):
         patterns = (
             ("post", r"instagram\.com/p/([\.\w\-]+)/?"),

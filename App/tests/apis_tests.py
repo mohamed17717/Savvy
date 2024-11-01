@@ -244,9 +244,3 @@ class TagsMostWeightedListAPITestCase(APITestCase):
         response = self.client.get(endpoint)
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_tag_most_weighted_list(self):
-        endpoint = reverse("app:tag_most_weighted")
-        response = self.client.get(endpoint)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)

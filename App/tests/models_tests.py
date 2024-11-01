@@ -277,13 +277,6 @@ class WebpageMetaTagTestCase(TestCase):
         self.reconnect_signals()
         self.wb.tearDown()
 
-    def test_weight_factor_property(self):
-        obj = self.obj
-        self.assertEqual(obj.weight_factor, 4)
-
-        obj.name = "keywords"
-        self.assertEqual(obj.weight_factor, 5)
-
     def test_bulk_create_class_method(self):
         # just run to make sure not raise errors
         old_count = self.wb.webpage.meta_tags.count()
